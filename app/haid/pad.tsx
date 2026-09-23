@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Chips } from '@/components/haid/Chips';
-import { HaidScroll } from '@/components/haid/HaidScroll';
+import { SubScreen } from '@/components/ui/SubScreen';
 import { ClayButton } from '@/components/ui/ClayButton';
 import { Txt } from '@/components/ui/Txt';
 import { clayOf, type Palette, space } from '@/constants/theme';
@@ -46,7 +46,7 @@ export default function PadScreen() {
   }
 
   return (
-    <HaidScroll>
+    <SubScreen>
       <View style={[clayOf(colors), styles.card]}>
         <Txt variant="heading" accessibilityRole="header">Dipakai</Txt>
         <Chips options={PAD_PRODUCTS} isOn={(id) => id === product} onToggle={(id) => setProduct(id as PadProduct)} />
@@ -60,7 +60,7 @@ export default function PadScreen() {
           <Txt variant="caption">{`${changesToday} kali ganti hari ini`}</Txt>
         </View>
       )}
-    </HaidScroll>
+    </SubScreen>
   );
 }
 

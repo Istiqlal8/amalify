@@ -5,8 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { type Palette, space } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
 
-/** Body of a haid sub-screen; the header comes from the haid stack. */
-export function HaidScroll({ children }: { children: ReactNode }) {
+/** Scrolling body of a screen whose header comes from its stack. */
+export function SubScreen({ children }: { children: ReactNode }) {
   const styles = useStyles(makeStyles);
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>

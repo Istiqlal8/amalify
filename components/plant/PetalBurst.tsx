@@ -5,6 +5,7 @@ import Svg, { Path } from 'react-native-svg';
 
 import { type Palette } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
+import { FLOWERS } from '@/domain/flowers';
 import { useTheme } from '@/providers/ThemeProvider';
 
 const PETALS = 14;
@@ -26,7 +27,7 @@ export function PetalBurst({ width, height }: Props) {
 
 function Petal({ index, width, height }: { index: number; width: number; height: number }) {
   const styles = useStyles(makeStyles);
-  const { colors } = useTheme();
+  const { colors, flower } = useTheme();
   const progress = useSharedValue(0);
   // Drawn once per petal so a re-render mid-fall does not make it jump.
   const [{ startX, drift, spin, size, delay }] = useState(() => ({
@@ -37,7 +38,9 @@ function Petal({ index, width, height }: { index: number; width: number; height:
     size: 12 + Math.random() * 8,
     delay: Math.random() * 500,
   }));
-  const pink = index % 3 === 0 ? colors.primary : colors.petal;
+  const own = FLOWERS.find((f) => f.id === flower)?.petal ?? null;
+  // Sakura follows the theme; other flowers fall in their own colour, every third one in the accent.
+  const fill = index % 3 === 0 ? colors.primary : (own ?? colors.petal);
 
   useEffect(() => {
     progress.value = withDelay(delay, withTiming(1, { duration: FALL_MS, easing: Easing.in(Easing.quad) }));
@@ -55,7 +58,7 @@ function Petal({ index, width, height }: { index: number; width: number; height:
   return (
     <Animated.View style={[styles.petal, style]}>
       <Svg width={size} height={size} viewBox="0 0 20 20">
-        <Path d="M10 1 C16 5 16 14 10 19 C4 14 4 5 10 1 Z" fill={pink} />
+        <Path d="M10 1 C16 5 16 14 10 19 C4 14 4 5 10 1 Z" fill={fill} stroke={colors.border} strokeWidth={1} />
       </Svg>
     </Animated.View>
   );

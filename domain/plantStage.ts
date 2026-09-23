@@ -8,6 +8,12 @@ export const STAGE_NAMES: Record<PlantStage, string> = {
   4: 'Pohon berbunga',
 };
 
+/** Trees keep "Pohon muda / Pohon berbunga"; every other plant buds and then blooms. */
+export function stageName(stage: PlantStage, isTree: boolean): string {
+  if (isTree || stage < 3) return STAGE_NAMES[stage];
+  return stage === 3 ? 'Kuncup' : 'Mekar';
+}
+
 export function stageFromPercent(percent: number): PlantStage {
   if (percent >= 100) return 4;
   if (percent >= 65) return 3;

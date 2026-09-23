@@ -42,7 +42,7 @@ export default function TabLayout() {
       />
       <Tabs.Screen
         name="account"
-        options={{ title: 'Akun', tabBarIcon: icon({ ios: 'person.crop.circle', android: 'account_circle', web: 'account_circle' }) }}
+        options={{ title: 'Pengaturan', tabBarIcon: icon({ ios: 'gearshape.fill', android: 'settings', web: 'settings' }) }}
       />
     </Tabs>
   );

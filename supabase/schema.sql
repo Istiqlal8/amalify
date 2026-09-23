@@ -101,3 +101,57 @@ language sql stable security definer set search_path = public as $$
   order by 3 desc, p.display_name
   limit 100
 $$;
+
+-- Group programs. A check event (target 1) is done once progress reaches 1; a counted one
+-- tracks progress toward its target, like a counted amal yaumi item.
+create table public.group_events (
+  id uuid primary key default gen_random_uuid(),
+  group_id uuid not null references public.groups on delete cascade,
+  title text not null check (char_length(title) between 1 and 80),
+  starts_at timestamptz not null,
+  pic uuid references public.profiles on delete set null,
+  target integer not null default 1 check (target between 1 and 100000),
+  unit text not null default '' check (char_length(unit) <= 12),
+  progress integer not null default 0 check (progress between 0 and 100000),
+  created_by uuid not null references auth.users on delete cascade default auth.uid(),
+  created_at timestamptz not null default now()
+);
+
+alter table public.group_events enable row level security;
+create policy "read" on public.group_events for select using (group_id in (select my_group_ids()));
+create policy "add" on public.group_events for insert
+  with check (group_id in (select my_group_ids()) and created_by = auth.uid());
+create policy "edit" on public.group_events for update
+  using (group_id in (select my_group_ids())) with check (group_id in (select my_group_ids()));
+create policy "delete own" on public.group_events for delete using (created_by = auth.uid());
+
+-- Group cash book. Positive amounts come in, negative go out (whole rupiah). A dues payment
+-- names the member and the month (first day) it pays for.
+alter table public.groups add column dues_amount integer check (dues_amount between 1 and 100000000);
+
+create table public.cash_entries (
+  id uuid primary key default gen_random_uuid(),
+  group_id uuid not null references public.groups on delete cascade,
+  amount bigint not null check (amount <> 0 and abs(amount) <= 1000000000),
+  note text not null check (char_length(note) between 1 and 80),
+  day date not null default current_date,
+  dues_for uuid references public.profiles on delete set null,
+  dues_month date check (dues_month is null or extract(day from dues_month) = 1),
+  created_by uuid not null references auth.users on delete cascade default auth.uid(),
+  created_at timestamptz not null default now(),
+  check ((dues_month is null) or (amount > 0 and dues_for is not null))
+);
+
+alter table public.cash_entries enable row level security;
+create policy "read" on public.cash_entries for select using (group_id in (select my_group_ids()));
+create policy "add" on public.cash_entries for insert
+  with check (group_id in (select my_group_ids()) and created_by = auth.uid());
+create policy "delete own" on public.cash_entries for delete using (created_by = auth.uid());
+
+-- Any member may set or clear (null) the monthly dues.
+create function public.set_group_dues(g uuid, amount integer) returns void
+language plpgsql security definer set search_path = public as $$
+begin
+  if g not in (select my_group_ids()) then raise exception 'not a member'; end if;
+  update groups set dues_amount = amount where id = g;
+end $$;

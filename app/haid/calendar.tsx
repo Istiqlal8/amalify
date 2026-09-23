@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { CycleCard } from '@/components/haid/CycleCard';
-import { HaidScroll } from '@/components/haid/HaidScroll';
+import { SubScreen } from '@/components/ui/SubScreen';
 import { firstOfMonth, MonthGrid } from '@/components/haid/MonthGrid';
 import { PeriodForm } from '@/components/haid/PeriodForm';
 import { Txt } from '@/components/ui/Txt';
@@ -27,7 +27,7 @@ export default function CalendarScreen() {
   const [y, m] = first.split('-').map(Number);
 
   return (
-    <HaidScroll>
+    <SubScreen>
       <View style={[clayOf(colors), styles.card]}>
         <View style={styles.nav}>
           <NavButton label="‹" a11y="Bulan sebelumnya" onPress={() => setFirst(shiftMonth(first, -1))} />
@@ -44,7 +44,7 @@ export default function CalendarScreen() {
       </View>
       <PeriodForm />
       <CycleCard />
-    </HaidScroll>
+    </SubScreen>
   );
 }
 

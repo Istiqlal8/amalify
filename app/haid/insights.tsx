@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
 import { BarChart } from '@/components/haid/BarChart';
-import { HaidScroll } from '@/components/haid/HaidScroll';
+import { SubScreen } from '@/components/ui/SubScreen';
 import { Txt } from '@/components/ui/Txt';
 import { clayOf, type Palette, space } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
@@ -22,7 +22,7 @@ export default function InsightsScreen() {
   const spread = cycles.length > 1 ? Math.max(...cycles.map((c) => c.value)) - Math.min(...cycles.map((c) => c.value)) : null;
 
   return (
-    <HaidScroll>
+    <SubScreen>
       <View style={styles.stats}>
         <Stat value={stats ? `${stats.avgCycle}` : '–'} label="hari siklus" />
         <Stat value={stats?.avgLength ? `${stats.avgLength}` : '–'} label="hari haid" />
@@ -33,7 +33,7 @@ export default function InsightsScreen() {
       <BarChart title="Aliran" bars={flowCounts(haid)} empty="Belum ada catatan aliran." />
       <BarChart title="Nyeri" bars={painCounts(haid)} empty="Belum ada catatan nyeri." />
       <BarChart title="Gejala tersering" bars={topSymptoms(haid, TOP)} empty="Belum ada catatan gejala." />
-    </HaidScroll>
+    </SubScreen>
   );
 }
 

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 
 import { Chips } from '@/components/haid/Chips';
-import { HaidScroll } from '@/components/haid/HaidScroll';
+import { SubScreen } from '@/components/ui/SubScreen';
 import { ClayButton } from '@/components/ui/ClayButton';
 import { DateButton } from '@/components/ui/DateButton';
 import { Txt } from '@/components/ui/Txt';
@@ -44,7 +44,7 @@ export default function KbScreen() {
     const expiry = kbExpiry(kb);
     const left = daysBetween(today, expiry);
     return (
-      <HaidScroll>
+      <SubScreen>
         <View style={[clayOf(colors), styles.card]}>
           <Txt variant="heading">{kbInfo(kb.type).label}</Txt>
           <Txt>{`Dipasang ${formatDay(kb.start)} ${yearOf(kb.start)}`}</Txt>
@@ -53,12 +53,12 @@ export default function KbScreen() {
           </Txt>
           <ClayButton label="Hapus" tone="soft" onPress={confirmRemove} />
         </View>
-      </HaidScroll>
+      </SubScreen>
     );
   }
 
   return (
-    <HaidScroll>
+    <SubScreen>
       <View style={[clayOf(colors), styles.card]}>
         <Txt variant="heading" accessibilityRole="header">Metode</Txt>
         <Chips options={KB_TYPES} isOn={(id) => id === type} onToggle={(id) => setType(id as KbType)} />
@@ -68,7 +68,7 @@ export default function KbScreen() {
         </View>
         <ClayButton label="Simpan" onPress={save} />
       </View>
-    </HaidScroll>
+    </SubScreen>
   );
 }
 

@@ -62,6 +62,7 @@ export default function RootLayout() {
               <Stack>
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                 <Stack.Screen name="haid" options={{ headerShown: false }} />
+                <Stack.Screen name="doa" options={{ headerShown: false }} />
               </Stack>
             </ReminderProvider>
           </PrayerProvider>

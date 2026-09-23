@@ -1,17 +1,20 @@
 import Svg, { Circle, Ellipse, G, Path, Rect } from 'react-native-svg';
 
-import { useTheme } from '@/providers/ThemeProvider';
+import type { FlowerId } from '@/domain/flowers';
 import type { PlantStage } from '@/domain/plantStage';
+import { useTheme } from '@/providers/ThemeProvider';
+
+import { GROWS_IN_WATER, SPECIES } from './species';
 
 // Drawn on a 160×180 canvas; the pot sits at the bottom, the plant grows up from y≈118.
 
-function Pot() {
+function Pot({ water }: { water: boolean }) {
   const { colors } = useTheme();
   return (
     <G>
       <Path d="M44 124 H116 L106 172 Q80 178 54 172 Z" fill={colors.pot} />
       <Rect x={38} y={114} width={84} height={16} rx={8} fill={colors.potRim} />
-      <Ellipse cx={80} cy={116} rx={36} ry={5} fill={colors.soil} />
+      <Ellipse cx={80} cy={116} rx={36} ry={5} fill={water ? '#7DD3FC' : colors.soil} />
       <Circle cx={68} cy={146} r={3} fill={colors.foreground} />
       <Circle cx={92} cy={146} r={3} fill={colors.foreground} />
       <Path d="M74 153 Q80 159 86 153" stroke={colors.foreground} strokeWidth={2.5} fill="none" strokeLinecap="round" />
@@ -40,39 +43,12 @@ function Leaf({ x, y, flip = false, size = 1 }: { x: number; y: number; flip?: b
   );
 }
 
-function Flower({ x, y, r = 7 }: { x: number; y: number; r?: number }) {
-  const { colors } = useTheme();
-  const petals = [0, 72, 144, 216, 288].map((deg) => {
-    const rad = (deg * Math.PI) / 180;
-    return <Circle key={deg} cx={x + Math.cos(rad) * r} cy={y + Math.sin(rad) * r} r={r * 0.75} fill={colors.petal} />;
-  });
-  return (
-    <G>
-      {petals}
-      <Circle cx={x} cy={y} r={r * 0.55} fill={colors.petalCenter} />
-    </G>
-  );
-}
-
 function Stem({ top }: { top: number }) {
   const { colors } = useTheme();
   return <Path d={`M80 116 Q78 ${(116 + top) / 2} 80 ${top}`} stroke={colors.leafDeep} strokeWidth={4} fill="none" strokeLinecap="round" />;
 }
 
-function Canopy() {
-  const { colors } = useTheme();
-  return (
-    <G>
-      <Path d="M80 116 L80 70" stroke={colors.trunk} strokeWidth={9} strokeLinecap="round" />
-      <Circle cx={80} cy={52} r={30} fill={colors.leaf} />
-      <Circle cx={56} cy={66} r={20} fill={colors.leaf} />
-      <Circle cx={104} cy={66} r={20} fill={colors.leaf} />
-      <Circle cx={70} cy={42} r={8} fill="#86EFAC" />
-    </G>
-  );
-}
-
-const STAGES: Record<PlantStage, () => React.ReactElement> = {
+const SEEDLINGS: Record<0 | 1 | 2, () => React.ReactElement> = {
   0: Seed,
   1: () => (
     <G>
@@ -90,26 +66,20 @@ const STAGES: Record<PlantStage, () => React.ReactElement> = {
       <Leaf x={80} y={68} flip size={0.8} />
     </G>
   ),
-  3: () => <Canopy />,
-  4: () => (
-    <G>
-      <Canopy />
-      <Flower x={80} y={34} />
-      <Flower x={58} y={58} r={6} />
-      <Flower x={102} y={56} r={6} />
-      <Flower x={84} y={70} r={5} />
-      <Flower x={46} y={74} r={4} />
-      <Flower x={116} y={76} r={4} />
-    </G>
-  ),
 };
 
-export function PlantArt({ stage, size }: { stage: PlantStage; size: number }) {
-  const Growth = STAGES[stage];
+type Props = { stage: PlantStage; size: number; /** Overrides the chosen flower, e.g. for previews. */ flower?: FlowerId };
+
+/** Stages 0–2 are the same seedling for every plant; from stage 3 each flower grows its own way. */
+export function PlantArt({ stage, size, flower }: Props) {
+  const { colors, flower: chosen } = useTheme();
+  const kind = flower ?? chosen;
+  const Grown = SPECIES[kind];
+  const Seedling = stage < 3 ? SEEDLINGS[stage as 0 | 1 | 2] : null;
   return (
     <Svg width={size} height={(size * 180) / 160} viewBox="0 0 160 180">
-      <Growth />
-      <Pot />
+      {Seedling ? <Seedling /> : <Grown bloom={stage === 4} c={colors} />}
+      <Pot water={stage >= 3 && GROWS_IN_WATER.has(kind)} />
     </Svg>
   );
 }

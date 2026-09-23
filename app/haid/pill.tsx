@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Alert, StyleSheet, View } from 'react-native';
 
 import { Chips } from '@/components/haid/Chips';
-import { HaidScroll } from '@/components/haid/HaidScroll';
+import { SubScreen } from '@/components/ui/SubScreen';
 import { PillPack } from '@/components/haid/PillPack';
 import { ClayButton } from '@/components/ui/ClayButton';
 import { DateButton } from '@/components/ui/DateButton';
@@ -26,9 +26,9 @@ export default function PillScreen() {
   const care = careOf(haid);
   const setCare = (change: (c: Care) => Care) => editHaid((h, now) => withCare(h, change(careOf(h)), now));
   return (
-    <HaidScroll>
+    <SubScreen>
       {care.pill ? <Regimen care={care} reg={care.pill} setCare={setCare} /> : <Setup setCare={setCare} />}
-    </HaidScroll>
+    </SubScreen>
   );
 }
 

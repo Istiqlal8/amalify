@@ -6,13 +6,14 @@ import { Txt } from '@/components/ui/Txt';
 import { clayOf, type Palette, space } from '@/constants/theme';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useStyles } from '@/hooks/useStyles';
-import { STAGE_NAMES, stageFromPercent } from '@/domain/plantStage';
+import { isTree } from '@/domain/flowers';
+import { stageFromPercent, stageName } from '@/domain/plantStage';
 import type { Group, MemberToday } from '@/services/groupService';
 
 type Props = { group: Group; members: MemberToday[] };
 
 export function MemberGarden({ group, members }: Props) {
-  const { colors } = useTheme();
+  const { colors, flower } = useTheme();
   const styles = useStyles(makeStyles);
   function invite() {
     Share.share({ message: `Yuk tanam kebaikan bareng di grup "${group.name}" Amalify. Kode: ${group.invite_code}` });
@@ -27,11 +28,11 @@ export function MemberGarden({ group, members }: Props) {
       {members.map((m) => {
         const stage = stageFromPercent(m.percent);
         return (
-          <View key={m.userId} style={styles.row} accessible accessibilityLabel={`${m.name}, ${STAGE_NAMES[stage]}, ${m.percent}%`}>
+          <View key={m.userId} style={styles.row} accessible accessibilityLabel={`${m.name}, ${stageName(stage, isTree(flower))}, ${m.percent}%`}>
             <PlantArt stage={stage} size={48} />
             <View style={styles.flex}>
               <Txt variant="bold">{m.name}</Txt>
-              <Txt variant="caption">{STAGE_NAMES[stage]}</Txt>
+              <Txt variant="caption">{stageName(stage, isTree(flower))}</Txt>
             </View>
             <Txt variant="bold">{m.percent}%</Txt>
           </View>

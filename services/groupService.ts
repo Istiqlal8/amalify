@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-export type Group = { id: string; name: string; invite_code: string };
+/** `dues_amount` is the monthly dues in rupiah; null when the group has none. */
+export type Group = { id: string; name: string; invite_code: string; dues_amount: number | null };
 export type MemberToday = { userId: string; name: string; percent: number };
 
 type MemberRow = { user_id: string; profiles: { display_name: string } | null };
@@ -15,7 +16,7 @@ export async function signInSupabase(db: SupabaseClient, idToken: string, name: 
 }
 
 export async function listGroups(db: SupabaseClient): Promise<Group[]> {
-  const { data, error } = await db.from('groups').select('id, name, invite_code').order('created_at');
+  const { data, error } = await db.from('groups').select('id, name, invite_code, dues_amount').order('created_at');
   if (error) throw error;
   return data;
 }

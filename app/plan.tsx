@@ -4,19 +4,18 @@ import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ItemEditor } from '@/components/plan/ItemEditor';
-import { ClayButton } from '@/components/ui/ClayButton';
 import { Txt } from '@/components/ui/Txt';
 import { fonts, type Palette, radius, space } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
 import { useTheme } from '@/providers/ThemeProvider';
-import { SECTIONS } from '@/domain/amalan';
+import { SECTIONS, type SectionId } from '@/domain/amalan';
 import type { ItemDraft, PlanItem } from '@/domain/plan';
 import { useLogs } from '@/providers/LogsProvider';
 
-const BLANK: ItemDraft = { label: '', section: 'kebaikan', kind: 'check', target: 1, unit: '' };
+const blank = (section: SectionId): ItemDraft => ({ label: '', section, kind: 'check', target: 1, unit: '' });
 
-/** `null` = nothing open, `'new'` = adding, otherwise the id being edited. */
-type Editing = null | 'new' | string;
+/** `null` = nothing open, `{ adding }` = new item in that section, otherwise the id being edited. */
+type Editing = null | { adding: SectionId } | string;
 
 export default function PlanScreen() {
   const styles = useStyles(makeStyles);
@@ -25,7 +24,7 @@ export default function PlanScreen() {
   const [editing, setEditing] = useState<Editing>(null);
 
   function save(draft: ItemDraft) {
-    if (editing === 'new') addItem(draft);
+    if (typeof editing === 'object' && editing) addItem(draft);
     else if (editing) updateItem(editing, draft);
     setEditing(null);
   }
@@ -65,9 +64,17 @@ export default function PlanScreen() {
                   <Row key={it.id} item={it} onEdit={() => setEditing(it.id)} onRemove={() => confirmRemove(it)} />
                 ),
               )}
+            {typeof editing === 'object' && editing?.adding === section.id ? (
+              editor(blank(section.id))
+            ) : (
+              <Pressable accessibilityRole="button" onPress={() => setEditing({ adding: section.id })} style={styles.add}>
+                <Txt variant="bold" style={{ color: colors.primaryDeep }}>
+                  + Tambah
+                </Txt>
+              </Pressable>
+            )}
           </View>
         ))}
-        {editing === 'new' ? editor(BLANK) : <ClayButton label="Tambah amalan" onPress={() => setEditing('new')} />}
       </ScrollView>
     </SafeAreaView>
   );
@@ -113,6 +120,15 @@ const makeStyles = (c: Palette) =>
       borderWidth: 2,
       borderColor: c.border,
       backgroundColor: c.card,
+    },
+    add: {
+      minHeight: 48,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: radius.md,
+      borderWidth: 2,
+      borderStyle: 'dashed',
+      borderColor: c.secondary,
     },
     action: { minHeight: 44, minWidth: 56, alignItems: 'center', justifyContent: 'center', paddingHorizontal: space.sm },
   });

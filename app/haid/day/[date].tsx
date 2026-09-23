@@ -3,7 +3,7 @@ import { useState, type ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Chips } from '@/components/haid/Chips';
-import { HaidScroll } from '@/components/haid/HaidScroll';
+import { SubScreen } from '@/components/ui/SubScreen';
 import { TextField } from '@/components/ui/TextField';
 import { Txt } from '@/components/ui/Txt';
 import { clayOf, type Palette, space } from '@/constants/theme';
@@ -32,7 +32,7 @@ export default function DayNoteScreen() {
   }
 
   return (
-    <HaidScroll>
+    <SubScreen>
       <Stack.Screen options={{ title: formatDay(date) }} />
       {isHaidDay(haid, date) && <Txt variant="bold" style={{ color: colors.primaryDeep }}>Hari haid</Txt>}
       <Section title="Aliran">
@@ -60,7 +60,7 @@ export default function DayNoteScreen() {
           placeholder="Ketik lalu tekan selesai"
         />
       </Section>
-    </HaidScroll>
+    </SubScreen>
   );
 }
 

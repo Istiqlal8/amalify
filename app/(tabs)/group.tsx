@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import { GroupForms } from '@/components/group/GroupForms';
 import { MemberGarden } from '@/components/group/MemberGarden';
+import { MenuTile } from '@/components/home/MenuTile';
 import { Screen } from '@/components/ui/Screen';
 import { Txt } from '@/components/ui/Txt';
 import { type Palette, radius, space } from '@/constants/theme';
@@ -48,6 +49,20 @@ export default function GroupScreen() {
         </ScrollView>
       )}
       {selected && <MemberGarden group={selected} members={members} />}
+      {selected && (
+        <View style={styles.tiles}>
+          <MenuTile
+            href={{ pathname: '/event', params: { group: selected.id } }}
+            label="Event"
+            icon={{ ios: 'calendar', android: 'event', web: 'event' }}
+          />
+          <MenuTile
+            href={{ pathname: '/kas', params: { group: selected.id } }}
+            label="Kas grup"
+            icon={{ ios: 'banknote.fill', android: 'payments', web: 'payments' }}
+          />
+        </View>
+      )}
       {error && <Txt style={{ color: colors.destructive }}>{error}</Txt>}
       <GroupForms onCreate={create} onJoin={join} />
     </Screen>
@@ -57,6 +72,7 @@ export default function GroupScreen() {
 const makeStyles = (c: Palette) =>
   StyleSheet.create({
     chips: { gap: space.sm },
+    tiles: { flexDirection: 'row' },
     chip: {
       minHeight: 44,
       justifyContent: 'center',
