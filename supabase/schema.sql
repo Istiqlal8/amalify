@@ -1,5 +1,5 @@
--- Amalify group layer. Only a daily percentage and a display name leave the device;
--- the full checklist stays in each user's own Google Drive.
+-- Amalify group layer. Only a daily percentage, today's tilawah pages and a display name
+-- leave the device; the full checklist stays in each user's own Google Drive.
 
 create table public.profiles (
   id uuid primary key references auth.users on delete cascade default auth.uid(),
@@ -25,6 +25,7 @@ create table public.daily_summaries (
   user_id uuid not null references auth.users on delete cascade default auth.uid(),
   day date not null,
   percent smallint not null check (percent between 0 and 100),
+  tilawah smallint not null default 0 check (tilawah between 0 and 1000),
   primary key (user_id, day)
 );
 
@@ -81,3 +82,22 @@ begin
   insert into group_members (group_id, user_id) values (g.id, auth.uid()) on conflict do nothing;
   return g;
 end $$;
+
+-- Tilawah pages per user over a day range. Global (only_group null) lists every signed-in user
+-- who read something; a group board lists all its members and is open only to members.
+-- Returns names and page totals only, so percentages stay visible to group mates alone.
+create function public.tilawah_board(from_day date, to_day date, only_group uuid default null)
+returns table (user_id uuid, display_name text, pages bigint)
+language sql stable security definer set search_path = public as $$
+  select p.id, p.display_name, coalesce(sum(s.tilawah), 0)
+  from profiles p
+  left join daily_summaries s on s.user_id = p.id and s.day between from_day and to_day
+  where auth.uid() is not null
+    and (only_group is null or (
+      only_group in (select my_group_ids())
+      and p.id in (select m.user_id from group_members m where m.group_id = only_group)))
+  group by p.id, p.display_name
+  having only_group is not null or coalesce(sum(s.tilawah), 0) > 0
+  order by 3 desc, p.display_name
+  limit 100
+$$;

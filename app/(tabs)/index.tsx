@@ -38,8 +38,10 @@ export default function HomeScreen() {
           );
         })}
         <MenuTile href="/quran" label="Baca Quran" icon={{ ios: 'book.fill', android: 'menu_book', web: 'menu_book' }} />
+        <MenuTile href="/haid" label="Haid" icon={{ ios: 'drop.fill', android: 'water_drop', web: 'water_drop' }} />
         <MenuTile href="/kiblat" label="Kiblat" icon={{ ios: 'location.north.circle.fill', android: 'explore', web: 'explore' }} />
         <MenuTile href="/garden" label="Kebun" icon={{ ios: 'leaf.fill', android: 'potted_plant', web: 'potted_plant' }} />
+        <MenuTile href="/leaderboard" label="Leaderboard" icon={{ ios: 'trophy.fill', android: 'emoji_events', web: 'emoji_events' }} />
         <MenuTile href="/group" label="Grup" icon={{ ios: 'person.3.fill', android: 'group', web: 'group' }} />
         <MenuTile href="/plan" label="Atur amalan" icon={{ ios: 'slider.horizontal.3', android: 'tune', web: 'tune' }} />
       </View>

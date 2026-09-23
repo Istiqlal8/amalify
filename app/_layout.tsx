@@ -61,6 +61,7 @@ export default function RootLayout() {
               <StatusBar style="dark" />
               <Stack>
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="haid" options={{ headerShown: false }} />
               </Stack>
             </ReminderProvider>
           </PrayerProvider>

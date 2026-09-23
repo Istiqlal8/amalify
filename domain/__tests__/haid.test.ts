@@ -1,6 +1,6 @@
 import { expect, test } from '@jest/globals';
 
-import { dayOfPeriod, earliestStart, EMPTY_HAID, endHaid, isHaidDay, itemsForDay, removePeriod, restampHaidChange, setOpenStart, startHaid, type HaidLog } from '../haid';
+import { addPeriod, dayOfPeriod, earliestStart, EMPTY_HAID, endHaid, isHaidDay, itemsForDay, removePeriod, restampHaidChange, setOpenStart, startHaid, type HaidLog } from '../haid';
 import type { PlanItem } from '../plan';
 
 const open: HaidLog = { periods: [{ start: '2026-09-20' }], at: 1 };
@@ -76,4 +76,17 @@ test('test_restampHaidChange_earlierStart_rescoresNewHaidDays', () => {
 
 test('test_removePeriod_dropsOnlyThatStart', () => {
   expect(removePeriod(withPast, '2026-08-25', 5).periods).toEqual([{ start: '2026-09-23' }]);
+});
+
+test('test_addPeriod_pastRange_isAdded', () => {
+  expect(addPeriod(EMPTY_HAID, '2026-08-01', '2026-08-05', '2026-09-23', 5).periods).toEqual([{ start: '2026-08-01', end: '2026-08-05' }]);
+});
+
+test('test_addPeriod_overlapsOpen_isRefused', () => {
+  expect(addPeriod(open, '2026-09-21', '2026-09-22', '2026-09-23', 5)).toBe(open);
+});
+
+test('test_removePeriod_keepsDayNotes', () => {
+  const log: HaidLog = { ...open, days: { '2026-09-20': { flow: 'deras', symptoms: [] } } };
+  expect(removePeriod(log, '2026-09-20', 5).days).toEqual(log.days);
 });

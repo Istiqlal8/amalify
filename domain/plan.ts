@@ -25,6 +25,9 @@ const count = (id: string, label: string, section: SectionId, target: number, un
   id, label, section, kind: 'count', target, unit,
 });
 
+/** The seeded tilawah item; its daily count (pages) feeds the tilawah leaderboard. */
+export const TILAWAH_ID = 'tilawah';
+
 /** Seed for a fresh install; `at: 0` lets any edited plan (local or Drive) win over it. */
 export const DEFAULT_PLAN: Plan = {
   at: 0,
@@ -37,7 +40,7 @@ export const DEFAULT_PLAN: Plan = {
     check('rawatib', 'Rawatib', 'sholat'),
     check('dhuha', 'Dhuha', 'sholat'),
     check('tahajud', 'Tahajud', 'sholat'),
-    count('tilawah', 'Tilawah', 'quran', 5, 'halaman'),
+    count(TILAWAH_ID, 'Tilawah', 'quran', 5, 'halaman'),
     check('dzikir-pagi', 'Dzikir pagi', 'quran'),
     check('dzikir-petang', 'Dzikir petang', 'quran'),
     count('istighfar', 'Istighfar', 'quran', 100, 'kali'),

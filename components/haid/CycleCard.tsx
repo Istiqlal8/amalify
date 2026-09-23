@@ -17,7 +17,7 @@ function when(today: string, day: string): string {
   return `lewat ${-n} hari`;
 }
 
-/** Cycle summary for the Kebun tab; hidden until haid has been marked once. */
+/** Cycle summary and history for the haid calendar; hidden until haid has been marked once. */
 export function CycleCard() {
   const styles = useStyles(makeStyles);
   const { colors } = useTheme();

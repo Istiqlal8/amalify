@@ -1,6 +1,5 @@
 import { StyleSheet, View } from 'react-native';
 
-import { CycleCard } from '@/components/haid/CycleCard';
 import { PlantArt } from '@/components/plant/PlantArt';
 import { Screen } from '@/components/ui/Screen';
 import { Txt } from '@/components/ui/Txt';
@@ -45,7 +44,6 @@ export default function GardenScreen() {
           </View>
         ))}
       </View>
-      <CycleCard />
     </Screen>
   );
 }

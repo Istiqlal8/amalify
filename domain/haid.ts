@@ -1,10 +1,13 @@
+import type { Care } from './care';
 import { dateKey, resnapshot, type Logs } from './dayLog';
+import type { DayNote } from './haidDay';
 import type { PlanItem } from './plan';
 
 /** Inclusive local dates `YYYY-MM-DD`; `end` is absent while the period is still going. */
 export type Period = { start: string; end?: string };
 
-export type HaidLog = { periods: Period[]; at: number };
+/** `days` and `care` are absent in logs written before those existed. */
+export type HaidLog = { periods: Period[]; at: number; days?: Record<string, DayNote>; care?: Care };
 
 export const EMPTY_HAID: HaidLog = { periods: [], at: 0 };
 
@@ -27,7 +30,7 @@ export function openPeriod(log: HaidLog): Period | undefined {
 
 export function startHaid(log: HaidLog, today: string, now: number): HaidLog {
   if (openPeriod(log)) return log;
-  return { periods: [...log.periods, { start: today }], at: now };
+  return { ...log, periods: [...log.periods, { start: today }], at: now };
 }
 
 /** Closes the open period at yesterday, so today's prayers count again. Started today → removed. */
@@ -36,7 +39,7 @@ export function endHaid(log: HaidLog, today: string, now: number): HaidLog {
   const periods = log.periods
     .map((p) => (p.end === undefined ? { ...p, end: yesterday } : p))
     .filter((p) => p.end === undefined || p.start <= p.end);
-  return { periods, at: now };
+  return { ...log, periods, at: now };
 }
 
 /**
@@ -48,7 +51,7 @@ export function setOpenStart(log: HaidLog, start: string, today: string, now: nu
   if (!open || start > today) return log;
   const clash = log.periods.some((p) => p !== open && p.end !== undefined && p.end >= start);
   if (clash) return log;
-  return { periods: log.periods.map((p) => (p === open ? { ...p, start } : p)), at: now };
+  return { ...log, periods: log.periods.map((p) => (p === open ? { ...p, start } : p)), at: now };
 }
 
 /** The earliest allowed start for the open period: the day after the previous one ended. */
@@ -57,8 +60,16 @@ export function earliestStart(log: HaidLog): string | null {
   return ends.length ? shiftDay(ends[ends.length - 1], 1) : null;
 }
 
+/** Adds a finished period from the past. Refused when it runs backwards, reaches past today or overlaps another. */
+export function addPeriod(log: HaidLog, start: string, end: string, today: string, now: number): HaidLog {
+  if (start > end || end > today) return log;
+  const clash = log.periods.some((p) => p.start <= end && (p.end === undefined || p.end >= start));
+  if (clash) return log;
+  return { ...log, periods: [...log.periods, { start, end }], at: now };
+}
+
 export function removePeriod(log: HaidLog, start: string, now: number): HaidLog {
-  return { periods: log.periods.filter((p) => p.start !== start), at: now };
+  return { ...log, periods: log.periods.filter((p) => p.start !== start), at: now };
 }
 
 /** 1 on the first day of the current period. */

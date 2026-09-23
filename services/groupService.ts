@@ -32,8 +32,8 @@ export async function joinGroup(db: SupabaseClient, code: string): Promise<Group
   return data as Group;
 }
 
-export async function pushToday(db: SupabaseClient, day: string, percent: number): Promise<void> {
-  const { error } = await db.from('daily_summaries').upsert({ day, percent });
+export async function pushToday(db: SupabaseClient, day: string, percent: number, tilawah: number): Promise<void> {
+  const { error } = await db.from('daily_summaries').upsert({ day, percent, tilawah });
   if (error) throw error;
 }
 

@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, type Dispatch, type ReactNode, type SetStateAction } from 'react';
 
-import { dateKey, dayPercent, mergeLogs, resnapshot, setCount, type DayEntry, type Logs } from '@/domain/dayLog';
+import { countOf, dateKey, dayPercent, mergeLogs, resnapshot, setCount, type DayEntry, type Logs } from '@/domain/dayLog';
 import * as haids from '@/domain/haid';
 import * as plans from '@/domain/plan';
 import { useDriveSync, type SyncStatus } from '@/hooks/useDriveSync';
@@ -22,6 +22,9 @@ type Actions = {
 type LogsState = Actions & {
   setHaidStart: (start: string) => void;
   removeHaid: (start: string) => void;
+  addHaid: (start: string, end: string) => void;
+  /** Day notes and care changes; these never touch which days pause sholat. */
+  editHaid: (change: (h: haids.HaidLog, now: number) => haids.HaidLog) => void;
   logs: Logs;
   plan: plans.Plan;
   haid: haids.HaidLog;
@@ -58,7 +61,7 @@ export function LogsProvider({ children }: { children: ReactNode }) {
   }, [loaded, today, todayItems, setLogs]);
   const todayEntry = logs[today];
   const todayPercent = dayPercent(todayEntry, todayItems);
-  useGroupSummary(groupsReady, today, todayPercent);
+  useGroupSummary(groupsReady, today, todayPercent, countOf(todayEntry, plans.TILAWAH_ID));
 
   const actions = useActions(today, todayItems, setLogs, setPlan, setHaid);
   const setHaidStart = useCallback((start: string) => {
@@ -73,9 +76,19 @@ export function LogsProvider({ children }: { children: ReactNode }) {
     setLogs((l) => haids.restampHaidChange(l, haid, next, plan.items, today));
     setHaid(next);
   }, [haid, today, plan.items, setLogs, setHaid]);
+  const addHaid = useCallback((start: string, end: string) => {
+    const next = haids.addPeriod(haid, start, end, today, Date.now());
+    if (next === haid) return;
+    setLogs((l) => haids.restampHaidChange(l, haid, next, plan.items, today));
+    setHaid(next);
+  }, [haid, today, plan.items, setLogs, setHaid]);
+  const editHaid = useCallback(
+    (change: (h: haids.HaidLog, now: number) => haids.HaidLog) => setHaid((h) => change(h, Date.now())),
+    [setHaid],
+  );
   const value = useMemo(
-    () => ({ logs, plan, haid, today, todayHaid, loaded, todayEntry, todayPercent, sync, setHaidStart, removeHaid, ...actions }),
-    [logs, plan, haid, today, todayHaid, loaded, todayEntry, todayPercent, sync, setHaidStart, removeHaid, actions],
+    () => ({ logs, plan, haid, today, todayHaid, loaded, todayEntry, todayPercent, sync, setHaidStart, removeHaid, addHaid, editHaid, ...actions }),
+    [logs, plan, haid, today, todayHaid, loaded, todayEntry, todayPercent, sync, setHaidStart, removeHaid, addHaid, editHaid, actions],
   );
   return <LogsContext.Provider value={value}>{children}</LogsContext.Provider>;
 }

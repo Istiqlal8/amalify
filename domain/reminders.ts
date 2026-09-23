@@ -1,5 +1,6 @@
 import { countOf, dateKey, dayPercent, type Logs } from './dayLog';
 import { isHaidDay, isPausedSection, type HaidLog } from './haid';
+import { haidReminders } from './haidReminders';
 import type { PlanItem } from './plan';
 import type { NextPrayer } from './prayer';
 
@@ -99,6 +100,7 @@ export function buildSchedule({ items, logs, evening, prayers, city, haid, now }
   const horizon = new Date(now);
   horizon.setDate(now.getDate() + DAYS_AHEAD);
   all.push(...adzan(prayers.filter((p) => p.at < horizon), items, logs, city, haid));
+  all.push(...haidReminders(haid, now));
   return all
     .filter((r) => r.date.getTime() > now.getTime())
     .sort((a, b) => a.date.getTime() - b.date.getTime())
