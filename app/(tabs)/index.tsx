@@ -1,31 +1,51 @@
-import { StyleSheet } from 'react-native';
+import type { SymbolViewProps } from 'expo-symbols';
+import { StyleSheet, View } from 'react-native';
 
-import EditScreenInfo from '@/components/EditScreenInfo';
-import { Text, View } from '@/components/Themed';
+import { MenuTile } from '@/components/home/MenuTile';
+import { PrayerCard } from '@/components/prayer/PrayerCard';
+import { TodayPlantCard } from '@/components/TodayPlantCard';
+import { Screen } from '@/components/ui/Screen';
+import { space } from '@/constants/theme';
+import { SECTIONS, type SectionId } from '@/domain/amalan';
+import { streak } from '@/domain/dayLog';
+import { useLogs } from '@/providers/LogsProvider';
 
-export default function TabOneScreen() {
+type IconName = SymbolViewProps['name'];
+
+const SECTION_ICONS: Record<SectionId, IconName> = {
+  sholat: { ios: 'moon.stars.fill', android: 'mosque', web: 'mosque' },
+  quran: { ios: 'book.closed.fill', android: 'auto_stories', web: 'auto_stories' },
+  kebaikan: { ios: 'heart.fill', android: 'volunteer_activism', web: 'volunteer_activism' },
+};
+
+export default function HomeScreen() {
+  const { logs, plan, loaded, todayPercent } = useLogs();
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Tab One</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/(tabs)/index.tsx" />
-    </View>
+    <Screen title="Assalamu'alaikum">
+      <TodayPlantCard percent={todayPercent} streakDays={streak(logs)} loaded={loaded} />
+      <PrayerCard />
+      <View style={styles.grid}>
+        {SECTIONS.map((section) => {
+          if (!plan.items.some((it) => it.section === section.id)) return null;
+          return (
+            <MenuTile
+              key={section.id}
+              href={{ pathname: '/amalan/[section]', params: { section: section.id } }}
+              label={section.title}
+              icon={SECTION_ICONS[section.id]}
+            />
+          );
+        })}
+        <MenuTile href="/quran" label="Baca Quran" icon={{ ios: 'book.fill', android: 'menu_book', web: 'menu_book' }} />
+        <MenuTile href="/garden" label="Kebun" icon={{ ios: 'leaf.fill', android: 'potted_plant', web: 'potted_plant' }} />
+        <MenuTile href="/group" label="Grup" icon={{ ios: 'person.3.fill', android: 'group', web: 'group' }} />
+        <MenuTile href="/plan" label="Atur amalan" icon={{ ios: 'slider.horizontal.3', android: 'tune', web: 'tune' }} />
+      </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  separator: {
-    marginVertical: 30,
-    height: 1,
-    width: '80%',
-  },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.md },
 });
