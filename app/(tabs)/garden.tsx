@@ -1,59 +1,50 @@
 import { StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { PlantArt } from '@/components/plant/PlantArt';
-import { Screen } from '@/components/ui/Screen';
+import { FarmScene } from '@/components/farm/FarmScene';
 import { Txt } from '@/components/ui/Txt';
-import { clayOf, type Palette, space } from '@/constants/theme';
-import { useTheme } from '@/providers/ThemeProvider';
+import { frostOf, type Palette, radius, space } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
 import { lastDays, pastPercent, streak } from '@/domain/dayLog';
+import { buildFarm } from '@/domain/farm';
 import { isHaidDay, itemsForDay } from '@/domain/haid';
-import { stageFromPercent } from '@/domain/plantStage';
 import { useLogs } from '@/providers/LogsProvider';
 
 const DAYS = 28;
-const WEEKDAY = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
 export default function GardenScreen() {
-  const { colors } = useTheme();
   const styles = useStyles(makeStyles);
+  const top = useSafeAreaInsets().top;
   const { logs, plan, haid, today, todayPercent } = useLogs();
   const days = lastDays(DAYS).map((key) => {
     const onHaid = isHaidDay(haid, key);
     const percent = key === today ? todayPercent : pastPercent(logs[key], itemsForDay(plan.items, onHaid));
-    return { key, percent, stage: stageFromPercent(percent), onHaid };
+    return { key, percent, onHaid };
   });
-  const blooms = days.filter((d) => d.stage === 4).length;
+  const plots = buildFarm(days);
+  const blooms = plots.filter((p) => p.stage === 4).length;
 
   return (
-    <Screen title="Kebunku">
-      <View style={styles.stats}>
-        <Stat value={streak(logs)} label="hari beruntun" />
-        <Stat value={blooms} label="pohon berbunga" />
+    <View style={styles.root}>
+      <FarmScene plots={plots} />
+      <View style={[styles.header, { top: top + space.sm }]}>
+        <View style={styles.pill}>
+          <Txt variant="heading" accessibilityRole="header">
+            Kebunku
+          </Txt>
+        </View>
+        <Chip value={streak(logs)} label="hari beruntun" />
+        <Chip value={blooms} label="berbunga" />
       </View>
-      <View style={[clayOf(colors), styles.grid]}>
-        {days.map((d) => (
-          <View
-            key={d.key}
-            style={styles.cell}
-            accessible
-            accessibilityLabel={`${d.key}: ${d.percent}%${d.onHaid ? ', haid' : ''}`}>
-            <PlantArt stage={d.stage} size={40} />
-            <Txt variant="caption">{WEEKDAY[new Date(`${d.key}T00:00`).getDay()]}</Txt>
-            <View style={[styles.dot, d.onHaid && styles.dotHaid]} />
-          </View>
-        ))}
-      </View>
-    </Screen>
+    </View>
   );
 }
 
-function Stat({ value, label }: { value: number; label: string }) {
-  const { colors } = useTheme();
+function Chip({ value, label }: { value: number; label: string }) {
   const styles = useStyles(makeStyles);
   return (
-    <View style={[clayOf(colors), styles.stat]}>
-      <Txt variant="title">{value}</Txt>
+    <View style={[styles.pill, styles.chip]} accessible accessibilityLabel={`${value} ${label}`}>
+      <Txt variant="bold">{value}</Txt>
       <Txt variant="caption">{label}</Txt>
     </View>
   );
@@ -61,11 +52,8 @@ function Stat({ value, label }: { value: number; label: string }) {
 
 const makeStyles = (c: Palette) =>
   StyleSheet.create({
-    stats: { flexDirection: 'row', gap: space.md },
-    stat: { flex: 1, padding: space.md, alignItems: 'center' },
-    grid: { flexDirection: 'row', flexWrap: 'wrap', padding: space.sm, rowGap: space.sm },
-    cell: { width: `${100 / 7}%`, alignItems: 'center' },
-    // Always rendered so every row keeps the same height; only haid days are filled.
-    dot: { width: 6, height: 6, borderRadius: 3, marginTop: 2 },
-    dotHaid: { backgroundColor: c.primary },
+    root: { flex: 1 },
+    header: { position: 'absolute', left: space.md, right: space.md, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: space.sm },
+    pill: { ...frostOf(c), borderRadius: radius.pill, paddingHorizontal: space.md, paddingVertical: space.xs },
+    chip: { flexDirection: 'row', alignItems: 'baseline', gap: space.xs },
   });

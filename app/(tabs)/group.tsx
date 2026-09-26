@@ -61,6 +61,7 @@ export default function GroupScreen() {
             label="Kas grup"
             icon={{ ios: 'banknote.fill', android: 'payments', web: 'payments' }}
           />
+          <MenuTile href={{ pathname: '/group-farm', params: { group: selected.id } }} label="Kebun grup" icon={{ ios: 'leaf', android: 'yard', web: 'yard' }} />
         </View>
       )}
       {error && <Txt style={{ color: colors.destructive }}>{error}</Txt>}

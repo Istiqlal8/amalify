@@ -2,18 +2,20 @@ import { StyleSheet, View } from 'react-native';
 
 import { HaidCard, SholatHeader } from '@/components/haid/HaidSection';
 import { PlanItemRow } from '@/components/PlanItemRow';
+import { TodayPlantCard } from '@/components/TodayPlantCard';
 import { StackScreen } from '@/components/ui/StackScreen';
 import { Txt } from '@/components/ui/Txt';
 import { space } from '@/constants/theme';
 import { SECTIONS } from '@/domain/amalan';
+import { streak } from '@/domain/dayLog';
 import { isPausedSection } from '@/domain/haid';
 import { useLogs } from '@/providers/LogsProvider';
 
 export default function AmalYaumiScreen() {
-  const { plan, todayEntry, todayHaid, setToday } = useLogs();
+  const { plan, logs, loaded, todayEntry, todayHaid, todayPercent, setToday } = useLogs();
 
   return (
-    <StackScreen title="Amal Yaumi">
+    <StackScreen title="Amal Yaumi" header={<TodayPlantCard percent={todayPercent} streakDays={streak(logs)} loaded={loaded} />}>
       {SECTIONS.map((section) => {
         const items = plan.items.filter((it) => it.section === section.id);
         if (items.length === 0) return null;
