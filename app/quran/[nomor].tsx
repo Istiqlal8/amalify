@@ -31,11 +31,15 @@ function Header({ surah }: { surah: SurahDetail }) {
   return (
     <View style={styles.hero}>
       <GradientFill from={pastels.lavender.tint} to={pastels.rose.tint} />
-      <Txt style={styles.heroArab}>{surah.nama}</Txt>
-      <Txt variant="heading" style={styles.onPink}>{surah.namaLatin}</Txt>
-      <Txt style={styles.onPinkSoft}>
-        {surah.arti} · {surah.tempatTurun} · {surah.jumlahAyat} ayat
-      </Txt>
+      <View style={styles.heroRow}>
+        <View style={styles.heroInfo}>
+          <Txt variant="bold" style={styles.onPink}>{surah.namaLatin}</Txt>
+          <Txt variant="caption" style={styles.onPinkSoft}>
+            {surah.arti} · {surah.tempatTurun} · {surah.jumlahAyat} ayat
+          </Txt>
+        </View>
+        <Txt style={styles.heroArab}>{surah.nama}</Txt>
+      </View>
       {!NO_BASMALAH.has(surah.nomor) && <Txt style={styles.basmalah}>بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ</Txt>}
     </View>
   );
@@ -125,16 +129,18 @@ const makeStyles = (c: Palette) =>
     legend: { marginBottom: space.sm },
     hero: {
       alignItems: 'center',
-      gap: space.xs,
-      padding: space.lg,
+      paddingHorizontal: space.md,
+      paddingVertical: space.sm,
       marginBottom: space.sm,
       borderRadius: radius.lg,
       overflow: 'hidden',
       borderWidth: 1,
       borderColor: 'rgba(255,255,255,0.95)',
     },
-    heroArab: { fontFamily: fonts.arabic, fontSize: 34, lineHeight: 64, color: c.foreground },
-    basmalah: { fontFamily: fonts.arabic, fontSize: 24, lineHeight: 52, color: c.foreground, marginTop: space.sm },
+    heroRow: { flexDirection: 'row', alignItems: 'center', alignSelf: 'stretch', gap: space.sm },
+    heroInfo: { flex: 1, gap: 2 },
+    heroArab: { fontFamily: fonts.arabic, fontSize: 24, lineHeight: 46, color: c.primaryDeep },
+    basmalah: { fontFamily: fonts.arabic, fontSize: 19, lineHeight: 40, color: c.foreground },
     onPink: { color: c.foreground },
-    onPinkSoft: { color: c.foreground, textAlign: 'center' },
+    onPinkSoft: { color: c.mutedForeground },
   });
