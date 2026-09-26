@@ -23,9 +23,9 @@
       "permissions": [
         "android.permission.SCHEDULE_EXACT_ALARM"
       ],
-      "blockedPermissions": [
-        "android.permission.RECORD_AUDIO"
-      ]
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     },
     "web": {
       "bundler": "metro",
@@ -99,8 +99,8 @@
       [
         "expo-audio",
         {
-          "microphonePermission": false,
-          "recordAudioAndroid": false,
+          "microphonePermission": "Mikrofon dipakai untuk merekam setoran hafalan.",
+          "recordAudioAndroid": true,
           "enableBackgroundPlayback": true
         }
       ],
@@ -108,8 +108,7 @@
         "expo-image-picker",
         {
           "photosPermission": "Foto dipakai untuk avatar profilmu.",
-          "cameraPermission": false,
-          "microphonePermission": false
+          "cameraPermission": false
         }
       ],
       "expo-video",
@@ -123,6 +122,16 @@
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "395d4056-0120-4f0f-a3f4-4f1161ea41fe"
+      }
+    },
+    "owner": "istiqlalbi",
+    "updates": {
+      "url": "https://u.expo.dev/395d4056-0120-4f0f-a3f4-4f1161ea41fe"
     }
   }
 }
