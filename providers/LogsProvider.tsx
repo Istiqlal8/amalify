@@ -4,9 +4,11 @@ import { countOf, dateKey, dayPercent, mergeLogs, resnapshot, setCount, type Day
 import * as haids from '@/domain/haid';
 import * as plans from '@/domain/plan';
 import { EMPTY_UNLOCKS, mergeUnlocks, type Unlocks } from '@/domain/shop';
+import { newerTilawah } from '@/domain/tilawah';
 import { useDriveSync, type SyncStatus } from '@/hooks/useDriveSync';
 import { useGroupSummary } from '@/hooks/useGroupSummary';
 import { usePersisted } from '@/hooks/usePersisted';
+import { useTilawahLog, type TilawahState } from '@/hooks/useTilawahLog';
 import { useAuth } from '@/providers/AuthProvider';
 import type { DriveFile } from '@/storage/driveStore';
 import * as store from '@/storage/localStore';
@@ -21,10 +23,7 @@ type Actions = {
   endHaid: () => void;
 };
 
-type LogsState = Actions & {
-  /** Shop purchases; read and changed through useRewards. */
-  unlocks: Unlocks;
-  setUnlocks: Dispatch<SetStateAction<Unlocks>>;
+type LogsState = Actions & Pick<TilawahState, 'tilawah' | 'addTilawah' | 'removeTilawah'> & {
   setHaidStart: (start: string) => void;
   removeHaid: (start: string) => void;
   addHaid: (start: string, end: string) => void;
@@ -39,6 +38,9 @@ type LogsState = Actions & {
   todayEntry: DayEntry | undefined;
   todayPercent: number;
   sync: SyncStatus;
+  /** Shop purchases; read and changed through useRewards. */
+  unlocks: Unlocks;
+  setUnlocks: Dispatch<SetStateAction<Unlocks>>;
 };
 
 const LogsContext = createContext<LogsState | null>(null);
@@ -49,16 +51,18 @@ export function LogsProvider({ children }: { children: ReactNode }) {
   const [plan, setPlan, planLoaded] = usePersisted(plans.DEFAULT_PLAN, store.loadPlan, store.savePlan);
   const [haid, setHaid, haidLoaded] = usePersisted(haids.EMPTY_HAID, store.loadHaid, store.saveHaid);
   const [unlocks, setUnlocks, unlocksLoaded] = usePersisted<Unlocks>(EMPTY_UNLOCKS, loadUnlocks, saveUnlocks);
-  const loaded = logsLoaded && planLoaded && haidLoaded && unlocksLoaded;
   const today = dateKey(new Date());
+  const { tilawah, tilawahLoaded, setTilawah, addTilawah, removeTilawah } = useTilawahLog(today, plan.items, haid, setLogs);
+  const loaded = logsLoaded && planLoaded && haidLoaded && tilawahLoaded && unlocksLoaded;
 
   const applyRemote = useCallback((remote: DriveFile) => {
     setLogs((l) => mergeLogs(l, remote.logs));
     setPlan((p) => plans.newerPlan(p, remote.plan));
     setHaid((h) => haids.newerHaid(h, remote.haid));
+    setTilawah((t) => newerTilawah(t, remote.tilawah));
     setUnlocks((u) => mergeUnlocks(u, remote.unlocks));
-  }, [setLogs, setPlan, setHaid, setUnlocks]);
-  const local = useMemo(() => ({ logs, plan, haid, unlocks }), [logs, plan, haid, unlocks]);
+  }, [setLogs, setPlan, setHaid, setTilawah, setUnlocks]);
+  const local = useMemo(() => ({ logs, plan, haid, tilawah, unlocks }), [logs, plan, haid, tilawah, unlocks]);
   const sync = useDriveSync(user !== null, loaded, local, applyRemote);
 
   const todayHaid = haids.isHaidDay(haid, today);
@@ -94,8 +98,8 @@ export function LogsProvider({ children }: { children: ReactNode }) {
     [setHaid],
   );
   const value = useMemo(
-    () => ({ logs, plan, haid, today, todayHaid, loaded, todayEntry, todayPercent, sync, setHaidStart, removeHaid, addHaid, editHaid, unlocks, setUnlocks, ...actions }),
-    [logs, plan, haid, today, todayHaid, loaded, todayEntry, todayPercent, sync, setHaidStart, removeHaid, addHaid, editHaid, unlocks, setUnlocks, actions],
+    () => ({ logs, plan, haid, today, todayHaid, loaded, todayEntry, todayPercent, sync, setHaidStart, removeHaid, addHaid, editHaid, tilawah, addTilawah, removeTilawah, unlocks, setUnlocks, ...actions }),
+    [logs, plan, haid, today, todayHaid, loaded, todayEntry, todayPercent, sync, setHaidStart, removeHaid, addHaid, editHaid, tilawah, addTilawah, removeTilawah, unlocks, setUnlocks, actions],
   );
   return <LogsContext.Provider value={value}>{children}</LogsContext.Provider>;
 }
