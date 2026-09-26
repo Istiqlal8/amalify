@@ -13,6 +13,7 @@ import 'react-native-reanimated';
 import { pastels } from '@/constants/pastel';
 import { AuthProvider } from '@/providers/AuthProvider';
 import { LogsProvider } from '@/providers/LogsProvider';
+import { AmbiencePlayer } from '@/components/murottal/AmbiencePlayer';
 import { MurottalProvider } from '@/providers/MurottalProvider';
 import { PrayerProvider } from '@/providers/PrayerProvider';
 import { ReminderProvider } from '@/providers/ReminderProvider';
@@ -81,6 +82,7 @@ export default function RootLayout() {
                   <Stack.Screen name="doa" options={{ headerShown: false }} />
                   <Stack.Screen name="murottal" options={{ headerShown: false }} />
                 </Stack>
+                <AmbiencePlayer />
               </MurottalProvider>
             </ReminderProvider>
           </PrayerProvider>

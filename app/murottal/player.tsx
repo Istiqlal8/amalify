@@ -14,6 +14,7 @@ import { Txt } from '@/components/ui/Txt';
 import { space } from '@/constants/theme';
 import { SURAH_NAMES } from '@/domain/murottal';
 import { useCurrentAyah } from '@/hooks/useCurrentAyah';
+import { usePlayerPrefs } from '@/hooks/usePlayerPrefs';
 import { useSceneChoice } from '@/hooks/useSceneChoice';
 import { useMurottal, useMurottalStatus } from '@/providers/MurottalProvider';
 
@@ -26,18 +27,20 @@ export default function PlayerScreen() {
   const { error } = useMurottalStatus();
   const { scene, setScene } = useSceneChoice();
   const [picking, setPicking] = useState(false);
-  const ayahNow = useCurrentAyah(reciter, surah);
+  const prefs = usePlayerPrefs();
+  const timedAyah = useCurrentAyah(reciter, surah);
+  const ayahNow = prefs.ayahText ? timedAyah : null;
   const current = surah ?? 1;
   const { name, ayat } = SURAH_NAMES[current - 1];
 
   return (
     <View style={styles.root}>
-      <SceneBackground scene={scene} />
+      <SceneBackground scene={scene} tint={prefs.tint} />
       <SafeAreaView style={styles.safe}>
         <View style={styles.top}>
           <IconButton icon={{ ios: 'chevron.down', android: 'keyboard_arrow_down', web: 'keyboard_arrow_down' }} label="Tutup" onPress={() => router.back()} />
           <Txt variant="caption" style={SOFT}>{reciter.style ?? 'Murottal'}</Txt>
-          <IconButton icon={{ ios: 'photo.on.rectangle', android: 'wallpaper', web: 'wallpaper' }} label="Ganti latar" onPress={() => setPicking(true)} />
+          <IconButton icon={{ ios: 'slider.horizontal.3', android: 'tune', web: 'tune' }} label="Pengaturan pemutar" onPress={() => setPicking(true)} />
         </View>
         <View style={styles.art}>
           {ayahNow ? <AyahNow ayah={ayahNow} /> : (

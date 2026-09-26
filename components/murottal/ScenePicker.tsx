@@ -7,11 +7,12 @@ import { type Palette, radius, space } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
 import { useTheme } from '@/providers/ThemeProvider';
 
+import { PlayerOptions } from './PlayerOptions';
 import { SCENES, type Scene } from './scenes';
 
 type Props = { visible: boolean; value: Scene; onPick: (id: string) => void; onClose: () => void };
 
-/** Bottom sheet listing the player backdrops. */
+/** Bottom sheet with the player backdrops and its on/off options. */
 export function ScenePicker({ visible, value, onPick, onClose }: Props) {
   const styles = useStyles(makeStyles);
   const { colors } = useTheme();
@@ -37,6 +38,8 @@ export function ScenePicker({ visible, value, onPick, onClose }: Props) {
             )}
           </Pressable>
         ))}
+        <Txt variant="heading" style={styles.section}>Lainnya</Txt>
+        <PlayerOptions />
       </View>
     </Modal>
   );
@@ -54,4 +57,5 @@ const makeStyles = (c: Palette) =>
     },
     row: { flexDirection: 'row', alignItems: 'center', minHeight: 56, gap: space.md },
     flex: { flex: 1 },
+    section: { marginTop: space.md },
   });

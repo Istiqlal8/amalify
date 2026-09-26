@@ -7,8 +7,11 @@ import { useTheme } from '@/providers/ThemeProvider';
 
 import type { Scene } from './scenes';
 
-/** Full-screen backdrop: a silent looping clip, or a deep theme gradient for "Tanpa video". */
-export function SceneBackground({ scene }: { scene: Scene }) {
+/**
+ * Full-screen backdrop: a silent looping clip, or a deep theme gradient for "Tanpa video". With
+ * `tint` the theme colour washes over it, pink with the pink theme.
+ */
+export function SceneBackground({ scene, tint }: { scene: Scene; tint: boolean }) {
   const { colors } = useTheme();
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
@@ -22,6 +25,18 @@ export function SceneBackground({ scene }: { scene: Scene }) {
         <Rect width="100%" height="100%" fill="url(#deep)" />
       </Svg>
       {scene.source !== null && <Clip key={scene.id} source={scene.source} />}
+      {tint && (
+        <Svg style={StyleSheet.absoluteFill}>
+          <Defs>
+            <LinearGradient id="tint" x1="0" y1="0" x2="0.3" y2="1">
+              <Stop offset="0" stopColor={colors.primary} stopOpacity={0.55} />
+              <Stop offset="0.6" stopColor={colors.secondary} stopOpacity={0.25} />
+              <Stop offset="1" stopColor={colors.primaryDeep} stopOpacity={0.45} />
+            </LinearGradient>
+          </Defs>
+          <Rect width="100%" height="100%" fill="url(#tint)" />
+        </Svg>
+      )}
       {/* Keeps white text legible over any clip. */}
       <Svg style={StyleSheet.absoluteFill}>
         <Defs>
