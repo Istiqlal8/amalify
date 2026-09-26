@@ -1,28 +1,32 @@
 import { expect, test } from '@jest/globals';
 
-import { START } from '../farm';
+import { BLOCK_ROWS, GRID, WORLD_COLS, WORLD_START } from '../farmWorld';
 import { FLOWERS } from '../flowers';
-import { animalFor, ANIMALS, applyPos, flowerFor, buildGroupFarm, firstName, mergePresence, parsePresence, type Players } from '../groupFarm';
+import { animalFor, ANIMALS, applyPos, flowerFor, buildGroupWorld, firstName, MAX_FIELDS, mergePresence, parsePresence, type Players } from '../groupFarm';
 
-const member = (name: string, percent = 0) => ({ userId: `id-${name}`, name, percent });
+const member = (name: string, days: Record<string, number> = {}) => ({ userId: `id-${name}`, name, days });
 const player = { userId: 'b', name: 'Bila', animal: 'cat' as const, flower: 'mawar' as const, pet: null, x: 4, y: 10, facing: 'down' as const, moving: false };
+const TODAY = '2026-09-26';
 
-test('test_buildGroupFarm_eightMembers_wrapsToSecondRow', () => {
-  const beds = buildGroupFarm(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map((n) => member(n)));
-  expect(beds[7]).toMatchObject({ name: 'H', row: 1, col: 0 });
+test('test_buildGroupWorld_me_getsFirstSlotOthersByName', () => {
+  const fields = buildGroupWorld(TODAY, [member('Zahra'), member('Aisyah'), member('Nur')], 'id-Zahra');
+  expect(fields.map((f) => f.label)).toEqual(['Zahra', 'Aisyah', 'Nur']);
 });
 
-test('test_buildGroupFarm_anyOrder_sortsByName', () => {
-  const beds = buildGroupFarm([member('Zahra', 90), member('Aisyah', 10)]);
-  expect(beds.map((b) => b.name)).toEqual(['Aisyah', 'Zahra']);
+test('test_buildGroupWorld_field_hasEveryDayOfThisMonth', () => {
+  const [field] = buildGroupWorld(TODAY, [member('A', { '2026-09-02': 100 })], 'id-A');
+  expect(field.plots).toHaveLength(30);
+  expect(field.plots.find((p) => p.key === '2026-09-02')).toMatchObject({ percent: 100, stage: 4 });
 });
 
-test('test_buildGroupFarm_percent_mapsToStage', () => {
-  expect(buildGroupFarm([member('A', 100)])[0].stage).toBe(4);
+test('test_buildGroupWorld_twentyMembers_extraFieldsBelowTheMap', () => {
+  const fields = buildGroupWorld(TODAY, Array.from({ length: 20 }, (_, i) => member(`M${String(i).padStart(2, '0')}`)), 'x');
+  expect(fields).toHaveLength(20);
+  expect(fields[12]).toMatchObject({ left: 0, top: GRID * BLOCK_ROWS });
 });
 
-test('test_buildGroupFarm_tooMany_capsAtFieldSize', () => {
-  expect(buildGroupFarm(Array.from({ length: 40 }, (_, i) => member(`M${i}`)))).toHaveLength(28);
+test('test_buildGroupWorld_tooMany_capsAtMaxFields', () => {
+  expect(buildGroupWorld(TODAY, Array.from({ length: 50 }, (_, i) => member(`M${i}`)), 'x')).toHaveLength(MAX_FIELDS);
 });
 
 test('test_firstName_fullName_keepsFirstWord', () => {
@@ -73,7 +77,7 @@ test('test_parsePresence_removedPig_fallsBackToHash', () => {
 
 test('test_mergePresence_newcomer_startsAtStart', () => {
   const next = mergePresence({}, [{ userId: 'b', name: 'Bila', animal: 'cat', flower: 'mawar', pet: null }], 'me');
-  expect(next.b).toMatchObject({ x: START.x, y: START.y });
+  expect(next.b).toMatchObject({ x: WORLD_START.x, y: WORLD_START.y });
 });
 
 test('test_mergePresence_me_isSkipped', () => {
@@ -99,7 +103,7 @@ test('test_applyPos_unknownOrMalformed_isIgnored', () => {
 });
 
 test('test_applyPos_outOfBounds_isClamped', () => {
-  expect(applyPos({ b: player }, { userId: 'b', x: 999, y: -5, facing: 'up', moving: false }).b).toMatchObject({ x: 8, y: 0 });
+  expect(applyPos({ b: player }, { userId: 'b', x: 999, y: -5, facing: 'up', moving: false }).b).toMatchObject({ x: WORLD_COLS - 1, y: 0 });
 });
 
 test('test_parsePresence_pet_keptWhenAllowedElseNone', () => {

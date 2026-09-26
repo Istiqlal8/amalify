@@ -66,8 +66,24 @@ export const CENTER_MAP = [
 ];
 // CENTER_MAP_END
 
-/** A field block: path on row 0, fence with a gate on rows 1 and 15, hedges/trees on the outer columns. */
-const FIELD_BLOCK = ['...........', '#####.#####', ...Array<string>(13).fill('##.......##'), '#####.#####'];
+/** A field block: path on row 0, fence with a 3-cell gate on rows 1 and 15, hedges/trees on the outer columns. */
+const FIELD_BLOCK = ['...........', '####...####', ...Array<string>(13).fill('##.......##'), '####...####'];
+
+/** Sprites rise this far above their footprint (keep in sync with scripts/farm_world.py). */
+export const HOUSE_EXTRA_ROWS = 0.6;
+
+/**
+ * Where a house sprite goes on the map, in cells: the footprint of 'H' (main house) or 'B' (second
+ * building) in CENTER_MAP, extended HOUSE_EXTRA_ROWS upwards. The footprint stays solid whatever tier.
+ */
+export function buildingSprite(mark: 'H' | 'B'): { x: number; y: number; w: number; h: number } {
+  const cells = CENTER_MAP.flatMap((line, r) => [...line].flatMap((c, col) => (c === mark ? [{ r, col }] : [])));
+  const c0 = Math.min(...cells.map((p) => p.col));
+  const c1 = Math.max(...cells.map((p) => p.col));
+  const r0 = Math.min(...cells.map((p) => p.r));
+  const r1 = Math.max(...cells.map((p) => p.r));
+  return { x: BLOCK_COLS + c0, y: BLOCK_ROWS + r0 - HOUSE_EXTRA_ROWS, w: c1 - c0 + 1, h: r1 - r0 + 1 + HOUSE_EXTRA_ROWS };
+}
 
 /** Lantern glow for the night theme: in front of the house and the barn doors. */
 export const WORLD_LANTERNS: Point[] = [
@@ -79,7 +95,8 @@ export const WORLD_LANTERNS: Point[] = [
 export const WORLD_START: Point = { x: BLOCK_COLS + GATE_COL, y: BLOCK_ROWS + 10 };
 
 export type WorldPlot = FarmDay & { x: number; y: number; stage: PlantStage };
-export type WorldField = { index: number; year: number; month: number; label: string; left: number; top: number; plots: WorldPlot[] };
+/** `short` is the overview map's tile label. */
+export type WorldField = { index: number; year: number; month: number; label: string; short: string; left: number; top: number; plots: WorldPlot[] };
 
 const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
@@ -109,16 +126,24 @@ export function calendarSlots(year: number, month: number): { key: string; week:
 /** Lays out the 12 month fields around the yard. `dayOf` gives each day's percentage (days after today count as 0). */
 export function buildWorld(today: string, dayOf: (key: string) => FarmDay): WorldField[] {
   return monthList(today).map(({ year, month }, index) => {
-    const [bx, by] = RING[index];
-    const left = bx * BLOCK_COLS;
-    const top = by * BLOCK_ROWS;
-    const plots = calendarSlots(year, month).map(({ key, week, weekday }) => {
-      const day = key > today ? { key, percent: 0, onHaid: false } : dayOf(key);
-      const at = { x: left + FIRST_BED_COL + weekday, y: top + FIRST_BED_ROW + week * BED_ROW_STEP };
-      return { ...day, ...at, stage: stageFromPercent(day.percent) };
-    });
-    return { index, year, month, label: monthLabel(year, month), left, top, plots };
+    const label = monthLabel(year, month);
+    return buildField({ index, year, month, label, short: `${label.slice(0, 3)} ${String(year).slice(2)}` }, today, dayOf);
   });
+}
+
+type FieldInfo = Pick<WorldField, 'index' | 'year' | 'month' | 'label' | 'short'>;
+
+/** One field on ring slot `info.index`: a bed per day of the month, in calendar order. */
+export function buildField(info: FieldInfo, today: string, dayOf: (key: string) => FarmDay, ring = RING): WorldField {
+  const [bx, by] = ring[info.index];
+  const left = bx * BLOCK_COLS;
+  const top = by * BLOCK_ROWS;
+  const plots = calendarSlots(info.year, info.month).map(({ key, week, weekday }) => {
+    const day = key > today ? { key, percent: 0, onHaid: false } : dayOf(key);
+    const at = { x: left + FIRST_BED_COL + weekday, y: top + FIRST_BED_ROW + week * BED_ROW_STEP };
+    return { ...day, ...at, stage: stageFromPercent(day.percent) };
+  });
+  return { ...info, left, top, plots };
 }
 
 /** Average percentage of a field's days up to today (0 when none). */
@@ -128,16 +153,16 @@ export function monthAverage(field: WorldField, today: string): number {
 }
 
 /** The spot on the path just outside a field's top gate: where the overview map drops the character. */
-export function gateOf(index: number): Point {
-  const [bx, by] = RING[index];
+export function gateOf(index: number, ring = RING): Point {
+  const [bx, by] = ring[index];
   return { x: bx * BLOCK_COLS + GATE_COL, y: by * BLOCK_ROWS };
 }
 
 const SOLID_YARD = new Set(['H', 'B', 'W', 'T', 'b', 'r']);
 
-/** Collision grid for the whole map (WORLD_ROWS strings of WORLD_COLS). */
-export function worldCollision(): string[] {
-  return Array.from({ length: WORLD_ROWS }, (_, y) => {
+/** Collision grid for the whole map (blockRows × BLOCK_ROWS strings of WORLD_COLS). */
+export function worldCollision(blockRows = GRID): string[] {
+  return Array.from({ length: blockRows * BLOCK_ROWS }, (_, y) => {
     let row = '';
     for (let bx = 0; bx < GRID; bx++) row += blockRow(bx, Math.floor(y / BLOCK_ROWS), y % BLOCK_ROWS);
     return row;
@@ -151,22 +176,35 @@ function blockRow(bx: number, by: number, local: number): string {
   return [...yard].map((c) => (SOLID_YARD.has(c) ? '#' : '.')).join('');
 }
 
-/** Month index per block (row-major, GRID × GRID), -1 for the yard. */
-export const BLOCK_FIELD: number[] = Array.from({ length: GRID * GRID }, (_, i) =>
-  RING.findIndex(([bx, by]) => by * GRID + bx === i),
-);
+/** Which block each field sits on, and how many block rows the map has. */
+export type Layout = { ring: [number, number][]; blockRows: number };
 
-/** The block a scene position is in, clamped to the map. */
-export function blockAt(pos: Point): { bx: number; by: number } {
+/** The group map: the Kebunku ring, then rows of GRID field blocks below it for every field past the 12th. */
+export function groupLayout(fields: number): Layout {
+  const extra = Math.ceil(Math.max(0, fields - RING.length) / GRID);
+  const below = Array.from({ length: extra * GRID }, (_, i): [number, number] => [i % GRID, GRID + Math.floor(i / GRID)]);
+  return { ring: [...RING, ...below], blockRows: GRID + extra };
+}
+
+/** Field index per block (row-major, GRID wide), -1 for the yard and empty blocks. */
+export function blockFields({ ring, blockRows }: Layout): number[] {
+  return Array.from({ length: GRID * blockRows }, (_, i) => ring.findIndex(([bx, by]) => by * GRID + bx === i));
+}
+
+export const BLOCK_FIELD: number[] = blockFields({ ring: RING, blockRows: GRID });
+
+/** The block a scene position is in, clamped to a map `blockRows` blocks tall. */
+export function blockAt(pos: Point, blockRows = GRID): { bx: number; by: number } {
   'worklet';
   const bx = Math.min(Math.max(Math.floor((pos.x + 0.5) / BLOCK_COLS), 0), GRID - 1);
-  const by = Math.min(Math.max(Math.floor((pos.y + 0.55) / BLOCK_ROWS), 0), GRID - 1);
+  const by = Math.min(Math.max(Math.floor((pos.y + 0.55) / BLOCK_ROWS), 0), blockRows - 1);
   return { bx, by };
 }
 
 /** Flat lookup from (month, week, weekday) to an index in `fields.flatMap(f => f.plots)`, or -1. */
 export function slotIndex(fields: WorldField[]): number[] {
-  const slots = new Array<number>(MONTHS * WEEKS * DAYS_PER_WEEK).fill(-1);
+  const count = Math.max(MONTHS, ...fields.map((f) => f.index + 1));
+  const slots = new Array<number>(count * WEEKS * DAYS_PER_WEEK).fill(-1);
   let n = 0;
   for (const field of fields) {
     for (const plot of field.plots) {
@@ -180,7 +218,7 @@ export function slotIndex(fields: WorldField[]): number[] {
 /** The bed the character stands on or right next to (index into the flat plot list), or -1. */
 export function worldNear(slots: number[], blockField: number[], pos: Point): number {
   'worklet';
-  const { bx, by } = blockAt(pos);
+  const { bx, by } = blockAt(pos, blockField.length / GRID);
   const month = blockField[by * GRID + bx];
   if (month < 0) return -1;
   const fx = pos.x + 0.5 - bx * BLOCK_COLS - FIRST_BED_COL;

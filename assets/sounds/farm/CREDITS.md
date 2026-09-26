@@ -16,3 +16,4 @@ No music: nature ambience and short effects only.
 | sfx_buy.m4a | RPG Audio (handleCoins) https://kenney.nl/assets/rpg-audio | Kenney | CC0 |
 | sfx_gate.m4a | RPG Audio (creak1) | Kenney | CC0 |
 | sfx_teleport.m4a | RPG Audio (cloth2) | Kenney | CC0 |
+| sfx_hoof.m4a | Impact Sounds (impactWood_light_000 + _002, layered and low-passed into a hoof clop) https://kenney.nl/assets/impact-sounds | Kenney | CC0 |

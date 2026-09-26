@@ -13,6 +13,7 @@ export default function DoaLayout() {
       }}>
       <Stack.Screen name="index" options={{ title: 'Doa & Dzikir' }} />
       <Stack.Screen name="[kategori]" options={{ title: 'Doa' }} />
+      <Stack.Screen name="tasbih" options={{ title: 'Tasbih' }} />
     </Stack>
   );
 }

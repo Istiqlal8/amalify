@@ -6,10 +6,12 @@ import {
   BLOCK_FIELD,
   BLOCK_ROWS,
   blockAt,
+  buildingSprite,
   buildWorld,
   calendarSlots,
   CENTER_MAP,
   gateOf,
+  groupLayout,
   monthAverage,
   monthLabel,
   monthList,
@@ -90,8 +92,18 @@ test('test_worldCollision_size_isWholeMap', () => {
 
 test('test_worldCollision_startAndGates_areOpen', () => {
   expect(grid[WORLD_START.y][WORLD_START.x]).toBe('.');
-  expect(grid[1][BLOCK_COLS + 5]).toBe('.');
-  expect(grid[1][BLOCK_COLS + 4]).toBe('#');
+  expect([4, 5, 6].map((c) => grid[1][BLOCK_COLS + c])).toEqual(['.', '.', '.']);
+  expect(grid[1][BLOCK_COLS + 3]).toBe('#');
+});
+
+test('test_groupLayout_twentyFields_addsTwoRowsBelow', () => {
+  const layout = groupLayout(20);
+  expect(layout.blockRows).toBe(6);
+  expect(layout.ring[19]).toEqual([3, 5]);
+});
+
+test('test_groupLayout_twelveOrFewer_isTheKebunkuMap', () => {
+  expect(groupLayout(12)).toEqual({ ring: RING, blockRows: 4 });
 });
 
 test('test_step_fromHouse_walksUpIntoCurrentMonthField', () => {
@@ -112,4 +124,8 @@ test('test_worldNear_emptySlotOrYard_isNone', () => {
   const slots = slotIndex(fields);
   expect(worldNear(slots, BLOCK_FIELD, { x: BLOCK_COLS + 2, y: 3 })).toBe(-1); // Monday before 1 Sep
   expect(worldNear(slots, BLOCK_FIELD, WORLD_START)).toBe(-1);
+});
+
+test('test_buildingSprite_mainHouse_coversFootprintPlusRoof', () => {
+  expect(buildingSprite('H')).toEqual({ x: BLOCK_COLS + 1, y: BLOCK_ROWS + 3 - 0.6, w: 4, h: 6.6 });
 });

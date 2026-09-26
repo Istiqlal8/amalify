@@ -6,6 +6,7 @@ import { Txt } from '@/components/ui/Txt';
 import { frostOf, type Palette, radius, space } from '@/constants/theme';
 import { CELL_ASPECT, type Point, SCENE_COLS } from '@/domain/farm';
 import type { Animal } from '@/domain/groupFarm';
+import type { MountId } from '@/domain/estate';
 import type { PetId } from '@/domain/pets';
 import type { ThemeId } from '@/domain/shop';
 import { useStyles } from '@/hooks/useStyles';
@@ -35,6 +36,7 @@ type Props = {
   motion: Motion;
   animal: Animal;
   pet: PetId | null;
+  riding?: MountId | null; // the horse the character sits on, if riding
   onNearPlot: (index: number) => void;
   onStep?: (x: number, y: number) => void;
   onGrab?: () => void;
@@ -62,7 +64,7 @@ export function FarmStage(props: Props) {
           {props.background(cell, art)}
           {children(cell)}
           {props.pet && <PetFollower key={props.pet} owner={motion.pos} pet={props.pet} cell={cell} />}
-          <Walker cell={cell} motion={motion} animal={props.animal} grid={props.grid} near={props.near} onNearPlot={props.onNearPlot} onStep={props.onStep} />
+          <Walker cell={cell} motion={motion} animal={props.animal} mount={props.riding} grid={props.grid} near={props.near} onNearPlot={props.onNearPlot} onStep={props.onStep} />
           {art.night && <NightOverlay cell={cell} width={size.width} height={size.height} lanterns={props.lanterns} />}
         </Animated.View>
       )}

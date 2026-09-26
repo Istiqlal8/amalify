@@ -1,3 +1,4 @@
+import * as estate from './estate';
 import { DEFAULT_FLOWER, type FlowerId, FLOWERS, isFlowerId } from './flowers';
 import { type Animal, ANIMALS } from './groupFarm';
 import { FREE_PET, isPetId, PET_PRICES, type PetId, PETS } from './pets';
@@ -9,17 +10,23 @@ export type ThemeId = (typeof GARDEN_THEMES)[number];
 /**
  * What the user has bought. Purchases only ever grow, so devices merge by union.
  * `gift` is the flower an existing user already had before the shop existed: owned, never charged.
- * `animal`, `theme` and `pet` (null = none) are the current choices; `at` stamps the last change for merging.
+ * `animal`, `theme`, `pet`, `mount` (null = none) and `house` are the current choices; `at` stamps the last change for merging.
+ * `bonus` is extra points granted outside amal yaumi (a developer grant); it only ever grows.
  */
 export type Unlocks = {
   flowers: FlowerId[];
   animals: AnimalId[];
   themes: ThemeId[];
   pets: PetId[];
+  mounts: estate.MountId[];
+  houses: estate.HouseId[];
   animal: AnimalId;
   theme: ThemeId;
   pet: PetId | null;
+  mount: estate.MountId | null;
+  house: estate.HouseId;
   gift: FlowerId | null;
+  bonus: number;
   at: number;
 };
 
@@ -28,10 +35,15 @@ export const EMPTY_UNLOCKS: Unlocks = {
   animals: [],
   themes: [],
   pets: [],
+  mounts: [],
+  houses: [],
   animal: 'rabbit',
   theme: 'musim-semi',
   pet: FREE_PET,
+  mount: null,
+  house: estate.DEFAULT_HOUSE,
   gift: null,
+  bonus: 0,
   at: 0,
 };
 
@@ -39,7 +51,9 @@ export type ShopItem =
   | { kind: 'flower'; id: FlowerId }
   | { kind: 'animal'; id: AnimalId }
   | { kind: 'theme'; id: ThemeId }
-  | { kind: 'pet'; id: PetId };
+  | { kind: 'pet'; id: PetId }
+  | { kind: 'mount'; id: estate.MountId }
+  | { kind: 'house'; id: estate.HouseId };
 
 /** Common flowers are cheap, showy ones pricey; sakura is the free default. */
 export const FLOWER_PRICES: Record<FlowerId, number> = {
@@ -74,18 +88,28 @@ export const THEME_NAMES: Record<ThemeId, string> = {
   malam: 'Malam berbintang',
 };
 
-const FREE: Record<ShopItem['kind'], string> = { flower: DEFAULT_FLOWER, animal: 'rabbit', theme: 'musim-semi', pet: FREE_PET };
+// No horse is free, so `mount` has no free id.
+const FREE: Record<ShopItem['kind'], string> = {
+  flower: DEFAULT_FLOWER,
+  animal: 'rabbit',
+  theme: 'musim-semi',
+  pet: FREE_PET,
+  mount: '',
+  house: estate.DEFAULT_HOUSE,
+};
 
 export function priceOf(item: ShopItem): number {
   if (item.kind === 'flower') return FLOWER_PRICES[item.id];
   if (item.kind === 'pet') return PET_PRICES[item.id];
+  if (item.kind === 'mount') return estate.MOUNT_PRICES[item.id];
+  if (item.kind === 'house') return estate.HOUSE_PRICES[item.id];
   return item.kind === 'animal' ? ANIMAL_PRICES[item.id] : THEME_PRICES[item.id];
 }
 
 const isFree = (item: ShopItem) => FREE[item.kind] === item.id;
 
 function bought(u: Unlocks, kind: ShopItem['kind']): string[] {
-  const lists = { flower: u.flowers, animal: u.animals, theme: u.themes, pet: u.pets };
+  const lists = { flower: u.flowers, animal: u.animals, theme: u.themes, pet: u.pets, mount: u.mounts, house: u.houses };
   return lists[kind];
 }
 
@@ -101,6 +125,8 @@ export function spent(u: Unlocks): number {
     ...u.animals.map((id) => ({ kind: 'animal' as const, id })),
     ...u.themes.map((id) => ({ kind: 'theme' as const, id })),
     ...u.pets.map((id) => ({ kind: 'pet' as const, id })),
+    ...u.mounts.map((id) => ({ kind: 'mount' as const, id })),
+    ...u.houses.map((id) => ({ kind: 'house' as const, id })),
   ];
   return items.filter((i) => !isFree(i)).reduce((sum, i) => sum + priceOf(i), 0);
 }
@@ -119,6 +145,8 @@ export function buy(earned: number, u: Unlocks, item: ShopItem, now: number): Un
   if (item.kind === 'flower') return { ...u, flowers: [...u.flowers, item.id], at: now };
   if (item.kind === 'animal') return { ...u, animals: [...u.animals, item.id], at: now };
   if (item.kind === 'pet') return { ...u, pets: [...u.pets, item.id], at: now };
+  if (item.kind === 'mount') return { ...u, mounts: [...u.mounts, item.id], at: now };
+  if (item.kind === 'house') return { ...u, houses: [...u.houses, item.id], at: now };
   return { ...u, themes: [...u.themes, item.id], at: now };
 }
 
@@ -134,6 +162,16 @@ export function chooseTheme(u: Unlocks, id: ThemeId, now: number): Unlocks {
 export function choosePet(u: Unlocks, id: PetId | null, now: number): Unlocks {
   if (id !== null && !owns(u, { kind: 'pet', id })) return u;
   return u.pet === id ? u : { ...u, pet: id, at: now };
+}
+
+/** `null` gets off / keeps the horse in the stable. */
+export function chooseMount(u: Unlocks, id: estate.MountId | null, now: number): Unlocks {
+  if (id !== null && !owns(u, { kind: 'mount', id })) return u;
+  return u.mount === id ? u : { ...u, mount: id, at: now };
+}
+
+export function chooseHouse(u: Unlocks, id: estate.HouseId, now: number): Unlocks {
+  return owns(u, { kind: 'house', id }) && u.house !== id ? { ...u, house: id, at: now } : u;
 }
 
 const union = <T,>(a: T[], b: T[]) => [...new Set([...a, ...b])];
@@ -153,16 +191,28 @@ export function mergeUnlocks(a: Unlocks, remote: unknown): Unlocks {
     animals: union(a.animals, listOf(r.animals, isAnimal)),
     themes: union(a.themes, listOf(r.themes, isTheme)),
     pets: union(a.pets, listOf(r.pets, isPetId)),
+    mounts: union(a.mounts, listOf(r.mounts, estate.isMountId)),
+    houses: union(a.houses, listOf(r.houses, estate.isHouseId)),
     gift,
+    bonus: Math.max(a.bonus, typeof r.bonus === 'number' && r.bonus > 0 ? r.bonus : 0),
   };
-  if (at <= a.at) return { ...merged, animal: a.animal, theme: a.theme, pet: a.pet, at: a.at };
+  if (at <= a.at) return { ...merged, animal: a.animal, theme: a.theme, pet: a.pet, mount: a.mount, house: a.house, at: a.at };
   const animal = typeof r.animal === 'string' && isAnimal(r.animal) ? r.animal : a.animal;
   const theme = typeof r.theme === 'string' && isTheme(r.theme) ? r.theme : a.theme;
   const pet = r.pet === null ? null : isPetId(r.pet) ? r.pet : a.pet;
-  return { ...merged, animal, theme, pet, at };
+  const mount = r.mount === null ? null : estate.isMountId(r.mount) ? r.mount : a.mount;
+  const house = estate.isHouseId(r.house) ? r.house : a.house;
+  return { ...merged, animal, theme, pet, mount, house, at };
 }
 
 export const SHOP_FLOWERS: ShopItem[] = FLOWERS.map((f) => ({ kind: 'flower', id: f.id }));
 export const SHOP_ANIMALS: ShopItem[] = ANIMALS.map((id) => ({ kind: 'animal', id }));
 export const SHOP_THEMES: ShopItem[] = GARDEN_THEMES.map((id) => ({ kind: 'theme', id }));
 export const SHOP_PETS: ShopItem[] = PETS.map((id) => ({ kind: 'pet', id }));
+export const SHOP_MOUNTS: ShopItem[] = estate.MOUNTS.map((id) => ({ kind: 'mount', id }));
+export const SHOP_HOUSES: ShopItem[] = estate.HOUSES.map((id) => ({ kind: 'house', id }));
+
+/** Adds bonus points on top of what amal yaumi earned. */
+export function grantBonus(u: Unlocks, amount: number): Unlocks {
+  return amount > 0 ? { ...u, bonus: u.bonus + amount } : u;
+}

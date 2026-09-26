@@ -2,6 +2,7 @@ import type { ImageSourcePropType } from 'react-native';
 
 import type { Facing } from '@/domain/farm';
 import type { Animal } from '@/domain/groupFarm';
+import type { HouseId, MountId } from '@/domain/estate';
 import type { PetId } from '@/domain/pets';
 import type { ThemeId } from '@/domain/shop';
 
@@ -132,4 +133,22 @@ export const PET_ART: Record<PetId, Record<Facing, ImageSourcePropType>> = {
     up: require('@/assets/farm/pet_kucing-putih_up.png'),
     right: require('@/assets/farm/pet_kucing-putih_right.png'),
   },
+};
+
+/** The rideable horse per facing (composed from Kenney's Animal Pack Redux head); drawn at MOUNT_SIZE of a cell. */
+export const MOUNT_SIZE = 1.35;
+export const MOUNT_ART: Record<MountId, Record<Facing, ImageSourcePropType>> = {
+  kuda: {
+    down: require('@/assets/farm/mount_kuda_down.png'),
+    left: require('@/assets/farm/mount_kuda_left.png'),
+    up: require('@/assets/farm/mount_kuda_up.png'),
+    right: require('@/assets/farm/mount_kuda_right.png'),
+  },
+};
+
+/** House tiers on the yard: `main` sits on the 'H' footprint, `side` on 'B' (see CENTER_MAP). */
+export const HOUSE_ART: Record<HouseId, { main: ImageSourcePropType; side: ImageSourcePropType }> = {
+  kayu: { main: require('@/assets/farm/house_kayu_main.png'), side: require('@/assets/farm/house_kayu_side.png') },
+  bata: { main: require('@/assets/farm/house_bata_main.png'), side: require('@/assets/farm/house_bata_side.png') },
+  mewah: { main: require('@/assets/farm/house_mewah_main.png'), side: require('@/assets/farm/house_mewah_side.png') },
 };

@@ -18,6 +18,7 @@ export default function DoaHome() {
   return (
     <SubScreen>
       <View style={styles.grid}>
+        <MenuTile href="/doa/tasbih" label="Tasbih" icon={{ ios: 'circle.circle.fill', android: 'radio_button_checked', web: 'radio_button_checked' }} />
         {DOA_CATEGORIES.map((c) => (
           <MenuTile key={c.id} href={{ pathname: '/doa/[kategori]', params: { kategori: c.id } }} label={c.title} icon={ICONS[c.id]} />
         ))}

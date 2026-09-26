@@ -1,25 +1,39 @@
-import { type Facing, PLOT_COLS, PLOT_ROWS, type Point, SCENE_COLS, SCENE_ROWS, START } from './farm';
+import type { Facing, Point } from './farm';
+import { BLOCK_ROWS, buildField, groupLayout, WORLD_COLS, WORLD_START, type WorldField } from './farmWorld';
 import { type FlowerId, FLOWERS, isFlowerId } from './flowers';
 import { isPetId, type PetId } from './pets';
-import { type PlantStage, stageFromPercent } from './plantStage';
 
 export const ANIMALS = ['rabbit', 'chick', 'cat', 'fox'] as const;
 export type Animal = (typeof ANIMALS)[number];
-/** The fenced field holds 4 rows of 7 beds. */
-export const MAX_BEDS = PLOT_COLS * PLOT_ROWS;
-
-export type MemberBed = { userId: string; name: string; percent: number; stage: PlantStage; row: number; col: number };
 export type PresenceMeta = { userId: string; name: string; animal: Animal; flower: FlowerId; pet: PetId | null };
 export type Player = PresenceMeta & Point & { facing: Facing; moving: boolean };
 export type Players = Record<string, Player>;
 export type PosMessage = Point & { userId: string; facing: Facing; moving: boolean };
 
-/** One bed per member, 7 per row, rows added as the group grows; ordered by name so beds don't swap places. */
-export function buildGroupFarm(members: { userId: string; name: string; percent: number }[]): MemberBed[] {
+/** A member and their shared percentage per day (YYYY-MM-DD). */
+export type MemberMonth = { userId: string; name: string; days: Record<string, number> };
+export type MemberField = WorldField & { userId: string };
+
+/** The group map grows a row of fields per 4 members past 12; this caps how long it gets. */
+export const MAX_FIELDS = 40;
+/** Height of the largest group map, in cells: where remote positions are clamped. */
+const MAX_ROWS = groupLayout(MAX_FIELDS).blockRows * BLOCK_ROWS;
+
+/**
+ * Kebun grup: each member's field for this month, one per block of `groupLayout` (up to MAX_FIELDS).
+ * Mine sits right above the house; the rest follow by name so fields don't swap places.
+ */
+export function buildGroupWorld(today: string, members: MemberMonth[], me: string): MemberField[] {
+  const [year, month] = today.split('-').map(Number);
+  const { ring } = groupLayout(Math.min(members.length, MAX_FIELDS));
   return [...members]
-    .sort((a, b) => a.name.localeCompare(b.name) || a.userId.localeCompare(b.userId))
-    .slice(0, MAX_BEDS)
-    .map((m, i) => ({ ...m, stage: stageFromPercent(m.percent), row: Math.floor(i / PLOT_COLS), col: i % PLOT_COLS }));
+    .sort((a, b) => Number(b.userId === me) - Number(a.userId === me) || a.name.localeCompare(b.name) || a.userId.localeCompare(b.userId))
+    .slice(0, MAX_FIELDS)
+    .map((m, index) => {
+      const info = { index, year, month: month - 1, label: m.name, short: firstName(m.name, 7) };
+      const field = buildField(info, today, (key) => ({ key, percent: m.days[key] ?? 0, onHaid: false }), ring);
+      return { ...field, userId: m.userId };
+    });
 }
 
 /** First word of a display name, cut to fit under a bed. */
@@ -69,7 +83,7 @@ export function mergePresence(players: Players, metas: PresenceMeta[], me: strin
   for (const meta of metas) {
     if (meta.userId === me) continue;
     const known = players[meta.userId];
-    next[meta.userId] = known ? { ...known, ...meta } : { ...meta, ...START, facing: 'down', moving: false };
+    next[meta.userId] = known ? { ...known, ...meta } : { ...meta, ...WORLD_START, facing: 'down', moving: false };
   }
   return next;
 }
@@ -80,6 +94,6 @@ export function applyPos(players: Players, msg: unknown): Players {
   const { x, y, facing, moving } = msg;
   if (typeof x !== 'number' || typeof y !== 'number' || !Number.isFinite(x) || !Number.isFinite(y)) return players;
   const face = FACINGS.includes(facing as Facing) ? (facing as Facing) : 'down';
-  const pos = { x: clamp(x, SCENE_COLS - 1), y: clamp(y, SCENE_ROWS - 1) };
+  const pos = { x: clamp(x, WORLD_COLS - 1), y: clamp(y, MAX_ROWS - 1) };
   return { ...players, [msg.userId]: { ...players[msg.userId], ...pos, facing: face, moving: moving === true } };
 }

@@ -1,6 +1,6 @@
 import { expect, test } from '@jest/globals';
 
-import { balance, buy, canBuy, chooseAnimal, chooseTheme, EMPTY_UNLOCKS, mergeUnlocks, owns, spent, type Unlocks } from '../shop';
+import { balance, buy, canBuy, chooseAnimal, chooseTheme, EMPTY_UNLOCKS, grantBonus, mergeUnlocks, owns, spent, type Unlocks } from '../shop';
 
 const tulip = { kind: 'flower', id: 'tulip' } as const;
 const fox = { kind: 'animal', id: 'fox' } as const;
@@ -85,4 +85,16 @@ test('test_mergeUnlocks_removedPigAndMouse_areDroppedAndFallBackToRabbit', () =>
   const merged = mergeUnlocks(EMPTY_UNLOCKS, { ...EMPTY_UNLOCKS, animals: ['pig', 'mouse', 'cat'], animal: 'mouse', at: 7 });
   expect(merged.animals).toEqual(['cat']);
   expect(merged.animal).toBe('rabbit');
+});
+
+test('test_grantBonus_positiveAmount_addsToBonus', () => {
+  expect(grantBonus(EMPTY_UNLOCKS, 500).bonus).toBe(500);
+});
+
+test('test_mergeUnlocks_remoteBonusHigher_keepsHigher', () => {
+  expect(mergeUnlocks({ ...EMPTY_UNLOCKS, bonus: 100 }, { ...EMPTY_UNLOCKS, bonus: 900 }).bonus).toBe(900);
+});
+
+test('test_mergeUnlocks_remoteBonusInvalid_keepsLocal', () => {
+  expect(mergeUnlocks({ ...EMPTY_UNLOCKS, bonus: 100 }, { ...EMPTY_UNLOCKS, bonus: 'x' }).bonus).toBe(100);
 });

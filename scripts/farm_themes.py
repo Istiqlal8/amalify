@@ -85,3 +85,14 @@ def recolour_cat(img: Image.Image, look: str) -> Image.Image:
     out = Image.composite(fur_look, rgb, fur).convert('RGBA')
     out.putalpha(alpha)
     return out
+
+
+def recolour_roof(img: Image.Image) -> Image.Image:
+    """Green Kenney roofs to terracotta, for the luxury house. Alpha is kept."""
+    alpha = img.getchannel('A')
+    rgb = img.convert('RGB')
+    h, s, _ = rgb.convert('HSV').split()
+    roof = _and(_band(h, 60, 115), _band(s, 120, 255))
+    out = Image.composite(_hue(rgb, 8, 0.8, 25), rgb, roof).convert('RGBA')
+    out.putalpha(alpha)
+    return out

@@ -11,28 +11,40 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { CELL_ASPECT, type Facing, facing, nearPlot, type Point, START, step } from '@/domain/farm';
+import type { MountId } from '@/domain/estate';
 import type { Animal } from '@/domain/groupFarm';
 
 import { CharacterSprite } from './CharacterSprite';
 import { CHARACTERS } from './farmSprites';
+import { Rider } from './Rider';
 
 const HOPS_PER_SEC = 3;
 const MAX_DT = 0.05; // seconds; avoids a big jump after a dropped frame
 
-/** The player's live state, shared with the joystick (vec) and anything that syncs it (pos, face). */
-export type Motion = { vec: SharedValue<Point>; pos: SharedValue<Point>; face: SharedValue<Facing> };
+/**
+ * The player's live state, shared with the joystick (vec) and anything that syncs it (pos, face).
+ * `speed` multiplies the walking speed (1 on foot, RIDE_SPEED on horseback).
+ */
+export type Motion = { vec: SharedValue<Point>; pos: SharedValue<Point>; face: SharedValue<Facing>; speed: SharedValue<number> };
 
 export function useMotion(start: Point = START): Motion {
   const vec = useSharedValue<Point>({ x: 0, y: 0 });
   const pos = useSharedValue<Point>(start);
   const face = useSharedValue<Facing>('down');
-  return useMemo(() => ({ vec, pos, face }), [vec, pos, face]);
+  const speed = useSharedValue(1);
+  return useMemo(() => ({ vec, pos, face, speed }), [vec, pos, face, speed]);
+}
+
+/** Sets the speed multiplier (getting on or off the horse). */
+export function setMotionSpeed(m: Motion, speed: number): void {
+  m.speed.value = speed;
 }
 
 type Props = {
   cell: number;
   motion: Motion;
   animal: Animal;
+  mount?: MountId | null; // drawn under the character while riding
   grid?: string[]; // collision grid; the single-field farm when absent
   near?: (pos: Point) => number; // worklet: bed index at a position
   onNearPlot: (index: number) => void;
@@ -46,7 +58,7 @@ export function placeCharacter(m: Motion, to: Point): void {
 }
 
 /** The joystick-driven character; purely visual, never catches taps. */
-export function Walker({ cell, motion, animal, grid, near, onNearPlot, onStep }: Props) {
+export function Walker({ cell, motion, animal, mount, grid, near, onNearPlot, onStep }: Props) {
   const { pos, face } = motion;
   const walked = useSharedValue(-1); // seconds spent walking, drives the hop; -1 = idle
   useFrameCallback(({ timeSincePreviousFrame }) => tick(motion, walked, timeSincePreviousFrame ?? 16, grid));
@@ -70,7 +82,7 @@ export function Walker({ cell, motion, animal, grid, near, onNearPlot, onStep }:
   const hop = useDerivedValue(() => (walked.value < 0 ? 0 : Math.abs(Math.sin(walked.value * HOPS_PER_SEC * Math.PI))));
   return (
     <Animated.View style={[styles.walker, { width: cell, height: cell }, move]}>
-      <CharacterSprite art={CHARACTERS[animal]} face={face} hop={hop} cell={cell} />
+      {mount ? <Rider animal={animal} mount={mount} face={face} hop={hop} cell={cell} /> : <CharacterSprite art={CHARACTERS[animal]} face={face} hop={hop} cell={cell} />}
     </Animated.View>
   );
 }
@@ -85,7 +97,8 @@ function tick(m: Motion, walked: SharedValue<number>, frameMs: number, grid: str
     return;
   }
   const dt = Math.min(frameMs / 1000, MAX_DT);
-  m.pos.value = step(m.pos.value, v, dt, grid);
+  const s = m.speed.value;
+  m.pos.value = step(m.pos.value, { x: v.x * s, y: v.y * s }, dt, grid);
   walked.value = Math.max(walked.value, 0) + dt;
 }
 

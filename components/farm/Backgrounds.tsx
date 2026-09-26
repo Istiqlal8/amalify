@@ -1,17 +1,17 @@
 import { Image, StyleSheet } from 'react-native';
 
-import { CELL_ASPECT, SCENE_COLS, SCENE_ROWS } from '@/domain/farm';
-import { BLOCK_COLS, BLOCK_ROWS, RING } from '@/domain/farmWorld';
+import { CELL_ASPECT } from '@/domain/farm';
+import type { HouseId } from '@/domain/estate';
+import { BLOCK_COLS, BLOCK_ROWS, buildingSprite, RING } from '@/domain/farmWorld';
 
-import type { ThemeArt } from './farmSprites';
+import { HOUSE_ART, type ThemeArt } from './farmSprites';
 
-/** The group farm's single open field. */
-export function GroupBackground({ cell, art }: { cell: number; art: ThemeArt }) {
-  return <Image source={art.groupScene} style={{ width: cell * SCENE_COLS, height: cell * CELL_ASPECT * SCENE_ROWS }} accessibilityIgnoresInvertColors />;
-}
+const MAIN = buildingSprite('H');
+const SIDE = buildingSprite('B');
 
-/** Kebunku's village map: the yard in the middle 2×2 blocks and a field block for each month around it. */
-export function WorldBackground({ cell, art }: { cell: number; art: ThemeArt }) {
+/** Kebunku's village map: the yard in the middle 2×2 blocks and a field block for each month around it
+ * (or each block of `ring`, e.g. the group map's extra rows). */
+export function WorldBackground({ cell, art, house = 'kayu', ring = RING }: { cell: number; art: ThemeArt; house?: HouseId; ring?: [number, number][] }) {
   const row = cell * CELL_ASPECT;
   const place = (bx: number, by: number, blocks: number) => [
     styles.tile,
@@ -20,8 +20,15 @@ export function WorldBackground({ cell, art }: { cell: number; art: ThemeArt }) 
   return (
     <>
       <Image source={art.world.yard} style={place(1, 1, 2)} />
-      {RING.map(([bx, by], i) => (
+      {ring.map(([bx, by], i) => (
         <Image key={i} source={art.world.fields[i % art.world.fields.length]} style={place(bx, by, 1)} />
+      ))}
+      {[MAIN, SIDE].map((b, i) => (
+        <Image
+          key={i}
+          source={i === 0 ? HOUSE_ART[house].main : HOUSE_ART[house].side}
+          style={[styles.tile, { left: b.x * cell, top: b.y * row, width: b.w * cell, height: b.h * row }]}
+        />
       ))}
     </>
   );

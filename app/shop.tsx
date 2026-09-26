@@ -9,7 +9,7 @@ import { PillTabs } from '@/components/ui/PillTabs';
 import { StackScreen } from '@/components/ui/StackScreen';
 import { Txt } from '@/components/ui/Txt';
 import { space } from '@/constants/theme';
-import { SHOP_ANIMALS, SHOP_FLOWERS, SHOP_PETS, SHOP_THEMES, type ShopItem } from '@/domain/shop';
+import { SHOP_ANIMALS, SHOP_FLOWERS, SHOP_HOUSES, SHOP_MOUNTS, SHOP_PETS, SHOP_THEMES, type ShopItem } from '@/domain/shop';
 import { useFarmAudio } from '@/hooks/useFarmAudio';
 import { useRewards } from '@/hooks/useRewards';
 
@@ -20,8 +20,17 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'animal', label: 'Karakter' },
   { id: 'theme', label: 'Tema' },
   { id: 'pet', label: 'Peliharaan' },
+  { id: 'mount', label: 'Tunggangan' },
+  { id: 'house', label: 'Rumah' },
 ];
-const ITEMS: Record<Tab, ShopItem[]> = { flower: SHOP_FLOWERS, animal: SHOP_ANIMALS, theme: SHOP_THEMES, pet: SHOP_PETS };
+const ITEMS: Record<Tab, ShopItem[]> = {
+  flower: SHOP_FLOWERS,
+  animal: SHOP_ANIMALS,
+  theme: SHOP_THEMES,
+  pet: SHOP_PETS,
+  mount: SHOP_MOUNTS,
+  house: SHOP_HOUSES,
+};
 
 /** Toko, also the Tampilan settings page: points buy flowers, characters, themes and pets; app colours are free. */
 export default function ShopScreen() {
@@ -36,6 +45,7 @@ export default function ShopScreen() {
         <Txt variant="title">{rewards.balance} poin</Txt>
         <Txt variant="caption">Dapat poin dari amal yaumi harian</Txt>
       </View>
+      {__DEV__ && <ClayButton label="+10.000 poin (dev)" tone="soft" onPress={() => rewards.grant(10000)} />}
       <ThemePicker />
       <PillTabs options={TABS} value={tab} onChange={setTab} />
       {tab === 'pet' && rewards.unlocks.pet !== null && <ClayButton label="Tanpa peliharaan" tone="soft" onPress={rewards.dropPet} />}
