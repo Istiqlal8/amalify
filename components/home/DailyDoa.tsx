@@ -7,7 +7,7 @@ import { fonts, type Palette } from '@/constants/theme';
 import { doaOfDay } from '@/domain/doa';
 import { useStyles } from '@/hooks/useStyles';
 
-/** A short doa that changes once a day, set like a quotation below a rule. */
+/** A short doa that changes once a day, set like a quotation. */
 export function DailyDoa() {
   const styles = useStyles(makeStyles);
   const doa = doaOfDay(new Date());
@@ -29,7 +29,7 @@ export function DailyDoa() {
 const makeStyles = (c: Palette) => {
   const k = inkOf(c);
   return StyleSheet.create({
-    wrap: { borderTopWidth: 1, borderTopColor: k.rule, paddingTop: 8, gap: 8 },
+    wrap: { gap: 8 },
     head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     kicker: { fontFamily: mihrabFonts.bodyMedium, fontSize: 11, lineHeight: 16, letterSpacing: 1.6, textTransform: 'uppercase', color: k.inkSoft },
     link: { fontFamily: mihrabFonts.bodyBold, fontSize: 13, minHeight: 44, textAlignVertical: 'center', color: k.accent },

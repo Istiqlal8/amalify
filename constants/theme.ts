@@ -109,12 +109,15 @@ export const fonts = {
   arabic: 'Amiri_400Regular',
 } as const;
 
-/** Translucent white surface with a white rim, for anything that sits on the pastel backdrop. */
+/**
+ * See-through white pane with a bright rim, for anything that sits on the pastel backdrop: the
+ * backdrop's colour blobs show through it, so it reads as glass.
+ */
 export function frostOf(c: Palette) {
   return {
-    backgroundColor: 'rgba(255,255,255,0.8)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.95)',
+    backgroundColor: 'rgba(255,255,255,0.55)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.9)',
     boxShadow: `0px 6px 16px ${c.shadow}`,
   } as const;
 }

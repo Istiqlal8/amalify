@@ -10,7 +10,7 @@ import { useStyles } from '@/hooks/useStyles';
 import { useLogs } from '@/providers/LogsProvider';
 import { useTheme } from '@/providers/ThemeProvider';
 
-/** A ruled row that jumps back to where the last tilawah sitting stopped. */
+/** A row that jumps back to where the last tilawah sitting stopped. */
 export function ContinueReading() {
   const styles = useStyles(makeStyles);
   const k = inkOf(useTheme().colors);
@@ -39,7 +39,7 @@ export function ContinueReading() {
 const makeStyles = (c: Palette) => {
   const k = inkOf(c);
   return StyleSheet.create({
-    row: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 64, borderTopWidth: 1, borderBottomWidth: 1, borderColor: k.rule },
+    row: { flexDirection: 'row', alignItems: 'center', gap: 14, minHeight: 48 },
     pressed: { opacity: 0.6 },
     flex: { flex: 1 },
     kicker: { fontFamily: mihrabFonts.body, fontSize: 12, lineHeight: 16, color: k.inkSoft },
