@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Alert, Linking, StyleSheet, View } from 'react-native';
 
 import { ClayButton } from '@/components/ui/ClayButton';
 import { Txt } from '@/components/ui/Txt';
@@ -18,7 +18,7 @@ export const SYNC_LABEL: Record<SyncStatus, string> = {
 
 export function AccountCard() {
   const styles = useStyles(makeStyles);
-  const { user, signIn, signOut } = useAuth();
+  const { user, signIn, signOut, deleteAccount } = useAuth();
   const { sync } = useLogs();
   const [error, setError] = useState<string | null>(null);
 
@@ -29,6 +29,17 @@ export function AccountCard() {
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
+  }
+
+  function confirmDelete() {
+    Alert.alert(
+      'Hapus akun?',
+      'Profil, keanggotaan grup, dan cadangan di Google Drive dihapus permanen. Catatan di HP ini tetap ada.',
+      [
+        { text: 'Batal', style: 'cancel' },
+        { text: 'Hapus', style: 'destructive', onPress: () => run(deleteAccount) },
+      ],
+    );
   }
 
   return (
@@ -43,7 +54,13 @@ export function AccountCard() {
       )}
       <Txt variant="bold">{SYNC_LABEL[sync]}</Txt>
       {user ? (
-        <ClayButton label="Keluar" tone="soft" onPress={() => run(signOut)} />
+        <>
+          <ClayButton label="Kelola akun Google" tone="soft" onPress={() => Linking.openURL('https://myaccount.google.com/security')} />
+          <ClayButton label="Keluar" tone="soft" onPress={() => run(signOut)} />
+          <Txt style={styles.danger} onPress={confirmDelete} accessibilityRole="button">
+            Hapus akun
+          </Txt>
+        </>
       ) : (
         <ClayButton label="Masuk dengan Google" onPress={() => run(signIn)} />
       )}
@@ -56,4 +73,5 @@ const makeStyles = (c: Palette) =>
   StyleSheet.create({
     card: { ...clayOf(c), padding: space.md, gap: space.md },
     error: { color: c.destructive },
+    danger: { color: c.destructive, textAlign: 'center', paddingVertical: space.sm },
   });

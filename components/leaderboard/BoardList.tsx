@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
+import { Avatar } from '@/components/ui/Avatar';
 import { Txt } from '@/components/ui/Txt';
 import { clayOf, type Palette, radius, space } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
@@ -15,6 +16,7 @@ export function BoardList({ rows }: { rows: BoardRow[] }) {
           <View style={[styles.rank, i < 3 && styles.top]}>
             <Txt variant="bold">{i + 1}</Txt>
           </View>
+          <Avatar name={r.name} url={r.avatarUrl} size={32} />
           <Txt variant="bold" numberOfLines={1} style={styles.flex}>
             {r.name}
           </Txt>

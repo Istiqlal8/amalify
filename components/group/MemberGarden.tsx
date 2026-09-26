@@ -1,6 +1,7 @@
 import { Share, StyleSheet, View } from 'react-native';
 
 import { PlantArt } from '@/components/plant/PlantArt';
+import { Avatar } from '@/components/ui/Avatar';
 import { ClayButton } from '@/components/ui/ClayButton';
 import { Txt } from '@/components/ui/Txt';
 import { clayOf, type Palette, space } from '@/constants/theme';
@@ -30,8 +31,10 @@ export function MemberGarden({ group, members }: Props) {
         return (
           <View key={m.userId} style={styles.row} accessible accessibilityLabel={`${m.name}, ${stageName(stage, isTree(flower))}, ${m.percent}%`}>
             <PlantArt stage={stage} size={48} />
+            <Avatar name={m.name} url={m.avatarUrl} />
             <View style={styles.flex}>
               <Txt variant="bold">{m.name}</Txt>
+              {m.bio && <Txt variant="caption" numberOfLines={1}>{m.bio}</Txt>}
               <Txt variant="caption">{stageName(stage, isTree(flower))}</Txt>
             </View>
             <Txt variant="bold">{m.percent}%</Txt>

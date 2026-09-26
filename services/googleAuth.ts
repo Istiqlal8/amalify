@@ -5,6 +5,7 @@ const DRIVE_APPDATA = 'https://www.googleapis.com/auth/drive.appdata';
 export function configureGoogle(): void {
   GoogleSignin.configure({
     webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
     scopes: [DRIVE_APPDATA],
   });
 }
@@ -28,4 +29,10 @@ export async function signOutGoogle(): Promise<void> {
 /** Access tokens expire after an hour; getTokens refreshes them. */
 export async function googleTokens(): Promise<{ accessToken: string; idToken: string }> {
   return GoogleSignin.getTokens();
+}
+
+/** Withdraws the app's Drive and profile access, then signs out. */
+export async function revokeGoogle(): Promise<void> {
+  await GoogleSignin.revokeAccess();
+  await GoogleSignin.signOut();
 }

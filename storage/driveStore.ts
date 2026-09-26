@@ -68,3 +68,9 @@ async function createFile(token: string, content: string): Promise<string> {
   });
   return ((await res.json()) as { id: string }).id;
 }
+
+/** Removes the app's Drive file, used when the user deletes their account. */
+export async function deleteFile(token: string): Promise<void> {
+  const fileId = await findFileId(token);
+  if (fileId) await driveFetch(token, `${API}/${fileId}`, { method: 'DELETE' });
+}

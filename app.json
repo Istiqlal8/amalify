@@ -42,7 +42,7 @@
       [
         "@react-native-google-signin/google-signin",
         {
-          "iosUrlScheme": "com.googleusercontent.apps.REPLACE_WITH_IOS_CLIENT_ID"
+          "iosUrlScheme": "com.googleusercontent.apps.917769857312-ebgndesq494j7k20lcqhe15srr17jtqg"
         }
       ],
       [
@@ -91,6 +91,14 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "Lokasi dipakai untuk menentukan arah kiblat dari tempatmu."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Foto dipakai untuk avatar profilmu.",
+          "cameraPermission": false,
+          "microphonePermission": false
         }
       ]
     ],

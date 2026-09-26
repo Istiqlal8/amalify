@@ -2,16 +2,20 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 /** `dues_amount` is the monthly dues in rupiah; null when the group has none. */
 export type Group = { id: string; name: string; invite_code: string; dues_amount: number | null };
-export type MemberToday = { userId: string; name: string; percent: number };
+export type MemberToday = { userId: string; name: string; avatarUrl: string | null; bio: string | null; percent: number };
 
-type MemberRow = { user_id: string; profiles: { display_name: string } | null };
+type MemberRow = {
+  user_id: string;
+  profiles: { display_name: string; avatar_url: string | null; bio: string | null } | null;
+};
 type SummaryRow = { user_id: string; percent: number };
 
-export async function signInSupabase(db: SupabaseClient, idToken: string, name: string): Promise<void> {
+/** Creates the profile from the Google account on first sign-in; later edits are kept. */
+export async function signInSupabase(db: SupabaseClient, idToken: string, name: string, photo: string | null): Promise<void> {
   const { data, error } = await db.auth.signInWithIdToken({ provider: 'google', token: idToken });
   if (error) throw error;
-  const profile = { id: data.user.id, display_name: name.slice(0, 60) };
-  const { error: profileError } = await db.from('profiles').upsert(profile);
+  const profile = { id: data.user.id, display_name: name.slice(0, 60), avatar_url: photo };
+  const { error: profileError } = await db.from('profiles').upsert(profile, { ignoreDuplicates: true });
   if (profileError) throw profileError;
 }
 
@@ -41,7 +45,7 @@ export async function pushToday(db: SupabaseClient, day: string, percent: number
 export async function membersToday(db: SupabaseClient, groupId: string, day: string): Promise<MemberToday[]> {
   const members = await db
     .from('group_members')
-    .select('user_id, profiles(display_name)')
+    .select('user_id, profiles(display_name, avatar_url, bio)')
     .eq('group_id', groupId)
     .returns<MemberRow[]>();
   if (members.error) throw members.error;
@@ -50,6 +54,12 @@ export async function membersToday(db: SupabaseClient, groupId: string, day: str
   if (summaries.error) throw summaries.error;
   const byUser = new Map((summaries.data as SummaryRow[]).map((s) => [s.user_id, s.percent]));
   return members.data
-    .map((m) => ({ userId: m.user_id, name: m.profiles?.display_name ?? 'Teman', percent: byUser.get(m.user_id) ?? 0 }))
+    .map((m) => ({
+      userId: m.user_id,
+      name: m.profiles?.display_name ?? 'Teman',
+      avatarUrl: m.profiles?.avatar_url ?? null,
+      bio: m.profiles?.bio ?? null,
+      percent: byUser.get(m.user_id) ?? 0,
+    }))
     .sort((a, b) => b.percent - a.percent);
 }
