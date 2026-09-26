@@ -81,6 +81,7 @@ export function GroupCard({ group, today, initiallyOpen, onChanged }: Props) {
         <>
           <View style={styles.tiles}>
             <MenuTile href={{ pathname: '/anggota', params: { group: group.id } }} label="Anggota" icon={{ ios: 'person.2.fill', android: 'group', web: 'group' }} />
+            <MenuTile href={{ pathname: '/report', params: { group: group.id } }} label="Report" icon={{ ios: 'doc.text.fill', android: 'assignment', web: 'assignment' }} />
             <MenuTile href={{ pathname: '/event', params: { group: group.id } }} label="Event" icon={{ ios: 'calendar', android: 'event', web: 'event' }} />
             <MenuTile href={{ pathname: '/kas', params: { group: group.id } }} label="Kas grup" icon={{ ios: 'banknote.fill', android: 'payments', web: 'payments' }} />
             <MenuTile href={{ pathname: '/group-farm', params: { group: group.id } }} label="Kebun grup" icon={{ ios: 'leaf', android: 'yard', web: 'yard' }} />

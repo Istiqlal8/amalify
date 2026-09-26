@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import type { ReportField } from '@/domain/groupReport';
 import { isProgressHidden } from '@/storage/privacyPrefs';
 
 /** `dues_amount` is the monthly dues in rupiah; null when the group has none. */
@@ -10,6 +11,8 @@ export type Group = {
   dues_amount: number | null;
   logo_url: string | null;
   created_by: string | null;
+  /** What the weekly report asks; set by the creator. */
+  report_fields: ReportField[];
 };
 /** `hidden` members keep their percentage off the server; `percent` is then 0. */
 export type MemberToday = {
@@ -37,7 +40,7 @@ export async function signInSupabase(db: SupabaseClient, idToken: string, name: 
 }
 
 export async function listGroups(db: SupabaseClient): Promise<Group[]> {
-  const { data, error } = await db.from('groups').select('id, name, invite_code, dues_amount, logo_url, created_by').order('created_at');
+  const { data, error } = await db.from('groups').select('id, name, invite_code, dues_amount, logo_url, created_by, report_fields').order('created_at');
   if (error) throw error;
   return data;
 }
