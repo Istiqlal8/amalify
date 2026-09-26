@@ -1,14 +1,17 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { File } from 'expo-file-system';
 
+import { shrinkImage } from '@/services/shrinkImage';
+
 const BUCKET = 'group-logos';
 
-/** Uploads a picked image as the group's logo (creator only) and returns its public URL. */
+/** Uploads a picked image, shrunk to 256 px, as the group's logo (creator only) and returns its public URL. */
 export async function setGroupLogo(db: SupabaseClient, groupId: string, uri: string, mimeType: string): Promise<string> {
-  const ext = mimeType.split('/')[1] ?? 'jpg';
+  const image = await shrinkImage({ uri, mimeType });
+  const ext = image.mimeType.split('/')[1] ?? 'jpg';
   const path = `${groupId}/${Date.now()}.${ext}`;
-  const bytes = await new File(uri).arrayBuffer();
-  const upload = await db.storage.from(BUCKET).upload(path, bytes, { contentType: mimeType });
+  const bytes = await new File(image.uri).arrayBuffer();
+  const upload = await db.storage.from(BUCKET).upload(path, bytes, { contentType: image.mimeType });
   if (upload.error) throw upload.error;
   const url = db.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
   const { error } = await db.rpc('set_group_logo', { g: groupId, url });

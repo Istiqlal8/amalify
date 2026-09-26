@@ -1,6 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { File } from 'expo-file-system';
 
+import { shrinkImage } from '@/services/shrinkImage';
+
 export type Profile = {
   displayName: string;
   avatarUrl: string | null;
@@ -41,13 +43,14 @@ export async function updateProfile(db: SupabaseClient, edit: ProfileEdit): Prom
   if (error) throw error;
 }
 
-/** Uploads a picked image and points the profile at it; returns the new public URL. */
+/** Uploads a picked image, shrunk to 256 px, and points the profile at it; returns the new public URL. */
 export async function uploadAvatar(db: SupabaseClient, uri: string, mimeType: string): Promise<string> {
   const id = await myId(db);
-  const ext = mimeType.split('/')[1] ?? 'jpg';
+  const image = await shrinkImage({ uri, mimeType });
+  const ext = image.mimeType.split('/')[1] ?? 'jpg';
   const path = `${id}/${Date.now()}.${ext}`;
-  const bytes = await new File(uri).arrayBuffer();
-  const upload = await db.storage.from(BUCKET).upload(path, bytes, { contentType: mimeType });
+  const bytes = await new File(image.uri).arrayBuffer();
+  const upload = await db.storage.from(BUCKET).upload(path, bytes, { contentType: image.mimeType });
   if (upload.error) throw upload.error;
   const url = db.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
   const { error } = await db.from('profiles').update({ avatar_url: url }).eq('id', id);
