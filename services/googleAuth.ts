@@ -26,9 +26,20 @@ export async function signOutGoogle(): Promise<void> {
   await GoogleSignin.signOut();
 }
 
-/** Access tokens expire after an hour; getTokens refreshes them. */
-export async function googleTokens(): Promise<{ accessToken: string; idToken: string }> {
-  return GoogleSignin.getTokens();
+type Tokens = { accessToken: string; idToken: string };
+
+let inFlight: Promise<Tokens> | null = null;
+
+/**
+ * Access tokens expire after an hour; getTokens refreshes them. Callers asking at the same
+ * moment share one request: the library rejects a second getTokens while one is running,
+ * which on launch used to fail the group sign-in whenever Drive sync asked first.
+ */
+export function googleTokens(): Promise<Tokens> {
+  inFlight ??= GoogleSignin.getTokens().finally(() => {
+    inFlight = null;
+  });
+  return inFlight;
 }
 
 /** Withdraws the app's Drive and profile access, then signs out. */
