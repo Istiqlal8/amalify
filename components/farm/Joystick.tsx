@@ -11,13 +11,13 @@ export const JOYSTICK_SIZE = BASE;
 const THUMB = 52;
 const REACH = (BASE - THUMB) / 2;
 
-type Props = { vec: SharedValue<Point> };
+type Props = { vec: SharedValue<Point>; onGrab?: () => void };
 
 /** On-screen analog stick; writes a -1..1 vector (magnitude ≤ 1) into `vec`, zero when released. */
-export function Joystick({ vec }: Props) {
+export function Joystick({ vec, onGrab }: Props) {
   const styles = useStyles(makeStyles);
   const thumb = useSharedValue<Point>({ x: 0, y: 0 });
-  const responder = useMemo(() => makeResponder(vec, thumb), [vec, thumb]);
+  const responder = useMemo(() => makeResponder(vec, thumb, onGrab), [vec, thumb, onGrab]);
   const thumbStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: thumb.value.x }, { translateY: thumb.value.y }],
   }));
@@ -39,7 +39,7 @@ function clampToReach(dx: number, dy: number): Point {
   return { x: dx * k, y: dy * k };
 }
 
-function makeResponder(vec: SharedValue<Point>, thumb: SharedValue<Point>) {
+function makeResponder(vec: SharedValue<Point>, thumb: SharedValue<Point>, onGrab?: () => void) {
   let start: Point = { x: 0, y: 0 };
   const move = (g: PanResponderGestureState) => {
     const p = clampToReach(start.x + g.dx, start.y + g.dy);
@@ -57,6 +57,7 @@ function makeResponder(vec: SharedValue<Point>, thumb: SharedValue<Point>) {
     onPanResponderTerminationRequest: () => false,
     onPanResponderGrant: (e: GestureResponderEvent, g) => {
       start = { x: e.nativeEvent.locationX - BASE / 2, y: e.nativeEvent.locationY - BASE / 2 };
+      onGrab?.();
       move(g);
     },
     onPanResponderMove: (_e, g) => move(g),

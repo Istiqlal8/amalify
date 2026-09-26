@@ -11,12 +11,13 @@ import type { ThemeId } from '@/domain/shop';
 export type Particles = 'petals' | 'snow' | 'fireflies' | null;
 
 /**
- * Per garden theme: the Kebun world tiles (houses on top, one tile per month, closing trees), the
+ * Per garden theme: the Kebun map tiles (yard and field blocks), the
  * group farm scene (one open field), the grass colour past the scene's edge, the shop preview and
  * runtime extras.
  */
 export type ThemeArt = {
-  world: { top: ImageSourcePropType; month: ImageSourcePropType; bottom: ImageSourcePropType };
+  /** Kebunku map tiles: the yard (middle 2×2 blocks) and field blocks, used in turn around the ring. */
+  world: { yard: ImageSourcePropType; fields: ImageSourcePropType[] };
   groupScene: ImageSourcePropType;
   fill: string;
   preview: ImageSourcePropType;
@@ -25,7 +26,7 @@ export type ThemeArt = {
 };
 
 const BASE = {
-  world: { top: require('@/assets/farm/world_top.png'), month: require('@/assets/farm/world_month.png'), bottom: require('@/assets/farm/world_bottom.png') },
+  world: { yard: require('@/assets/farm/world_yard.png'), fields: [require('@/assets/farm/world_field_trees.png'), require('@/assets/farm/world_field_roses.png'), require('@/assets/farm/world_field_bushes.png')] },
   groupScene: require('@/assets/farm/scene_group.png'),
   fill: '#63A642',
 };
@@ -33,7 +34,7 @@ const BASE = {
 export const THEME_ART: Record<ThemeId, ThemeArt> = {
   'musim-semi': { ...BASE, preview: require('@/assets/farm/theme_musim-semi.png'), particles: null, night: false },
   sakura: {
-    world: { top: require('@/assets/farm/world_top_sakura.png'), month: require('@/assets/farm/world_month_sakura.png'), bottom: require('@/assets/farm/world_bottom_sakura.png') },
+    world: { yard: require('@/assets/farm/world_yard_sakura.png'), fields: [require('@/assets/farm/world_field_trees_sakura.png'), require('@/assets/farm/world_field_roses_sakura.png'), require('@/assets/farm/world_field_bushes_sakura.png')] },
     groupScene: require('@/assets/farm/scene_group_sakura.png'),
     fill: '#88AE68',
     preview: require('@/assets/farm/theme_sakura.png'),
@@ -41,7 +42,7 @@ export const THEME_ART: Record<ThemeId, ThemeArt> = {
     night: false,
   },
   pantai: {
-    world: { top: require('@/assets/farm/world_top_pantai.png'), month: require('@/assets/farm/world_month_pantai.png'), bottom: require('@/assets/farm/world_bottom_pantai.png') },
+    world: { yard: require('@/assets/farm/world_yard_pantai.png'), fields: [require('@/assets/farm/world_field_trees_pantai.png'), require('@/assets/farm/world_field_roses_pantai.png'), require('@/assets/farm/world_field_bushes_pantai.png')] },
     groupScene: require('@/assets/farm/scene_group_pantai.png'),
     fill: '#F0DBA8',
     preview: require('@/assets/farm/theme_pantai.png'),
@@ -49,7 +50,7 @@ export const THEME_ART: Record<ThemeId, ThemeArt> = {
     night: false,
   },
   salju: {
-    world: { top: require('@/assets/farm/world_top_salju.png'), month: require('@/assets/farm/world_month_salju.png'), bottom: require('@/assets/farm/world_bottom_salju.png') },
+    world: { yard: require('@/assets/farm/world_yard_salju.png'), fields: [require('@/assets/farm/world_field_trees_salju.png'), require('@/assets/farm/world_field_roses_salju.png'), require('@/assets/farm/world_field_bushes_salju.png')] },
     groupScene: require('@/assets/farm/scene_group_salju.png'),
     fill: '#F0F6FC',
     preview: require('@/assets/farm/theme_salju.png'),

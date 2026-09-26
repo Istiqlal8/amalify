@@ -12,44 +12,18 @@ The scene is composed at the packs' @2x size (a cell is 256 x 128 px, 3/4 view)
 and every output is downscaled once with LANCZOS to OUT_SCALE. The layout must
 match COLLISION / PLOT_* / CELL_ASPECT in domain/farm.ts.
 """
-import subprocess
 import sys
-import tempfile
 from pathlib import Path
 
 from PIL import Image, ImageDraw
 
+from farm_art import BARN, CH, CW, GRASS, GRASS_DARK, HOUSE, OUT, OUT_SCALE, Packs, band, kenney, put, shrink
 from farm_themes import THEMES, night_tint, recolour_cat
+from farm_world import build_world
 
-CW, CH = 256, 128  # one cell at the packs' @2x size
 COLS, ROWS = 9, 36
-OUT_SCALE = 0.5
 PLOT_LEFT, PLOT_TOP, PLOT_ROW_STEP = 1, 14, 2
 ANIMALS = ['Rabbit', 'Chick', 'Cat', 'Fox']
-
-GRASS, GRASS_DARK = (99, 166, 66), (87, 157, 78)
-PATH, PATH_EDGE = (217, 162, 77), (186, 132, 58)
-
-OUT = Path(__file__).resolve().parent.parent / 'assets' / 'farm'
-
-
-class Packs:
-    def __init__(self, root: Path) -> None:
-        self.comigo = root / 'comigo_farm' / 'AnimalsFarmAndPuzzlePack'
-        self.svg = root / 'kenney_medieval-rts' / 'Vector' / 'medievalRTS_vector.svg'
-
-    def art(self, folder: str, name: str) -> Image.Image:
-        return Image.open(self.comigo / folder / 'x2' / f'{name}@2x.png').convert('RGBA')
-
-
-def put(canvas: Image.Image, img: Image.Image, col: float, row: float) -> None:
-    """Anchor an object's bottom-left corner to the bottom-left of cell (col, row)."""
-    canvas.alpha_composite(img, (round(col * CW), round((row + 1) * CH) - img.height))
-
-
-def band(draw: ImageDraw.ImageDraw, box: tuple[float, float, float, float]) -> None:
-    x0, y0, x1, y1 = (round(v) for v in box)
-    draw.rounded_rectangle((x0, y0, x1, y1), radius=40, fill=PATH, outline=PATH_EDGE, width=6)
 
 
 def draw_ground(canvas: Image.Image) -> None:
@@ -59,23 +33,9 @@ def draw_ground(canvas: Image.Image) -> None:
     band(draw, (4.2 * CW, 10 * CH, 4.8 * CW, 13.4 * CH))
 
 
-def kenney(packs: Packs, box: tuple[float, float, float, float], height: int) -> Image.Image:
-    """Rasterise one Kenney structure straight from the vector sheet at `height` px."""
-    x, y, w, h = box
-    width = round(height * w / h)
-    svg = packs.svg.read_text()
-    head_end = svg.index('>', svg.index('<svg')) + 1
-    head = f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="{width}px" height="{height}px" viewBox="{x} {y} {w} {h}">'
-    with tempfile.TemporaryDirectory() as tmp:
-        src, dst = Path(tmp) / 'crop.svg', Path(tmp) / 'crop.png'
-        src.write_text(head + svg[head_end:])
-        subprocess.run(['magick', '-background', 'none', str(src), str(dst)], check=True)
-        return Image.open(dst).convert('RGBA')
-
-
 def draw_buildings(canvas: Image.Image, packs: Packs) -> None:
-    house = kenney(packs, (522, 610, 44.4, 60.4), round(6.5 * CH))
-    barn = kenney(packs, (618, 616, 44.4, 48.4), round(5.2 * CH))
+    house = kenney(packs, HOUSE, round(6.5 * CH))
+    barn = kenney(packs, BARN, round(5.2 * CH))
     put(canvas, house, 2.5 - house.width / CW / 2, 8)
     put(canvas, barn, 6.5 - barn.width / CW / 2, 8)
 
@@ -125,11 +85,6 @@ def draw_beds(canvas: Image.Image, packs: Packs) -> None:
             put(canvas, blank, PLOT_LEFT + col, PLOT_TOP + row * PLOT_ROW_STEP)
 
 
-def shrink(img: Image.Image) -> Image.Image:
-    size = (round(img.width * OUT_SCALE), round(img.height * OUT_SCALE))
-    return img.resize(size, Image.LANCZOS)
-
-
 def save(img: Image.Image, name: str) -> None:
     shrink(img).save(OUT / name, optimize=True)
 
@@ -151,47 +106,6 @@ def save_with_themes(img: Image.Image, name: str) -> None:
     img.save(OUT / f'{name}.png', optimize=True)
     for theme, recolour in THEMES.items():
         save_quantized(recolour(img), f'{name}_{theme}.png')
-
-
-# --- Kebun world: header (houses + path), one block per month, a closing row of trees --------
-HEADER_ROWS, BLOCK_ROWS, TAIL_ROWS = 11, 16, 3  # keep in sync with domain/farmWorld.ts
-
-
-def month_block(packs: Packs) -> Image.Image:
-    """One month: a fenced field with gates top and bottom on the path; beds are drawn at runtime."""
-    canvas = Image.new('RGBA', (COLS * CW, BLOCK_ROWS * CH), GRASS + (255,))
-    draw = ImageDraw.Draw(canvas)
-    draw.rectangle((0.5 * CW, 1.5 * CH, 8.5 * CW, 15.5 * CH), fill=GRASS_DARK)
-    band(draw, (4.2 * CW, -60, 4.8 * CW, 2.4 * CH))
-    band(draw, (4.2 * CW, 14.6 * CH, 4.8 * CW, BLOCK_ROWS * CH + 60))
-    f = lambda name: packs.art('Fences', f'Fence_{name}')  # noqa: E731
-    gate = [f('Horizontal')] * 2 + [f('Right'), None, f('Left')] + [f('Horizontal')] * 2
-    for col, piece in enumerate([f('Corner_Bottom_Right')] + gate + [f('Corner_Bottom_Left')]):
-        if piece:
-            put(canvas, piece, col, 1)
-    for row in range(2, 15):
-        put(canvas, f('Vertical'), 0, row)
-        put(canvas, f('Vertical'), 8, row)
-    for col, piece in enumerate([f('Corner_Top_Right')] + gate + [f('Corner_Top_Left')]):
-        if piece:
-            put(canvas, piece, col, 15)
-    return shrink(canvas.convert('RGB'))
-
-
-def world_tail(packs: Packs) -> Image.Image:
-    canvas = Image.new('RGBA', (COLS * CW, TAIL_ROWS * CH), GRASS + (255,))
-    band(ImageDraw.Draw(canvas), (4.2 * CW, -60, 4.8 * CW, 0.8 * CH))
-    tree = packs.art('Objects', 'Tree')
-    for col in (-0.4, 1.0, 2.6, 4.2, 5.8, 7.4):
-        put(canvas, tree, col, TAIL_ROWS - 1)
-    return shrink(canvas.convert('RGB'))
-
-
-def build_world(packs: Packs, open_field: Image.Image) -> None:
-    rows = round(HEADER_ROWS * CH * OUT_SCALE)
-    save_with_themes(open_field.crop((0, 0, open_field.width, rows)), 'world_top')
-    save_with_themes(month_block(packs), 'world_month')
-    save_with_themes(world_tail(packs), 'world_bottom')
 
 
 def save_quantized(img: Image.Image, name: str) -> None:
@@ -237,7 +151,7 @@ def main() -> None:
     build_previews(compose_scene(packs, True))
     open_field = compose_scene(packs, False)
     save_with_themes(open_field, 'scene_group')
-    build_world(packs, open_field)
+    build_world(packs, save_with_themes)
     build_beds(packs)
     build_animals(packs)
     build_pets(packs)

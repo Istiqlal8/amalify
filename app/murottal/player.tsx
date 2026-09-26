@@ -40,7 +40,11 @@ export default function PlayerScreen() {
           <IconButton icon={{ ios: 'photo.on.rectangle', android: 'wallpaper', web: 'wallpaper' }} label="Ganti latar" onPress={() => setPicking(true)} />
         </View>
         <View style={styles.art}>
-          {ayahNow ? <AyahNow ayah={ayahNow} /> : <ReciterAvatar reciter={reciter} size={Math.min(width * 0.62, 280)} square />}
+          {ayahNow ? <AyahNow ayah={ayahNow} /> : (
+            <View style={styles.centered}>
+              <ReciterAvatar reciter={reciter} size={Math.min(width * 0.62, 280)} square />
+            </View>
+          )}
         </View>
         <View style={styles.info}>
           {ayahNow && <ReciterAvatar reciter={reciter} size={48} square />}
@@ -76,7 +80,9 @@ const styles = StyleSheet.create({
   safe: { flex: 1, paddingHorizontal: space.lg, paddingBottom: space.lg, gap: space.lg },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: space.sm },
   icon: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  // Stretch so a long ayah can scroll full width; `alignSelf` below re-centres the photo.
   art: { flex: 1, justifyContent: 'center', alignItems: 'stretch' },
+  centered: { alignSelf: 'center' },
   info: { flexDirection: 'row', alignItems: 'center', gap: space.md },
   flex: { flex: 1 },
   title: { color: WHITE },

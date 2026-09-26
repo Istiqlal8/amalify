@@ -1,10 +1,12 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { space } from '@/constants/theme';
 import { plotTile, SCENE_ROWS } from '@/domain/farm';
 import { buildGroupFarm, firstName, flowerFor, type MemberBed } from '@/domain/groupFarm';
+import { useFarmAudio } from '@/hooks/useFarmAudio';
 import { useFarmPresence } from '@/hooks/useFarmPresence';
+import { useFarmSfx } from '@/hooks/useFarmSfx';
 import { useLogs } from '@/providers/LogsProvider';
 import { useTheme } from '@/providers/ThemeProvider';
 import type { MemberToday } from '@/services/groupService';
@@ -28,8 +30,18 @@ export function GroupFarmScene({ groupId, members, userId, name }: Props) {
   const me = useMemo(() => ({ userId, name, animal, flower, pet }), [userId, name, animal, flower, pet]);
   const players = useFarmPresence(groupId, me, motion);
   const bottom = useSafeAreaInsets().bottom + space.md;
-  const beds = buildGroupFarm(members);
+  const beds = useMemo(() => buildGroupFarm(members), [members]);
+  const bedCount = beds.length;
   const current = beds[near];
+  const { sfx } = useFarmAudio(theme);
+  const { onStep, onGrab, onBed } = useFarmSfx(sfx, false);
+  const onNearPlot = useCallback(
+    (index: number) => {
+      setNear(index);
+      onBed(index < bedCount ? index : -1);
+    },
+    [onBed, bedCount],
+  );
 
   return (
     <FarmStage
@@ -42,7 +54,9 @@ export function GroupFarmScene({ groupId, members, userId, name }: Props) {
       motion={motion}
       animal={animal}
       pet={pet}
-      onNearPlot={setNear}>
+      onNearPlot={onNearPlot}
+      onStep={onStep}
+      onGrab={onGrab}>
       {(cell) => (
         <>
           {beds.map((bed, i) => (

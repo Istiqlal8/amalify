@@ -1,5 +1,5 @@
-import { useVideoPlayer, VideoView } from 'expo-video';
-import { useEffect } from 'react';
+import { createVideoPlayer, VideoView, type VideoPlayer } from 'expo-video';
+import { useEffect, useState } from 'react';
 import { AppState, StyleSheet, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
@@ -37,14 +37,29 @@ export function SceneBackground({ scene }: { scene: Scene }) {
   );
 }
 
-function Clip({ source }: { source: number }) {
-  const video = useVideoPlayer(source, (player) => {
-    player.loop = true;
-    player.muted = true;
+// Long enough for the modal's closing animation to drop the view first.
+const RELEASE_DELAY_MS = 1000;
+
+/**
+ * A silent looping player. It is released a moment after unmount rather than at once, as
+ * `useVideoPlayer` does: closing the player modal still hands the player to the dying view,
+ * which fails with "Cannot use shared object that was already released".
+ */
+function useLoopingPlayer(source: number): VideoPlayer {
+  const [player] = useState(() => {
+    const p = createVideoPlayer(source);
+    p.loop = true;
+    p.muted = true;
     // Without this the clip takes audio focus and the recitation, which asks not to mix, stops.
-    player.audioMixingMode = 'mixWithOthers';
-    player.play();
+    p.audioMixingMode = 'mixWithOthers';
+    return p;
   });
+  useEffect(() => () => void setTimeout(() => player.release(), RELEASE_DELAY_MS), [player]);
+  return player;
+}
+
+function Clip({ source }: { source: number }) {
+  const video = useLoopingPlayer(source);
 
   // Pauses with the app, so listening with the screen off costs no extra battery.
   useEffect(() => {

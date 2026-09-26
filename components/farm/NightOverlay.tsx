@@ -1,18 +1,18 @@
 import { StyleSheet, View } from 'react-native';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 
-import { CELL_ASPECT } from '@/domain/farm';
+import { CELL_ASPECT, type Point } from '@/domain/farm';
 
-// Lantern glow in front of each house door, in scene cells (see scripts/build-farm-assets.py).
-const LANTERNS = [
+// Lantern glow in front of each house door on the group farm, in scene cells (see scripts/build-farm-assets.py).
+const GROUP_LANTERNS: Point[] = [
   { x: 2.5, y: 8.4 },
   { x: 6.5, y: 8.4 },
 ];
 
-type Props = { cell: number; width: number; height: number };
+type Props = { cell: number; width: number; height: number; lanterns?: Point[] };
 
 /** Dark blue night over the whole scene (scene coordinates) with warm lantern light by the houses. Decorative only. */
-export function NightOverlay({ cell, width, height }: Props) {
+export function NightOverlay({ cell, width, height, lanterns = GROUP_LANTERNS }: Props) {
   const r = cell * 1.4;
   return (
     <View style={styles.layer}>
@@ -24,8 +24,8 @@ export function NightOverlay({ cell, width, height }: Props) {
             <Stop offset="1" stopColor="#FFD27A" stopOpacity={0} />
           </RadialGradient>
         </Defs>
-        {LANTERNS.map((l) => (
-          <Circle key={l.x} cx={l.x * cell} cy={l.y * cell * CELL_ASPECT} r={r} fill="url(#lantern)" />
+        {lanterns.map((l) => (
+          <Circle key={`${l.x},${l.y}`} cx={l.x * cell} cy={l.y * cell * CELL_ASPECT} r={r} fill="url(#lantern)" />
         ))}
       </Svg>
     </View>

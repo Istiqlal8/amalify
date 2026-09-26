@@ -11,8 +11,8 @@ export function ThemePicker() {
 
   return (
     <View style={s.card}>
-      <Txt variant="bold">Tema</Txt>
-      <View style={s.row} accessibilityRole="radiogroup" accessibilityLabel="Tema">
+      <Txt variant="bold">Warna aplikasi</Txt>
+      <View style={s.row} accessibilityRole="radiogroup" accessibilityLabel="Warna aplikasi">
         {THEME_NAMES.map((t) => {
           const p = palettes[t.id];
           const active = t.id === name;

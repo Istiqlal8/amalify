@@ -14,7 +14,7 @@ export function Avatar({ name, url, size = 36 }: Props) {
   if (url) return <Image source={{ uri: url }} style={[styles.base, shape]} accessibilityIgnoresInvertColors />;
   return (
     <View style={[styles.base, styles.initial, shape]}>
-      <Txt variant="bold" style={{ fontSize: size * 0.42 }}>
+      <Txt variant="bold" style={{ fontSize: size * 0.42, lineHeight: size * 0.56 }}>
         {name.trim().charAt(0).toUpperCase() || '?'}
       </Txt>
     </View>

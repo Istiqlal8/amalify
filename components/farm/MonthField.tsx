@@ -16,7 +16,7 @@ export const MonthField = memo(function MonthField({ field, cell, flower, today,
   const fontSize = Math.max(10, cell * 0.26);
   return (
     <>
-      <View style={[styles.sign, { left: cell * 5.1, top: field.top * row + row * 0.05, height: row * 0.9, paddingHorizontal: cell * 0.15 }]}>
+      <View style={[styles.sign, { left: (field.left + 6.1) * cell, top: field.top * row + row * 0.05, height: row * 0.9, paddingHorizontal: cell * 0.15 }]}>
         <Text numberOfLines={1} style={[styles.label, { fontSize }]} accessibilityRole="header">
           {field.label}
         </Text>

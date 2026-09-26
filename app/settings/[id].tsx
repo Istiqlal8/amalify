@@ -5,9 +5,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { PrayerSettings } from '@/components/prayer/PrayerSettings';
 import { AccountCard } from '@/components/settings/AccountCard';
 import { EveningReminderCard } from '@/components/settings/EveningReminderCard';
-import { FlowerPicker } from '@/components/settings/FlowerPicker';
 import { ProfileCard } from '@/components/settings/ProfileCard';
-import { ThemePicker } from '@/components/ThemePicker';
 import { Txt } from '@/components/ui/Txt';
 import { type Palette, space } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
@@ -22,15 +20,6 @@ const PAGES: Record<string, { title: string; render: () => ReactElement }> = {
       <>
         <ProfileCard />
         <AccountCard />
-      </>
-    ),
-  },
-  tampilan: {
-    title: 'Tampilan',
-    render: () => (
-      <>
-        <ThemePicker />
-        <FlowerPicker />
       </>
     ),
   },

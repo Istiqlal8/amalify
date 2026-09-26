@@ -22,9 +22,9 @@ const MAX_DT = 0.05; // seconds; avoids a big jump after a dropped frame
 /** The player's live state, shared with the joystick (vec) and anything that syncs it (pos, face). */
 export type Motion = { vec: SharedValue<Point>; pos: SharedValue<Point>; face: SharedValue<Facing> };
 
-export function useMotion(): Motion {
+export function useMotion(start: Point = START): Motion {
   const vec = useSharedValue<Point>({ x: 0, y: 0 });
-  const pos = useSharedValue<Point>(START);
+  const pos = useSharedValue<Point>(start);
   const face = useSharedValue<Facing>('down');
   return useMemo(() => ({ vec, pos, face }), [vec, pos, face]);
 }
@@ -36,10 +36,17 @@ type Props = {
   grid?: string[]; // collision grid; the single-field farm when absent
   near?: (pos: Point) => number; // worklet: bed index at a position
   onNearPlot: (index: number) => void;
+  /** Called on the JS thread each time the feet enter a new cell (footsteps, gates). */
+  onStep?: (x: number, y: number) => void;
 };
 
+/** Moves the character straight to `to` (the overview map's teleport). */
+export function placeCharacter(m: Motion, to: Point): void {
+  m.pos.value = to;
+}
+
 /** The joystick-driven character; purely visual, never catches taps. */
-export function Walker({ cell, motion, animal, grid, near, onNearPlot }: Props) {
+export function Walker({ cell, motion, animal, grid, near, onNearPlot, onStep }: Props) {
   const { pos, face } = motion;
   const walked = useSharedValue(-1); // seconds spent walking, drives the hop; -1 = idle
   useFrameCallback(({ timeSincePreviousFrame }) => tick(motion, walked, timeSincePreviousFrame ?? 16, grid));
@@ -48,7 +55,14 @@ export function Walker({ cell, motion, animal, grid, near, onNearPlot }: Props) 
     (index, prev) => {
       if (index !== prev) scheduleOnRN(onNearPlot, index);
     },
-    [near],
+    [near, onNearPlot],
+  );
+  useAnimatedReaction(
+    () => Math.floor(pos.value.y + 0.55) * 1000 + Math.floor(pos.value.x + 0.5),
+    (key, prev) => {
+      if (onStep && prev !== null && key !== prev) scheduleOnRN(onStep, key % 1000, Math.floor(key / 1000));
+    },
+    [onStep],
   );
   const move = useAnimatedStyle(() => ({
     transform: [{ translateX: pos.value.x * cell }, { translateY: (pos.value.y + 1) * cell * CELL_ASPECT - cell }],
