@@ -3,9 +3,10 @@ import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Txt } from '@/components/ui/Txt';
-import { pastels, type Pastel } from '@/constants/pastel';
-import { fonts, type Palette, radius, space } from '@/constants/theme';
+import { inkOf, mihrabFonts } from '@/constants/mihrab';
+import type { Palette } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
+import { useTheme } from '@/providers/ThemeProvider';
 
 type Entry = { href: Href; label: string; icon: SymbolViewProps['name'] };
 
@@ -21,23 +22,20 @@ const ENTRIES: Entry[] = [
   { href: '/leaderboard', label: 'Peringkat', icon: { ios: 'trophy', android: 'emoji_events', web: 'emoji_events' } },
 ];
 
-const HUES: Pastel[] = [pastels.mint, pastels.sky, pastels.lavender, pastels.rose, pastels.peach, pastels.lemon];
-
-/** Pastel tiles, three across, each its own hue: icon top-left, label bottom-left. */
+/** Line icons over short labels, four across, no boxes. */
 export function HomeMenu() {
   const styles = useStyles(makeStyles);
+  const { colors } = useTheme();
   return (
     <View style={styles.grid}>
-      {ENTRIES.map((e, i) => (
+      {ENTRIES.map((e) => (
         <Pressable
           key={e.label}
           onPress={() => router.push(e.href)}
           accessibilityRole="button"
           accessibilityLabel={e.label}
-          style={({ pressed }) => [styles.tile, { backgroundColor: HUES[i % HUES.length].tint }, pressed && styles.pressed]}>
-          <View style={styles.icon}>
-            <SymbolView name={e.icon} tintColor={HUES[i % HUES.length].ink} size={22} />
-          </View>
+          style={({ pressed }) => [styles.item, pressed && styles.pressed]}>
+          <SymbolView name={e.icon} tintColor={colors.primaryDeep} size={26} weight="light" />
           <Txt numberOfLines={1} adjustsFontSizeToFit style={styles.label}>{e.label}</Txt>
         </Pressable>
       ))}
@@ -47,15 +45,8 @@ export function HomeMenu() {
 
 const makeStyles = (c: Palette) =>
   StyleSheet.create({
-    grid: { flexDirection: 'row', flexWrap: 'wrap', gap: space.sm },
-    tile: {
-      width: '31.8%',
-      aspectRatio: 1.05,
-      justifyContent: 'space-between',
-      padding: space.md,
-      borderRadius: radius.md,
-    },
-    icon: { width: 40, height: 40, borderRadius: radius.pill, backgroundColor: 'rgba(255,255,255,0.8)', alignItems: 'center', justifyContent: 'center' },
-    pressed: { opacity: 0.7 },
-    label: { fontFamily: fonts.body, fontSize: 15, color: c.foreground },
+    grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: 18 },
+    item: { width: '25%', minHeight: 56, alignItems: 'center', gap: 6 },
+    pressed: { opacity: 0.55 },
+    label: { fontFamily: mihrabFonts.body, fontSize: 12, lineHeight: 16, color: inkOf(c).ink },
   });

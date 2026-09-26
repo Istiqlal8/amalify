@@ -1,40 +1,40 @@
 import { Link } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
 
-import { GradientFill } from '@/components/ui/GradientFill';
 import { Txt } from '@/components/ui/Txt';
-import { pastels } from '@/constants/pastel';
-import { fonts, type Palette, radius, space } from '@/constants/theme';
+import { inkOf, mihrabFonts } from '@/constants/mihrab';
+import { fonts, type Palette } from '@/constants/theme';
 import { doaOfDay } from '@/domain/doa';
 import { useStyles } from '@/hooks/useStyles';
 
-/** A short doa that changes once a day, on a frosted card. */
+/** A short doa that changes once a day, set like a quotation below a rule. */
 export function DailyDoa() {
   const styles = useStyles(makeStyles);
   const doa = doaOfDay(new Date());
 
   return (
-    <View style={styles.card}>
-      <GradientFill from={pastels.rose.tint} to={pastels.peach.tint} />
+    <View style={styles.wrap}>
       <View style={styles.head}>
-        <Txt style={[styles.title, styles.flex]}>Doa hari ini</Txt>
+        <Txt style={styles.kicker}>Doa hari ini</Txt>
         <Link href="/doa" style={styles.link}>Lainnya ›</Link>
       </View>
-      <Txt variant="bold">{doa.title}</Txt>
+      <Txt style={styles.title}>{doa.title}</Txt>
       <Txt style={styles.arab}>{doa.arabic}</Txt>
-      <Txt style={styles.translation}>{doa.translation}</Txt>
-      {doa.source && <Txt variant="caption">{doa.source}</Txt>}
+      <Txt style={styles.translation}>{`“${doa.translation}”`}</Txt>
+      {doa.source && <Txt style={styles.kicker}>{doa.source}</Txt>}
     </View>
   );
 }
 
-const makeStyles = (c: Palette) =>
-  StyleSheet.create({
-    card: { gap: space.sm, padding: space.lg, borderRadius: radius.lg, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.95)' },
-    head: { flexDirection: 'row', alignItems: 'center' },
-    flex: { flex: 1 },
-    title: { fontFamily: fonts.display, fontSize: 28, lineHeight: 34, color: c.foreground },
-    link: { fontFamily: fonts.bodyBold, fontSize: 14, color: pastels.rose.ink, minHeight: 44, textAlignVertical: 'center' },
-    arab: { fontFamily: fonts.arabic, fontSize: 26, lineHeight: 52, textAlign: 'right', writingDirection: 'rtl', color: c.foreground },
-    translation: { fontStyle: 'italic', color: c.foreground },
+const makeStyles = (c: Palette) => {
+  const k = inkOf(c);
+  return StyleSheet.create({
+    wrap: { borderTopWidth: 1, borderTopColor: k.rule, paddingTop: 8, gap: 8 },
+    head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    kicker: { fontFamily: mihrabFonts.bodyMedium, fontSize: 11, lineHeight: 16, letterSpacing: 1.6, textTransform: 'uppercase', color: k.inkSoft },
+    link: { fontFamily: mihrabFonts.bodyBold, fontSize: 13, minHeight: 44, textAlignVertical: 'center', color: k.accent },
+    title: { fontFamily: mihrabFonts.bodyBold, fontSize: 15, lineHeight: 21, color: k.ink },
+    arab: { fontFamily: fonts.arabic, fontSize: 26, lineHeight: 52, textAlign: 'right', writingDirection: 'rtl', color: k.ink },
+    translation: { fontFamily: mihrabFonts.displayItalic, fontSize: 17, lineHeight: 25, color: k.ink },
   });
+};

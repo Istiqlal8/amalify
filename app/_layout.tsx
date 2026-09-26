@@ -1,6 +1,8 @@
 import { Amiri_400Regular } from '@expo-google-fonts/amiri';
+import { Fraunces_400Regular, Fraunces_400Regular_Italic, Fraunces_600SemiBold } from '@expo-google-fonts/fraunces';
 import { InstrumentSerif_400Regular } from '@expo-google-fonts/instrument-serif';
 import { Nunito_400Regular, Nunito_700Bold } from '@expo-google-fonts/nunito';
+import { PlusJakartaSans_400Regular, PlusJakartaSans_500Medium, PlusJakartaSans_700Bold } from '@expo-google-fonts/plus-jakarta-sans';
 import { useFonts } from 'expo-font';
 import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -41,7 +43,18 @@ function NavigationTheme({ children }: { children: ReactNode }) {
 }
 
 export default function RootLayout() {
-  const [loaded, error] = useFonts({ Amiri_400Regular, InstrumentSerif_400Regular, Nunito_400Regular, Nunito_700Bold });
+  const [loaded, error] = useFonts({
+    Amiri_400Regular,
+    InstrumentSerif_400Regular,
+    Nunito_400Regular,
+    Nunito_700Bold,
+    Fraunces_400Regular,
+    Fraunces_400Regular_Italic,
+    Fraunces_600SemiBold,
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_700Bold,
+  });
 
   useEffect(() => {
     if (error) throw error;
