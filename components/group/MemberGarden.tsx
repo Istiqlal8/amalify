@@ -29,15 +29,15 @@ export function MemberGarden({ group, members }: Props) {
       {members.map((m) => {
         const stage = stageFromPercent(m.percent);
         return (
-          <View key={m.userId} style={styles.row} accessible accessibilityLabel={`${m.name}, ${stageName(stage, isTree(flower))}, ${m.percent}%`}>
+          <View key={m.userId} style={styles.row} accessible accessibilityLabel={m.hidden ? `${m.name}, progres disembunyikan` : `${m.name}, ${stageName(stage, isTree(flower))}, ${m.percent}%`}>
             <PlantArt stage={stage} size={48} />
             <Avatar name={m.name} url={m.avatarUrl} />
             <View style={styles.flex}>
               <Txt variant="bold">{m.name}</Txt>
               {m.bio && <Txt variant="caption" numberOfLines={1}>{m.bio}</Txt>}
-              <Txt variant="caption">{stageName(stage, isTree(flower))}</Txt>
+              <Txt variant="caption">{m.hidden ? 'Progres disembunyikan' : stageName(stage, isTree(flower))}</Txt>
             </View>
-            <Txt variant="bold">{m.percent}%</Txt>
+            <Txt variant="bold">{m.hidden ? '—' : `${m.percent}%`}</Txt>
           </View>
         );
       })}

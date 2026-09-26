@@ -6,10 +6,13 @@ export type Bar = { label: string; value: number };
 
 const RECENT = 6;
 
-/** Days from each start to the next, newest last. */
+/** Days from each start to the next, newest last; gaps outside 15–60 days are entry mistakes, as in the forecast. */
 export function cycleLengths(log: HaidLog): Bar[] {
   const periods = sortedPeriods(log).slice(-(RECENT + 1));
-  return periods.slice(1).map((p, i) => ({ label: periods[i].start, value: daysBetween(periods[i].start, p.start) }));
+  return periods
+    .slice(1)
+    .map((p, i) => ({ label: periods[i].start, value: daysBetween(periods[i].start, p.start) }))
+    .filter((b) => b.value >= 15 && b.value <= 60);
 }
 
 /** Bleeding days of each finished period, newest last. */

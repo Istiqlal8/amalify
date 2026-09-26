@@ -1,16 +1,22 @@
 import { StyleSheet, View } from 'react-native';
 
 import { SubScreen } from '@/components/ui/SubScreen';
+import { IstihadahNotice, MandiNotice } from '@/components/haid/FiqhNotices';
+import { PregnancyCard } from '@/components/haid/PregnancyCard';
+import { PrivacyCard } from '@/components/haid/PrivacyCard';
+import { QadhaCard } from '@/components/haid/QadhaCard';
 import { TodayCard } from '@/components/haid/TodayCard';
 import { MenuTile } from '@/components/home/MenuTile';
 import { space } from '@/constants/theme';
 import { useLogs } from '@/providers/LogsProvider';
 
 export default function HaidHome() {
-  const { today } = useLogs();
+  const { today, haid } = useLogs();
   return (
     <SubScreen>
-      <TodayCard />
+      {haid.pregnant ? <PregnancyCard since={haid.pregnant} /> : <TodayCard />}
+      <IstihadahNotice />
+      <MandiNotice />
       <View style={styles.grid}>
         <MenuTile
           href={{ pathname: '/haid/day/[date]', params: { date: today } }}
@@ -24,6 +30,8 @@ export default function HaidHome() {
         <MenuTile href="/haid/kb" label="KB" icon={{ ios: 'checkmark.shield.fill', android: 'verified_user', web: 'verified_user' }} />
         <MenuTile href="/doa" label="Doa & Dzikir" icon={{ ios: 'hands.sparkles.fill', android: 'front_hand', web: 'front_hand' }} />
       </View>
+      <QadhaCard />
+      <PrivacyCard />
     </SubScreen>
   );
 }

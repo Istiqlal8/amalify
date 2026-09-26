@@ -112,7 +112,14 @@
           "microphonePermission": false
         }
       ],
-      "expo-video"
+      "expo-video",
+      "expo-sharing",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Face ID dipakai untuk membuka menu Haid."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

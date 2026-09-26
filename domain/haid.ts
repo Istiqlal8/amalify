@@ -3,25 +3,84 @@ import { dateKey, resnapshot, type Logs } from './dayLog';
 import type { DayNote } from './haidDay';
 import type { PlanItem } from './plan';
 
-/** Inclusive local dates `YYYY-MM-DD`; `end` is absent while the period is still going. */
-export type Period = { start: string; end?: string };
+/** Inclusive local dates `YYYY-MM-DD`; `end` is absent while the period is still going. `nifas` marks post-birth bleeding. */
+export type Period = { start: string; end?: string; nifas?: true };
 
-/** `days` and `care` are absent in logs written before those existed. */
-export type HaidLog = { periods: Period[]; at: number; days?: Record<string, DayNote>; care?: Care };
+/**
+ * `days`, `care`, `mandiDue` and `qadhaPaid` are absent in logs written before those existed.
+ * `mandiDue` is the suci date while mandi wajib is still to be ticked; `qadhaPaid` counts
+ * Ramadan fasts already made up, keyed by Hijri year.
+ */
+export type HaidLog = {
+  periods: Period[];
+  at: number;
+  days?: Record<string, DayNote>;
+  care?: Care;
+  mandiDue?: string;
+  qadhaPaid?: Record<string, number>;
+  /** Set while pregnant: the date pregnancy mode began. Forecasts pause. */
+  pregnant?: string;
+};
 
 export const EMPTY_HAID: HaidLog = { periods: [], at: 0 };
 
 /** Sections that are set aside during haid. */
 const PAUSED_SECTIONS = new Set(['sholat']);
+/** Fasting may sit in any section, so it is recognised by name. */
+const FASTING = /puasa|shaum|shiyam/i;
+
+// Mazhab Syafi'i: haid lasts at most 15 days; blood beyond that is istihadah, when prayer is due
+// again. A new haid needs at least 15 days of suci before it.
+export const MAX_HAID_DAYS = 15;
+export const MIN_SUCI_DAYS = 15;
+/** Nifas lasts at most 60 days in the same mazhab. */
+export const MAX_NIFAS_DAYS = 60;
+
+export function maxDays(p: Period): number {
+  return p.nifas ? MAX_NIFAS_DAYS : MAX_HAID_DAYS;
+}
 
 function shiftDay(day: string, delta: number): string {
   const [y, m, d] = day.split('-').map(Number);
   return dateKey(new Date(y, m - 1, d + delta));
 }
 
-/** An open period covers every day from its start on, so future reminders pause too. */
+/** Last day that can count as haid: the end, capped at 15 days (60 for nifas). An open period runs to the cap. */
+function lastHaidDay(p: Period): string {
+  const cap = shiftDay(p.start, maxDays(p) - 1);
+  return p.end !== undefined && p.end < cap ? p.end : cap;
+}
+
+/** Days past the 15-day limit are istihadah, so they are not haid days. */
 export function isHaidDay(log: HaidLog, day: string): boolean {
-  return log.periods.some((p) => p.start <= day && (p.end === undefined || day <= p.end));
+  return log.periods.some((p) => p.start <= day && day <= lastHaidDay(p));
+}
+
+/** True once the open period has run past its limit (15 days, or 60 for nifas). */
+export function isIstihadah(log: HaidLog, today: string): boolean {
+  const open = openPeriod(log);
+  return open !== undefined && dayOfPeriod(open, today) > maxDays(open);
+}
+
+export function startPregnancy(log: HaidLog, today: string, now: number): HaidLog {
+  return { ...log, pregnant: today, at: now };
+}
+
+export function endPregnancy(log: HaidLog, now: number): HaidLog {
+  return { ...log, pregnant: undefined, at: now };
+}
+
+/** After giving birth: pregnancy mode ends and nifas starts today. */
+export function startNifas(log: HaidLog, today: string, now: number): HaidLog {
+  if (openPeriod(log)) return { ...log, pregnant: undefined, at: now };
+  return { ...log, pregnant: undefined, periods: [...log.periods, { start: today, nifas: true }], at: now };
+}
+
+/** Whole days of suci between the last finished period and today, or null with none finished. */
+export function suciDays(log: HaidLog, today: string): number | null {
+  const ends = log.periods.filter((p) => p.end !== undefined && p.end < today).map((p) => p.end!).sort();
+  if (!ends.length) return null;
+  return dayOfPeriod({ start: ends[ends.length - 1] }, today) - 2;
 }
 
 export function openPeriod(log: HaidLog): Period | undefined {
@@ -39,7 +98,12 @@ export function endHaid(log: HaidLog, today: string, now: number): HaidLog {
   const periods = log.periods
     .map((p) => (p.end === undefined ? { ...p, end: yesterday } : p))
     .filter((p) => p.end === undefined || p.start <= p.end);
-  return { ...log, periods, at: now };
+  const kept = periods.length === log.periods.length;
+  return { ...log, periods, at: now, mandiDue: kept ? today : log.mandiDue };
+}
+
+export function doneMandi(log: HaidLog, now: number): HaidLog {
+  return { ...log, mandiDue: undefined, at: now };
 }
 
 /**
@@ -81,8 +145,9 @@ export function dayOfPeriod(period: Period, today: string): number {
   return Math.round((b - a) / 86400000) + 1;
 }
 
+/** On a haid day prayers and fasting drop out, so the day is scored without them. */
 export function itemsForDay(items: PlanItem[], haid: boolean): PlanItem[] {
-  return haid ? items.filter((it) => !PAUSED_SECTIONS.has(it.section)) : items;
+  return haid ? items.filter((it) => !PAUSED_SECTIONS.has(it.section) && !FASTING.test(it.label)) : items;
 }
 
 export function isPausedSection(section: string): boolean {

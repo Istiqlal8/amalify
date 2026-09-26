@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
+import { AnalysisCard } from '@/components/haid/AnalysisCard';
 import { BarChart } from '@/components/haid/BarChart';
 import { SubScreen } from '@/components/ui/SubScreen';
 import { Txt } from '@/components/ui/Txt';
@@ -28,6 +29,7 @@ export default function InsightsScreen() {
         <Stat value={stats?.avgLength ? `${stats.avgLength}` : '–'} label="hari haid" />
         <Stat value={spread !== null ? `±${spread}` : '–'} label="selisih siklus" />
       </View>
+      <AnalysisCard />
       <BarChart title="Panjang siklus" bars={byStart(cycles)} unit=" h" empty="Butuh minimal 2 kali haid." />
       <BarChart title="Lama haid" bars={byStart(periodLengths(haid))} unit=" h" empty="Belum ada haid yang selesai." />
       <BarChart title="Aliran" bars={flowCounts(haid)} empty="Belum ada catatan aliran." />

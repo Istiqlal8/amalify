@@ -1,4 +1,4 @@
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { ClayButton } from '@/components/ui/ClayButton';
@@ -8,47 +8,51 @@ import { type Palette, radius, space } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
 import { useTheme } from '@/providers/ThemeProvider';
 import { dayOfPeriod, earliestStart, openPeriod } from '@/domain/haid';
+import { useHaidStart } from '@/hooks/useHaidStart';
+import { useSuciConfirm } from '@/hooks/useSuciConfirm';
 import { useLogs } from '@/providers/LogsProvider';
+
+import { IstihadahNotice, MandiNotice } from './FiqhNotices';
 
 /** Section header for Sholat, with the haid switch beside it. */
 export function SholatHeader({ title }: { title: string }) {
   const styles = useStyles(makeStyles);
   const { colors } = useTheme();
-  const { todayHaid, startHaid } = useLogs();
+  const { haid, todayHaid } = useLogs();
+  const startHaid = useHaidStart();
   return (
-    <View style={styles.header}>
-      <Txt variant="heading" accessibilityRole="header" style={styles.flex}>
-        {title}
-      </Txt>
-      {!todayHaid && (
-        <Pressable accessibilityRole="button" onPress={startHaid} style={styles.mark}>
-          <Drop />
-          <Txt variant="bold" style={{ color: colors.primaryDeep }}>Tandai haid</Txt>
-        </Pressable>
-      )}
-    </View>
+    <>
+      <View style={styles.header}>
+        <Txt variant="heading" accessibilityRole="header" style={styles.flex}>
+          {title}
+        </Txt>
+        {!todayHaid && !openPeriod(haid) && (
+          <Pressable accessibilityRole="button" onPress={startHaid} style={styles.mark}>
+            <Drop />
+            <Txt variant="bold" style={{ color: colors.primaryDeep }}>Tandai haid</Txt>
+          </Pressable>
+        )}
+      </View>
+      <IstihadahNotice />
+      <MandiNotice />
+    </>
   );
 }
 
 /** Stands in for the prayer list while haid is marked. */
 export function HaidCard() {
   const styles = useStyles(makeStyles);
-  const { haid, today, endHaid, setHaidStart } = useLogs();
+  const { haid, today, setHaidStart } = useLogs();
   const period = openPeriod(haid);
 
-  function confirmEnd() {
-    Alert.alert('Sudah suci?', 'Sholat dihitung lagi mulai hari ini.', [
-      { text: 'Batal', style: 'cancel' },
-      { text: 'Sudah suci', onPress: endHaid },
-    ]);
-  }
+  const confirmEnd = useSuciConfirm();
 
   return (
     <View style={styles.card}>
       <View style={styles.row}>
         <Drop size={28} />
         <View style={styles.flex}>
-          <Txt variant="bold">Sedang haid</Txt>
+          <Txt variant="bold">Sedang {period?.nifas ? 'nifas' : 'haid'}</Txt>
           {period && <Txt variant="caption">Hari ke-{dayOfPeriod(period, today)} sejak</Txt>}
         </View>
         {period && (

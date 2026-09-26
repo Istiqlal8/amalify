@@ -34,15 +34,18 @@ export function formatDay(day: string): string {
   return `${d} ${MONTHS[m - 1]}`;
 }
 
+/** Haid periods oldest first; nifas is left out since it is not part of the cycle. */
 export function sortedPeriods(log: HaidLog): Period[] {
-  return [...log.periods].sort((a, b) => a.start.localeCompare(b.start));
+  return log.periods.filter((p) => !p.nifas).sort((a, b) => a.start.localeCompare(b.start));
 }
 
 function average(values: number[]): number {
   return Math.round(values.reduce((a, b) => a + b, 0) / values.length);
 }
 
+/** null while pregnant, and until two periods give a usable cycle. */
 export function cycleStats(log: HaidLog): CycleStats | null {
+  if (log.pregnant) return null;
   const periods = sortedPeriods(log).slice(-(RECENT + 1));
   const cycles = periods
     .slice(1)

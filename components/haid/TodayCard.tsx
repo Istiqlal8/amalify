@@ -1,4 +1,4 @@
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { ClayButton } from '@/components/ui/ClayButton';
 import { Txt } from '@/components/ui/Txt';
@@ -8,15 +8,17 @@ import { useTheme } from '@/providers/ThemeProvider';
 import { careOf, isNaturalCycle } from '@/domain/care';
 import { daysBetween, formatDay } from '@/domain/cycle';
 import { forecast, PHASE_LABEL, phaseOn, type Forecast } from '@/domain/cyclePhase';
-import { dayOfPeriod, openPeriod } from '@/domain/haid';
+import { dayOfPeriod, openPeriod, startPregnancy } from '@/domain/haid';
+import { useHaidStart } from '@/hooks/useHaidStart';
+import { useSuciConfirm } from '@/hooks/useSuciConfirm';
 import { useLogs } from '@/providers/LogsProvider';
 
 import { CycleRing } from './CycleRing';
 
 type Ring = { progress: number; value: string; caption: string };
 
-function ringFor(f: Forecast | null, today: string, haidDay: number | null): Ring | null {
-  if (haidDay !== null) return { progress: haidDay / (f?.avgLength ?? 7), value: `Hari ke-${haidDay}`, caption: 'haid' };
+function ringFor(f: Forecast | null, today: string, haidDay: number | null, nifas: boolean): Ring | null {
+  if (haidDay !== null) return { progress: haidDay / (f?.avgLength ?? 7), value: `Hari ke-${haidDay}`, caption: nifas ? 'nifas' : 'haid' };
   if (!f) return null;
   const left = daysBetween(today, f.nextStart);
   const progress = daysBetween(f.lastStart, today) / f.avgCycle;
@@ -29,19 +31,15 @@ function ringFor(f: Forecast | null, today: string, haidDay: number | null): Rin
 export function TodayCard() {
   const styles = useStyles(makeStyles);
   const { colors } = useTheme();
-  const { haid, today, todayHaid, startHaid, endHaid } = useLogs();
+  const { haid, today, todayHaid, editHaid } = useLogs();
+  const startHaid = useHaidStart();
   const f = forecast(haid);
   const period = openPeriod(haid);
-  const ring = ringFor(f, today, period ? dayOfPeriod(period, today) : null);
+  const ring = ringFor(f, today, period ? dayOfPeriod(period, today) : null, period?.nifas === true);
   const phase = f ? phaseOn(f, today, todayHaid) : null;
   const showPhase = phase && (isNaturalCycle(careOf(haid)) || phase === 'haid' || phase === 'telat');
 
-  function confirmEnd() {
-    Alert.alert('Sudah suci?', 'Sholat dihitung lagi mulai hari ini.', [
-      { text: 'Batal', style: 'cancel' },
-      { text: 'Sudah suci', onPress: endHaid },
-    ]);
-  }
+  const confirmEnd = useSuciConfirm();
 
   return (
     <View style={[clayOf(colors), styles.card]}>
@@ -51,7 +49,10 @@ export function TodayCard() {
       {period ? (
         <ClayButton label="Sudah suci" tone="soft" onPress={confirmEnd} />
       ) : (
-        <ClayButton label="Mulai haid hari ini" onPress={startHaid} />
+        <>
+          <ClayButton label="Mulai haid hari ini" onPress={startHaid} />
+          <ClayButton label="Sedang hamil" tone="soft" onPress={() => editHaid((h, now) => startPregnancy(h, today, now))} />
+        </>
       )}
     </View>
   );

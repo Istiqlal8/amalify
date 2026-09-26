@@ -35,3 +35,8 @@ test('test_cycleStats_unsortedInput_sortsByStart', () => {
   const stats = cycleStats(log([{ start: '2026-09-01' }, { start: '2026-08-04', end: '2026-08-10' }]));
   expect(stats?.nextStart).toBe('2026-09-29');
 });
+
+test('test_cycleStats_pregnant_isNull', () => {
+  const log = { periods: [{ start: '2026-01-01', end: '2026-01-05' }, { start: '2026-01-29', end: '2026-02-02' }], at: 1, pregnant: '2026-03-01' };
+  expect(cycleStats(log)).toBeNull();
+});

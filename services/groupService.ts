@@ -1,14 +1,24 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { isProgressHidden } from '@/storage/privacyPrefs';
+
 /** `dues_amount` is the monthly dues in rupiah; null when the group has none. */
 export type Group = { id: string; name: string; invite_code: string; dues_amount: number | null };
-export type MemberToday = { userId: string; name: string; avatarUrl: string | null; bio: string | null; percent: number };
+/** `hidden` members keep their percentage off the server; `percent` is then 0. */
+export type MemberToday = {
+  userId: string;
+  name: string;
+  avatarUrl: string | null;
+  bio: string | null;
+  percent: number;
+  hidden: boolean;
+};
 
 type MemberRow = {
   user_id: string;
   profiles: { display_name: string; avatar_url: string | null; bio: string | null } | null;
 };
-type SummaryRow = { user_id: string; percent: number };
+type SummaryRow = { user_id: string; percent: number | null };
 
 /** Creates the profile from the Google account on first sign-in; later edits are kept. */
 export async function signInSupabase(db: SupabaseClient, idToken: string, name: string, photo: string | null): Promise<void> {
@@ -38,7 +48,8 @@ export async function joinGroup(db: SupabaseClient, code: string): Promise<Group
 }
 
 export async function pushToday(db: SupabaseClient, day: string, percent: number, tilawah: number): Promise<void> {
-  const { error } = await db.from('daily_summaries').upsert({ day, percent, tilawah });
+  const shared = isProgressHidden() ? null : percent;
+  const { error } = await db.from('daily_summaries').upsert({ day, percent: shared, tilawah });
   if (error) throw error;
 }
 
@@ -52,7 +63,8 @@ export async function membersToday(db: SupabaseClient, groupId: string, day: str
   const ids = members.data.map((m) => m.user_id);
   const summaries = await db.from('daily_summaries').select('user_id, percent').eq('day', day).in('user_id', ids);
   if (summaries.error) throw summaries.error;
-  const byUser = new Map((summaries.data as SummaryRow[]).map((s) => [s.user_id, s.percent]));
+  const rows = summaries.data as SummaryRow[];
+  const byUser = new Map(rows.map((s) => [s.user_id, s.percent]));
   return members.data
     .map((m) => ({
       userId: m.user_id,
@@ -60,6 +72,13 @@ export async function membersToday(db: SupabaseClient, groupId: string, day: str
       avatarUrl: m.profiles?.avatar_url ?? null,
       bio: m.profiles?.bio ?? null,
       percent: byUser.get(m.user_id) ?? 0,
+      hidden: byUser.has(m.user_id) && byUser.get(m.user_id) === null,
     }))
     .sort((a, b) => b.percent - a.percent);
+}
+
+/** Clears today's shared percentage right away when the user starts hiding it. */
+export async function hideToday(db: SupabaseClient, day: string): Promise<void> {
+  const { error } = await db.from('daily_summaries').update({ percent: null }).eq('day', day);
+  if (error) throw error;
 }

@@ -1,6 +1,6 @@
 import { expect, test } from '@jest/globals';
 
-import { addPeriod, dayOfPeriod, earliestStart, EMPTY_HAID, endHaid, isHaidDay, itemsForDay, removePeriod, restampHaidChange, setOpenStart, startHaid, type HaidLog } from '../haid';
+import { addPeriod, dayOfPeriod, earliestStart, EMPTY_HAID, endHaid, isHaidDay, itemsForDay, removePeriod, restampHaidChange, setOpenStart, startHaid, startNifas, suciDays, type HaidLog } from '../haid';
 import type { PlanItem } from '../plan';
 
 const open: HaidLog = { periods: [{ start: '2026-09-20' }], at: 1 };
@@ -89,4 +89,33 @@ test('test_addPeriod_overlapsOpen_isRefused', () => {
 test('test_removePeriod_keepsDayNotes', () => {
   const log: HaidLog = { ...open, days: { '2026-09-20': { flow: 'deras', symptoms: [] } } };
   expect(removePeriod(log, '2026-09-20', 5).days).toEqual(log.days);
+});
+
+test('test_isHaidDay_day16OfOpenPeriod_isIstihadahNotHaid', () => {
+  const log = { ...EMPTY_HAID, periods: [{ start: '2026-09-01' }] };
+  expect([isHaidDay(log, '2026-09-15'), isHaidDay(log, '2026-09-16')]).toEqual([true, false]);
+});
+
+test('test_itemsForDay_haid_dropsFastingItems', () => {
+  const puasa = { id: 'p', label: 'Puasa sunnah', section: 'kebaikan', kind: 'check', target: 1, unit: '' } as PlanItem;
+  expect(itemsForDay([puasa], true)).toEqual([]);
+});
+
+test('test_endHaid_closesPeriod_setsMandiDue', () => {
+  const log = { ...EMPTY_HAID, periods: [{ start: '2026-09-01' }] };
+  expect(endHaid(log, '2026-09-07', 1).mandiDue).toBe('2026-09-07');
+});
+
+test('test_suciDays_countsDaysBetweenLastEndAndToday', () => {
+  const log = { ...EMPTY_HAID, periods: [{ start: '2026-09-01', end: '2026-09-07' }] };
+  expect(suciDays(log, '2026-09-12')).toBe(4);
+});
+
+test('test_isHaidDay_nifasDay40_isStillNifas', () => {
+  const log = startNifas({ ...EMPTY_HAID, pregnant: '2026-01-01' }, '2026-09-01', 1);
+  expect(isHaidDay(log, '2026-10-10')).toBe(true);
+});
+
+test('test_startNifas_endsPregnancyMode', () => {
+  expect(startNifas({ ...EMPTY_HAID, pregnant: '2026-01-01' }, '2026-09-01', 1).pregnant).toBeUndefined();
 });
