@@ -39,3 +39,13 @@ export function getSurah(nomor: number): Promise<SurahDetail> {
     return { ...pickSurah(raw), ayat };
   });
 }
+
+type RawTafsir = { ayat: number; teks: string };
+
+/** Tafsir Kemenag for each ayah of a surah; index 0 is ayah 1. */
+export function getTafsir(nomor: number): Promise<string[]> {
+  return cached(`tafsir-${nomor}`, async () => {
+    const raw = await get<{ tafsir: RawTafsir[] }>(`/tafsir/${nomor}`);
+    return raw.tafsir.map((t) => t.teks.trim());
+  });
+}
