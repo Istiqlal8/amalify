@@ -10,7 +10,6 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, type ReactNode } from 'react';
 import 'react-native-reanimated';
 
-import { pastels } from '@/constants/pastel';
 import { AuthProvider } from '@/providers/AuthProvider';
 import { LogsProvider } from '@/providers/LogsProvider';
 import { AmbiencePlayer } from '@/components/murottal/AmbiencePlayer';
@@ -36,7 +35,7 @@ function NavigationTheme({ children }: { children: ReactNode }) {
   const theme = useMemo(
     () => ({
       ...DefaultTheme,
-      colors: { ...DefaultTheme.colors, background: pastels.lavender.tint, primary: colors.primary, text: colors.foreground },
+      colors: { ...DefaultTheme.colors, background: colors.wash, primary: colors.primary, text: colors.foreground },
     }),
     [colors],
   );

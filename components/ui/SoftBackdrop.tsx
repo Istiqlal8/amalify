@@ -7,7 +7,7 @@ import { useTheme } from '@/providers/ThemeProvider';
 type Blob = { id: string; cx: string; cy: string; r: string; color: string; strength: number };
 
 /**
- * Multi-hue pastel wash behind every screen: lavender top, rose and sky glows, fading to white. Over
+ * Pastel wash behind every screen: the theme's pale top, its muted and a sky glow, fading to white. Over
  * it sit a few large soft colour blobs, so frosted and glass cards have something to bend; over a
  * flat gradient the glass barely shows. The blobs stay put while the content scrolls over them.
  */
@@ -24,13 +24,13 @@ export function SoftBackdrop() {
     <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
       <Defs>
         <LinearGradient id="wash" x1="0" y1="0" x2="0" y2="1">
-          <Stop offset="0" stopColor={pastels.lavender.tint} />
+          <Stop offset="0" stopColor={colors.wash} />
           <Stop offset="0.45" stopColor={colors.muted} />
           <Stop offset="1" stopColor={colors.card} />
         </LinearGradient>
         <RadialGradient id="rose" cx="90%" cy="12%" r="55%">
-          <Stop offset="0" stopColor={pastels.rose.tint} stopOpacity={1} />
-          <Stop offset="1" stopColor={pastels.rose.tint} stopOpacity={0} />
+          <Stop offset="0" stopColor={colors.muted} stopOpacity={1} />
+          <Stop offset="1" stopColor={colors.muted} stopOpacity={0} />
         </RadialGradient>
         <RadialGradient id="sky" cx="0%" cy="45%" r="55%">
           <Stop offset="0" stopColor={pastels.sky.tint} stopOpacity={1} />

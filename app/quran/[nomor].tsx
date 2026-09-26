@@ -9,7 +9,6 @@ import { TajweedLegend } from '@/components/quran/TajweedLegend';
 import { ClayButton } from '@/components/ui/ClayButton';
 import { GradientFill } from '@/components/ui/GradientFill';
 import { Txt } from '@/components/ui/Txt';
-import { pastels } from '@/constants/pastel';
 import { fonts, type Palette, radius, space } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
 import { useTheme } from '@/providers/ThemeProvider';
@@ -28,9 +27,10 @@ const NO_BASMALAH = new Set([1, 9]);
 
 function Header({ surah }: { surah: SurahDetail }) {
   const styles = useStyles(makeStyles);
+  const { colors } = useTheme();
   return (
     <View style={styles.hero}>
-      <GradientFill from={pastels.lavender.tint} to={pastels.rose.tint} />
+      <GradientFill from={colors.wash} to={colors.muted} />
       <View style={styles.heroRow}>
         <View style={styles.heroInfo}>
           <Txt variant="bold" style={styles.onPink}>{surah.namaLatin}</Txt>

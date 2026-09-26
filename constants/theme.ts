@@ -1,4 +1,4 @@
-export type ThemeName = 'pink' | 'hijau' | 'biru';
+export type ThemeName = 'pink' | 'hijau' | 'biru' | 'putih';
 
 export type Palette = {
   primary: string;
@@ -7,6 +7,8 @@ export type Palette = {
   /** Secondary text on a primaryDeep surface. */
   onPrimarySoft: string;
   secondary: string;
+  /** Pale top of the screen backdrop and the stack header. */
+  wash: string;
   background: string;
   foreground: string;
   card: string;
@@ -36,6 +38,7 @@ export const palettes: Record<ThemeName, Palette> = {
     onPrimary: '#FFFFFF',
     onPrimarySoft: '#FCE7F3',
     secondary: '#F9A8D4',
+    wash: '#EAE2FF',
     background: '#FDF2F8',
     foreground: '#831843',
     card: '#FFFFFF',
@@ -55,6 +58,7 @@ export const palettes: Record<ThemeName, Palette> = {
     onPrimary: '#FFFFFF',
     onPrimarySoft: '#D1FAE5',
     secondary: '#6EE7B7',
+    wash: '#EAE2FF',
     background: '#ECFDF5',
     foreground: '#064E3B',
     card: '#FFFFFF',
@@ -75,6 +79,7 @@ export const palettes: Record<ThemeName, Palette> = {
     onPrimary: '#FFFFFF',
     onPrimarySoft: '#DBEAFE',
     secondary: '#93C5FD',
+    wash: '#EAE2FF',
     background: '#EFF6FF',
     foreground: '#1E3A8A',
     card: '#FFFFFF',
@@ -87,12 +92,34 @@ export const palettes: Record<ThemeName, Palette> = {
     potRim: '#2563EB',
     petal: '#BFDBFE',
   },
+  // Clean white with slate accents; buttons stay dark enough for white text.
+  putih: {
+    ...plant,
+    primary: '#475569',
+    primaryDeep: '#1E293B',
+    onPrimary: '#FFFFFF',
+    onPrimarySoft: '#E2E8F0',
+    secondary: '#CBD5E1',
+    wash: '#F8FAFC',
+    background: '#FFFFFF',
+    foreground: '#0F172A',
+    card: '#FFFFFF',
+    muted: '#F1F5F9',
+    mutedForeground: '#64748B',
+    border: '#E2E8F0',
+    destructive: '#DC2626',
+    shadow: 'rgba(15, 23, 42, 0.08)',
+    pot: '#E2E8F0',
+    potRim: '#94A3B8',
+    petal: '#F1F5F9',
+  },
 };
 
 export const THEME_NAMES: { id: ThemeName; label: string }[] = [
   { id: 'pink', label: 'Pink' },
   { id: 'hijau', label: 'Hijau' },
   { id: 'biru', label: 'Biru' },
+  { id: 'putih', label: 'Putih' },
 ];
 
 /** Pink default; screens not yet reading `useTheme()` fall back to it. */
