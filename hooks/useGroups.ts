@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import { useLiveRefresh } from '@/hooks/useLiveRefresh';
 import * as groups from '@/services/groupService';
 import { supabase } from '@/services/supabase';
 
@@ -33,15 +34,27 @@ export function useGroups(ready: boolean): GroupsState {
   useEffect(() => {
     if (ready) refresh();
   }, [ready, refresh]);
+  useLiveRefresh(ready, [], refresh);
 
   return { list, error, create, join, refresh };
 }
 
+/** Each member's progress today, updated live as they tick items off or join and leave. */
 export function useMembersToday(groupId: string | null, day: string): groups.MemberToday[] {
   const [members, setMembers] = useState<groups.MemberToday[]>([]);
-  useEffect(() => {
+  const reload = useCallback(() => {
     if (!groupId || !supabase) return setMembers([]);
     groups.membersToday(supabase, groupId, day).then(setMembers).catch(() => setMembers([]));
   }, [groupId, day]);
+
+  useEffect(() => reload(), [reload]);
+  useLiveRefresh(
+    groupId !== null,
+    [
+      { table: 'daily_summaries', filter: `day=eq.${day}` },
+      { table: 'group_members', filter: `group_id=eq.${groupId}` },
+    ],
+    reload,
+  );
   return members;
 }

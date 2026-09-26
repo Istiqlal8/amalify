@@ -29,7 +29,7 @@ function GroupEvents({ group }: { group: Group }) {
   const { today } = useLogs();
   const me = useMyUserId();
   const members = useMembersToday(group.id, today);
-  const { data, error, run } = useGroupData(group.id, listEvents);
+  const { data, error, run } = useGroupData(group.id, listEvents, 'group_events');
   const [adding, setAdding] = useState(false);
   const nameOf = (id: string | null) => members.find((m) => m.userId === id)?.name ?? null;
 

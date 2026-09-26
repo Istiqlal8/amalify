@@ -33,7 +33,7 @@ function GroupCash({ group, refreshGroups }: { group: Group; refreshGroups: () =
   const { today } = useLogs();
   const me = useMyUserId();
   const members = useMembersToday(group.id, today);
-  const { data, error, run } = useGroupData(group.id, listCash);
+  const { data, error, run } = useGroupData(group.id, listCash, 'cash_entries');
   const [adding, setAdding] = useState(false);
   const month = monthOf(today);
 

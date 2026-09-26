@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { AppState } from 'react-native';
 
 import { googleTokens } from '@/services/googleAuth';
 import { downloadFile, uploadFile, type DriveFile } from '@/storage/driveStore';
@@ -8,9 +9,9 @@ export type SyncStatus = 'offline' | 'syncing' | 'synced' | 'error';
 const UPLOAD_DELAY_MS = 3000;
 
 /**
- * Pulls the Drive copy once per sign-in and hands it to `applyRemote` to merge; only after that
- * pull finishes are local edits pushed, so a fresh device never overwrites (or duplicates) the
- * file it has not read yet.
+ * Pulls the Drive copy on sign-in and again whenever the app returns to the foreground, and hands
+ * it to `applyRemote` to merge (newer entries win, so unsent local edits survive). Local edits are
+ * pushed only after the first pull, so a fresh device never overwrites the file it has not read yet.
  */
 export function useDriveSync(
   signedIn: boolean,
@@ -52,6 +53,21 @@ export function useDriveSync(
     }, UPLOAD_DELAY_MS);
     return () => clearTimeout(timer);
   }, [signedIn, pulled, local]);
+
+  // Picks up edits made on another device while this one was in the background.
+  useEffect(() => {
+    if (!signedIn || !pulled) return;
+    const sub = AppState.addEventListener('change', async (state) => {
+      if (state !== 'active') return;
+      try {
+        const { accessToken } = await googleTokens();
+        applyRemote((await downloadFile(accessToken)).file);
+      } catch {
+        setStatus('error');
+      }
+    });
+    return () => sub.remove();
+  }, [signedIn, pulled, applyRemote]);
 
   return status;
 }

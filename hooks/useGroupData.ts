@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import { useLiveRefresh } from '@/hooks/useLiveRefresh';
 import { supabase } from '@/services/supabase';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
@@ -10,10 +11,14 @@ type GroupData<T> = {
   run: (task: (db: SupabaseClient) => Promise<unknown>) => Promise<void>;
 };
 
-/** Loads one group's rows with `load` and reloads after every write made through `run`. */
+/**
+ * Loads one group's rows with `load`, reloads after every write made through `run`, and
+ * reloads live when anyone else changes `table` for this group.
+ */
 export function useGroupData<T>(
   groupId: string | null,
   load: (db: SupabaseClient, groupId: string) => Promise<T[]>,
+  table: string,
 ): GroupData<T> {
   const [data, setData] = useState<T[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -32,9 +37,11 @@ export function useGroupData<T>(
     [groupId, load],
   );
 
+  const reload = useCallback(() => run(async () => undefined), [run]);
   useEffect(() => {
-    run(async () => undefined);
-  }, [run]);
+    reload();
+  }, [reload]);
+  useLiveRefresh(groupId !== null, [{ table, filter: `group_id=eq.${groupId}` }], reload);
 
   return { data, error, run };
 }
