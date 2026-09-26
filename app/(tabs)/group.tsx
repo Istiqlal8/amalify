@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { GroupForms } from '@/components/group/GroupForms';
+import { AddGroupDialog } from '@/components/group/AddGroupDialog';
 import { MemberGarden } from '@/components/group/MemberGarden';
 import { MenuTile } from '@/components/home/MenuTile';
+import { ClayButton } from '@/components/ui/ClayButton';
 import { Screen } from '@/components/ui/Screen';
 import { Txt } from '@/components/ui/Txt';
 import { type Palette, radius, space } from '@/constants/theme';
@@ -21,6 +22,7 @@ export default function GroupScreen() {
   const { today } = useLogs();
   const { list, error, create, join } = useGroups(groupsReady);
   const [picked, setPicked] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
   const selected = list.find((g) => g.id === picked) ?? list[0] ?? null;
   const members = useMembersToday(selected?.id ?? null, today);
 
@@ -46,8 +48,14 @@ export default function GroupScreen() {
               </Pressable>
             );
           })}
+          <Pressable accessibilityRole="button" onPress={() => setAdding(true)} style={styles.chip}>
+            <Txt variant="bold" style={{ color: colors.primaryDeep }}>
+              + Tambah
+            </Txt>
+          </Pressable>
         </ScrollView>
       )}
+      {list.length === 0 && <ClayButton label="Buat atau gabung grup" onPress={() => setAdding(true)} />}
       {selected && <MemberGarden group={selected} members={members} />}
       {selected && (
         <View style={styles.tiles}>
@@ -65,7 +73,7 @@ export default function GroupScreen() {
         </View>
       )}
       {error && <Txt style={{ color: colors.destructive }}>{error}</Txt>}
-      <GroupForms onCreate={create} onJoin={join} />
+      {adding && <AddGroupDialog onCreate={create} onJoin={join} onClose={() => setAdding(false)} />}
     </Screen>
   );
 }
