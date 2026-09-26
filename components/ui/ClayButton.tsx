@@ -21,9 +21,10 @@ export function ClayButton({ label, onPress, tone = 'primary', disabled = false 
       style={({ pressed }) => [
         styles.base,
         primary ? styles.primary : styles.soft,
-        { opacity: disabled ? 0.5 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] },
+        disabled && styles.disabled,
+        { transform: [{ scale: pressed ? 0.97 : 1 }] },
       ]}>
-      <Txt variant="bold" style={{ color: primary ? colors.onPrimary : colors.primaryDeep }}>
+      <Txt variant="bold" style={{ color: disabled ? colors.mutedForeground : primary ? colors.onPrimary : colors.primaryDeep }}>
         {label}
       </Txt>
     </Pressable>
@@ -38,8 +39,9 @@ const makeStyles = (c: Palette) =>
       borderRadius: radius.pill,
       alignItems: 'center',
       justifyContent: 'center',
-      borderWidth: 2,
     },
-    primary: { backgroundColor: c.primaryDeep, borderColor: c.primary },
-    soft: { backgroundColor: c.muted, borderColor: c.border },
+    primary: { backgroundColor: c.primaryDeep },
+    // White pill over the pastel backdrop, like the reference's secondary actions.
+    soft: { backgroundColor: c.card, boxShadow: `0px 4px 12px ${c.shadow}` },
+    disabled: { backgroundColor: c.muted, boxShadow: 'none' },
   });

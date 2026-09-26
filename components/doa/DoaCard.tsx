@@ -2,7 +2,7 @@ import { memo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Txt } from '@/components/ui/Txt';
-import { fonts, type Palette, radius, space } from '@/constants/theme';
+import { fonts, type Palette, radius, space, frostOf } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
 import { useTheme } from '@/providers/ThemeProvider';
 import { repeatCount, type Doa } from '@/domain/doa';
@@ -42,7 +42,7 @@ export const DoaCard = memo(DoaCardBase);
 
 const makeStyles = (c: Palette) =>
   StyleSheet.create({
-    card: { gap: space.sm, padding: space.md, borderRadius: radius.md, borderWidth: 2, borderColor: c.border, backgroundColor: c.card },
+    card: { ...frostOf(c), gap: space.sm, padding: space.md, borderRadius: radius.md },
     note: { alignSelf: 'flex-start', paddingHorizontal: space.sm, paddingVertical: 2, borderRadius: radius.pill, backgroundColor: c.muted },
     arab: { fontFamily: fonts.arabic, fontSize: 26, lineHeight: 56, textAlign: 'right', writingDirection: 'rtl', color: c.foreground },
     latin: { fontFamily: fonts.body, fontStyle: 'italic', color: c.primaryDeep },

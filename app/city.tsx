@@ -4,12 +4,14 @@ import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 
 import { TextField } from '@/components/ui/TextField';
 import { Txt } from '@/components/ui/Txt';
-import { fonts, type Palette, radius, space } from '@/constants/theme';
+import { type Palette, radius, space } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
 import { useTheme } from '@/providers/ThemeProvider';
 import type { City } from '@/domain/prayer';
 import { useCitySearch } from '@/hooks/useCitySearch';
 import { usePrayer } from '@/providers/PrayerProvider';
+import { stackHeader } from '@/components/ui/stackHeader';
+import { SoftBackdrop } from '@/components/ui/SoftBackdrop';
 
 export default function CityScreen() {
   const styles = useStyles(makeStyles);
@@ -25,13 +27,11 @@ export default function CityScreen() {
 
   return (
     <View style={styles.screen}>
+      <SoftBackdrop />
       <Stack.Screen
         options={{
           title: 'Pilih kota',
-          headerStyle: { backgroundColor: colors.background },
-          headerTintColor: colors.primaryDeep,
-          headerTitleStyle: { fontFamily: fonts.display },
-          headerShadowVisible: false,
+          ...stackHeader(colors),
         }}
       />
       <TextField label="Kota atau kabupaten" value={query} onChangeText={setQuery} placeholder="Bandung" autoFocus />
@@ -53,14 +53,14 @@ export default function CityScreen() {
 
 const makeStyles = (c: Palette) =>
   StyleSheet.create({
-    screen: { flex: 1, backgroundColor: c.background, padding: space.md, gap: space.md },
+    screen: { flex: 1, padding: space.md, gap: space.md },
     list: { gap: space.sm, paddingBottom: space.xl },
     row: {
       minHeight: 52,
       justifyContent: 'center',
       paddingHorizontal: space.md,
       borderRadius: radius.md,
-      borderWidth: 2,
+      borderWidth: 1,
       borderColor: c.border,
       backgroundColor: c.card,
     },

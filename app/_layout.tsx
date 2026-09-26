@@ -1,5 +1,5 @@
 import { Amiri_400Regular } from '@expo-google-fonts/amiri';
-import { Fredoka_600SemiBold } from '@expo-google-fonts/fredoka';
+import { InstrumentSerif_400Regular } from '@expo-google-fonts/instrument-serif';
 import { Nunito_400Regular, Nunito_700Bold } from '@expo-google-fonts/nunito';
 import { useFonts } from 'expo-font';
 import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
@@ -8,6 +8,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, type ReactNode } from 'react';
 import 'react-native-reanimated';
 
+import { pastels } from '@/constants/pastel';
 import { AuthProvider } from '@/providers/AuthProvider';
 import { LogsProvider } from '@/providers/LogsProvider';
 import { PrayerProvider } from '@/providers/PrayerProvider';
@@ -31,7 +32,7 @@ function NavigationTheme({ children }: { children: ReactNode }) {
   const theme = useMemo(
     () => ({
       ...DefaultTheme,
-      colors: { ...DefaultTheme.colors, background: colors.background, primary: colors.primary, text: colors.foreground },
+      colors: { ...DefaultTheme.colors, background: pastels.lavender.tint, primary: colors.primary, text: colors.foreground },
     }),
     [colors],
   );
@@ -39,7 +40,7 @@ function NavigationTheme({ children }: { children: ReactNode }) {
 }
 
 export default function RootLayout() {
-  const [loaded, error] = useFonts({ Amiri_400Regular, Fredoka_600SemiBold, Nunito_400Regular, Nunito_700Bold });
+  const [loaded, error] = useFonts({ Amiri_400Regular, InstrumentSerif_400Regular, Nunito_400Regular, Nunito_700Bold });
 
   useEffect(() => {
     if (error) throw error;

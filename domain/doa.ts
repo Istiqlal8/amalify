@@ -35,3 +35,12 @@ export function repeatCount(notes: string | undefined): number {
   const match = notes?.match(/(\d+)x/);
   return match ? Number(match[1]) : 1;
 }
+
+/** Short enough to sit on Beranda without scrolling past it. */
+const DAILY_POOL = [...harian, ...pilihan].filter((d) => d.arabic.length <= 200);
+
+/** One doa per calendar day, the same all day long. */
+export function doaOfDay(date: Date): Doa {
+  const day = Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000);
+  return DAILY_POOL[day % DAILY_POOL.length];
+}

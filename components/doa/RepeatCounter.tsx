@@ -44,7 +44,7 @@ const makeStyles = (c: Palette) =>
       alignItems: 'center',
       justifyContent: 'center',
       borderRadius: radius.pill,
-      borderWidth: 2,
+      borderWidth: 1,
       borderColor: c.border,
       backgroundColor: c.muted,
       paddingHorizontal: space.lg,

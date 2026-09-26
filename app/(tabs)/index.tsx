@@ -1,34 +1,41 @@
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { MenuTile } from '@/components/home/MenuTile';
-import { PrayerCard } from '@/components/prayer/PrayerCard';
-import { TodayPlantCard } from '@/components/TodayPlantCard';
-import { Screen } from '@/components/ui/Screen';
-import { space } from '@/constants/theme';
-import { streak } from '@/domain/dayLog';
-import { useLogs } from '@/providers/LogsProvider';
+import { DailyDoa } from '@/components/home/DailyDoa';
+import { Greeting } from '@/components/home/Greeting';
+import { HomeMenu } from '@/components/home/HomeMenu';
+import { PrayerHero } from '@/components/home/PrayerHero';
+import { PrayerTimes } from '@/components/home/PrayerTimes';
+import { SoftBackdrop } from '@/components/ui/SoftBackdrop';
+import { WeekStrip } from '@/components/home/WeekStrip';
+import { type Palette, space } from '@/constants/theme';
+import { useStyles } from '@/hooks/useStyles';
+import { useTabBarSpace } from '@/hooks/useTabBarSpace';
 
 export default function HomeScreen() {
-  const { logs, loaded, todayPercent } = useLogs();
+  const styles = useStyles(makeStyles);
+  const tabBarSpace = useTabBarSpace();
 
   return (
-    <Screen title="Assalamu'alaikum">
-      <TodayPlantCard percent={todayPercent} streakDays={streak(logs)} loaded={loaded} />
-      <PrayerCard />
-      <View style={styles.grid}>
-        <MenuTile href="/amal-yaumi" label="Amal Yaumi" icon={{ ios: 'checklist', android: 'checklist', web: 'checklist' }} />
-        <MenuTile href="/quran" label="Baca Quran" icon={{ ios: 'book.fill', android: 'menu_book', web: 'menu_book' }} />
-        <MenuTile href="/doa" label="Doa & Dzikir" icon={{ ios: 'hands.sparkles.fill', android: 'front_hand', web: 'front_hand' }} />
-        <MenuTile href="/haid" label="Haid" icon={{ ios: 'drop.fill', android: 'water_drop', web: 'water_drop' }} />
-        <MenuTile href="/kiblat" label="Kiblat" icon={{ ios: 'location.north.circle.fill', android: 'explore', web: 'explore' }} />
-        <MenuTile href="/garden" label="Kebun" icon={{ ios: 'leaf.fill', android: 'potted_plant', web: 'potted_plant' }} />
-        <MenuTile href="/leaderboard" label="Leaderboard" icon={{ ios: 'trophy.fill', android: 'emoji_events', web: 'emoji_events' }} />
-        <MenuTile href="/group" label="Grup" icon={{ ios: 'person.3.fill', android: 'group', web: 'group' }} />
-      </View>
-    </Screen>
+    <View style={styles.root}>
+      <SoftBackdrop />
+      <SafeAreaView style={styles.flex} edges={['top']}>
+        <ScrollView contentContainerStyle={[styles.content, { paddingBottom: tabBarSpace }]}>
+          <Greeting />
+          <WeekStrip />
+          <PrayerHero />
+          <PrayerTimes />
+          <HomeMenu />
+          <DailyDoa />
+        </ScrollView>
+      </SafeAreaView>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: space.md },
-});
+const makeStyles = (c: Palette) =>
+  StyleSheet.create({
+    root: { flex: 1, backgroundColor: c.card },
+    flex: { flex: 1 },
+    content: { paddingHorizontal: space.md, paddingTop: space.md, paddingBottom: space.xl, gap: space.lg },
+  });

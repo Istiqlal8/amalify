@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { type Palette, radius, space } from '@/constants/theme';
+import { type Palette, radius, space, frostOf } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
 import { useTheme } from '@/providers/ThemeProvider';
 
@@ -75,9 +75,7 @@ const makeStyles = (c: Palette) =>
       paddingHorizontal: space.md,
       paddingVertical: space.sm,
       borderRadius: radius.md,
-      backgroundColor: c.card,
-      borderWidth: 2,
-      borderColor: c.border,
+      ...frostOf(c),
     },
     rowDone: { backgroundColor: c.muted, borderColor: c.secondary },
     text: { flex: 1, gap: 2 },
@@ -91,7 +89,7 @@ const makeStyles = (c: Palette) =>
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: c.muted,
-      borderWidth: 2,
+      borderWidth: 1,
       borderColor: c.border,
     },
   });

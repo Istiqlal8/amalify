@@ -6,12 +6,14 @@ import { Linking, ScrollView, StyleSheet, useWindowDimensions, View } from 'reac
 import { CompassDial } from '@/components/qibla/CompassDial';
 import { ClayButton } from '@/components/ui/ClayButton';
 import { Txt } from '@/components/ui/Txt';
-import { clayOf, fonts, type Palette, radius, space } from '@/constants/theme';
+import { clayOf, type Palette, radius, space } from '@/constants/theme';
 import { compassPoint, isAligned, turnTo } from '@/domain/qibla';
 import { useHeading } from '@/hooks/useHeading';
 import { useQibla } from '@/hooks/useQibla';
 import { useStyles } from '@/hooks/useStyles';
 import { useTheme } from '@/providers/ThemeProvider';
+import { stackHeader } from '@/components/ui/stackHeader';
+import { SoftBackdrop } from '@/components/ui/SoftBackdrop';
 
 function Guidance({ turn, aligned }: { turn: number; aligned: boolean }) {
   const styles = useStyles(makeStyles);
@@ -39,43 +41,43 @@ export default function QiblaScreen() {
   useAlignedHaptic(aligned);
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Stack.Screen
-        options={{
-          title: 'Kiblat',
-          headerStyle: { backgroundColor: colors.background },
-          headerTintColor: colors.primaryDeep,
-          headerTitleStyle: { fontFamily: fonts.display },
-          headerShadowVisible: false,
-        }}
-      />
-      {status === 'locating' && <Txt>Mencari lokasi…</Txt>}
-      {status === 'denied' && (
-        <View style={styles.card}>
-          <Txt>Izin lokasi dibutuhkan untuk menentukan arah kiblat dari tempatmu.</Txt>
-          <ClayButton label="Buka pengaturan" onPress={() => Linking.openSettings()} />
-        </View>
-      )}
-      {status === 'error' && (
-        <View style={styles.card}>
-          <Txt>Lokasi tidak ditemukan. Pastikan GPS aktif.</Txt>
-          <ClayButton label="Coba lagi" tone="soft" onPress={retry} />
-        </View>
-      )}
-      {qibla && (
-        <>
-          <CompassDial size={Math.min(width - space.md * 2, 340)} heading={heading?.degrees ?? 0} qibla={qibla.bearing} aligned={aligned} />
-          {heading ? <Guidance turn={turnTo(qibla.bearing, heading.degrees)} aligned={aligned} /> : <Txt>Menunggu kompas…</Txt>}
-          <View style={styles.stats}>
-            <Stat value={`${Math.round(qibla.bearing)}° ${compassPoint(qibla.bearing)}`} label="Arah kiblat" />
-            <Stat value={heading ? `${Math.round(heading.degrees)}° ${compassPoint(heading.degrees)}` : '–'} label="Arah HP" />
+    <View style={styles.screen}>
+      <SoftBackdrop />
+      <ScrollView contentContainerStyle={styles.content}>
+        <Stack.Screen
+          options={{
+            title: 'Kiblat',
+            ...stackHeader(colors),
+          }}
+        />
+        {status === 'locating' && <Txt>Mencari lokasi…</Txt>}
+        {status === 'denied' && (
+          <View style={styles.card}>
+            <Txt>Izin lokasi dibutuhkan untuk menentukan arah kiblat dari tempatmu.</Txt>
+            <ClayButton label="Buka pengaturan" onPress={() => Linking.openSettings()} />
           </View>
-          {heading !== null && heading.accuracy <= 1 && (
-            <Txt variant="caption" style={styles.center}>Kompas kurang akurat. Gerakkan HP membentuk angka 8.</Txt>
-          )}
-        </>
-      )}
-    </ScrollView>
+        )}
+        {status === 'error' && (
+          <View style={styles.card}>
+            <Txt>Lokasi tidak ditemukan. Pastikan GPS aktif.</Txt>
+            <ClayButton label="Coba lagi" tone="soft" onPress={retry} />
+          </View>
+        )}
+        {qibla && (
+          <>
+            <CompassDial size={Math.min(width - space.md * 2, 340)} heading={heading?.degrees ?? 0} qibla={qibla.bearing} aligned={aligned} />
+            {heading ? <Guidance turn={turnTo(qibla.bearing, heading.degrees)} aligned={aligned} /> : <Txt>Menunggu kompas…</Txt>}
+            <View style={styles.stats}>
+              <Stat value={`${Math.round(qibla.bearing)}° ${compassPoint(qibla.bearing)}`} label="Arah kiblat" />
+              <Stat value={heading ? `${Math.round(heading.degrees)}° ${compassPoint(heading.degrees)}` : '–'} label="Arah HP" />
+            </View>
+            {heading !== null && heading.accuracy <= 1 && (
+              <Txt variant="caption" style={styles.center}>Kompas kurang akurat. Gerakkan HP membentuk angka 8.</Txt>
+            )}
+          </>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -91,7 +93,7 @@ function Stat({ value, label }: { value: string; label: string }) {
 
 const makeStyles = (c: Palette) =>
   StyleSheet.create({
-    screen: { flex: 1, backgroundColor: c.background },
+    screen: { flex: 1 },
     content: { padding: space.md, gap: space.lg, alignItems: 'center', paddingBottom: space.xl },
     card: { ...clayOf(c), padding: space.md, gap: space.md, alignSelf: 'stretch' },
     aligned: { color: c.primaryDeep },

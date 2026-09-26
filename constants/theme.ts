@@ -103,21 +103,25 @@ export const radius = { sm: 12, md: 18, lg: 24, pill: 999 } as const;
 export const space = { xs: 4, sm: 8, md: 16, lg: 24, xl: 32 } as const;
 
 export const fonts = {
-  display: 'Fredoka_600SemiBold',
+  display: 'InstrumentSerif_400Regular',
   body: 'Nunito_400Regular',
   bodyBold: 'Nunito_700Bold',
   arabic: 'Amiri_400Regular',
 } as const;
 
-// Soft clay shadow: one broad outer shadow, the inner highlight comes from the border.
-export function clayOf(c: Palette) {
+/** Translucent white surface with a white rim, for anything that sits on the pastel backdrop. */
+export function frostOf(c: Palette) {
   return {
-    backgroundColor: c.card,
-    borderRadius: radius.lg,
-    borderWidth: 2,
-    borderColor: c.border,
-    boxShadow: `0px 6px 12px ${c.shadow}`,
+    backgroundColor: 'rgba(255,255,255,0.8)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.95)',
+    boxShadow: `0px 6px 16px ${c.shadow}`,
   } as const;
+}
+
+// Frosted card: the frost surface with the large card radius.
+export function clayOf(c: Palette) {
+  return { ...frostOf(c), borderRadius: radius.lg } as const;
 }
 
 export const clay = clayOf(colors);

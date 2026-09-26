@@ -6,7 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BoardList } from '@/components/leaderboard/BoardList';
 import { PillTabs } from '@/components/ui/PillTabs';
 import { Txt } from '@/components/ui/Txt';
-import { fonts, type Palette, space } from '@/constants/theme';
+import { type Palette, space } from '@/constants/theme';
 import { PERIODS, type Period } from '@/domain/period';
 import { useGroups } from '@/hooks/useGroups';
 import { useStyles } from '@/hooks/useStyles';
@@ -15,6 +15,8 @@ import { useAuth } from '@/providers/AuthProvider';
 import { useLogs } from '@/providers/LogsProvider';
 import { useTheme } from '@/providers/ThemeProvider';
 import { supabase } from '@/services/supabase';
+import { stackHeader } from '@/components/ui/stackHeader';
+import { SoftBackdrop } from '@/components/ui/SoftBackdrop';
 
 type Scope = 'grup' | 'global';
 
@@ -38,13 +40,11 @@ export default function LeaderboardScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
+      <SoftBackdrop />
       <Stack.Screen
         options={{
-          title: 'Leaderboard tilawah',
-          headerStyle: { backgroundColor: colors.background },
-          headerTintColor: colors.primaryDeep,
-          headerTitleStyle: { fontFamily: fonts.display },
-          headerShadowVisible: false,
+          title: 'Peringkat tilawah',
+          ...stackHeader(colors),
         }}
       />
       <ScrollView contentContainerStyle={styles.content}>
@@ -77,6 +77,6 @@ export default function LeaderboardScreen() {
 
 const makeStyles = (c: Palette) =>
   StyleSheet.create({
-    safe: { flex: 1, backgroundColor: c.background },
+    safe: { flex: 1 },
     content: { padding: space.md, gap: space.md, paddingBottom: space.xl },
   });

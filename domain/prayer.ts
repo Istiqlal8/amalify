@@ -54,3 +54,8 @@ export function monthsToLoad(now: Date): { year: number; month: number }[] {
     { year: next.getFullYear(), month: next.getMonth() + 1 },
   ];
 }
+
+/** The API sends names in capitals ("KOTA BANDUNG"); shown as "Kota Bandung". */
+export function cityLabel(name: string): string {
+  return name.toLowerCase().replace(/(^|[\s.(-])(\S)/g, (_m, sep: string, ch: string) => sep + ch.toUpperCase());
+}

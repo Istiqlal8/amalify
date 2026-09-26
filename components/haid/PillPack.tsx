@@ -42,7 +42,7 @@ const makeStyles = (c: Palette) =>
   StyleSheet.create({
     grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: space.sm },
     cell: { width: `${100 / 7}%`, alignItems: 'center' },
-    pill: { width: 36, height: 36, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: c.border },
+    pill: { width: 36, height: 36, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: c.border },
     taken: { backgroundColor: c.primary, borderColor: c.primary },
     missed: { borderColor: c.destructive },
     today: { borderColor: c.primaryDeep, backgroundColor: c.muted },

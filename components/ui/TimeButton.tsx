@@ -53,7 +53,7 @@ const makeStyles = (c: Palette) =>
       alignItems: 'center',
       justifyContent: 'center',
       borderRadius: radius.md,
-      borderWidth: 2,
+      borderWidth: 1,
       borderColor: c.border,
       backgroundColor: c.muted,
     },

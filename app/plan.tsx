@@ -5,12 +5,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ItemEditor } from '@/components/plan/ItemEditor';
 import { Txt } from '@/components/ui/Txt';
-import { fonts, type Palette, radius, space } from '@/constants/theme';
+import { type Palette, radius, space, frostOf } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
 import { useTheme } from '@/providers/ThemeProvider';
 import { SECTIONS, type SectionId } from '@/domain/amalan';
 import type { ItemDraft, PlanItem } from '@/domain/plan';
 import { useLogs } from '@/providers/LogsProvider';
+import { stackHeader } from '@/components/ui/stackHeader';
+import { SoftBackdrop } from '@/components/ui/SoftBackdrop';
 
 const blank = (section: SectionId): ItemDraft => ({ label: '', section, kind: 'check', target: 1, unit: '' });
 
@@ -40,13 +42,11 @@ export default function PlanScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
+      <SoftBackdrop />
       <Stack.Screen
         options={{
           title: 'Atur amalan',
-          headerStyle: { backgroundColor: colors.background },
-          headerTintColor: colors.primaryDeep,
-          headerTitleStyle: { fontFamily: fonts.display },
-          headerShadowVisible: false,
+          ...stackHeader(colors),
         }}
       />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
@@ -106,7 +106,7 @@ function Row({ item, onEdit, onRemove }: { item: PlanItem; onEdit: () => void; o
 
 const makeStyles = (c: Palette) =>
   StyleSheet.create({
-    safe: { flex: 1, backgroundColor: c.background },
+    safe: { flex: 1 },
     content: { padding: space.md, gap: space.md, paddingBottom: space.xl },
     section: { gap: space.sm },
     flex: { flex: 1 },
@@ -117,9 +117,7 @@ const makeStyles = (c: Palette) =>
       minHeight: 56,
       paddingLeft: space.md,
       borderRadius: radius.md,
-      borderWidth: 2,
-      borderColor: c.border,
-      backgroundColor: c.card,
+      ...frostOf(c),
     },
     add: {
       minHeight: 48,

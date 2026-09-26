@@ -2,7 +2,7 @@ import { memo } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Txt } from '@/components/ui/Txt';
-import { fonts, type Palette, radius, space } from '@/constants/theme';
+import { fonts, type Palette, radius, space, frostOf } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
 import type { Ayah } from '@/services/quranApi';
 
@@ -30,9 +30,7 @@ const makeStyles = (c: Palette) =>
       gap: space.sm,
       padding: space.md,
       borderRadius: radius.md,
-      borderWidth: 2,
-      borderColor: c.border,
-      backgroundColor: c.card,
+      ...frostOf(c),
     },
     top: { flexDirection: 'row' },
     arab: {

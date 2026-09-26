@@ -29,7 +29,7 @@ const makeStyles = (c: Palette) =>
       minHeight: 48,
       paddingHorizontal: space.md,
       borderRadius: radius.md,
-      borderWidth: 2,
+      borderWidth: 1,
       borderColor: c.border,
       backgroundColor: c.card,
       fontFamily: fonts.body,

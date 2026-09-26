@@ -89,7 +89,7 @@ const makeStyles = (c: Palette) =>
     card: { padding: space.md, gap: space.md },
     next: { alignItems: 'center', gap: 2, padding: space.md, borderRadius: radius.md, backgroundColor: c.muted },
     stats: { flexDirection: 'row', gap: space.sm },
-    stat: { flex: 1, alignItems: 'center', padding: space.sm, borderRadius: radius.md, borderWidth: 2, borderColor: c.border },
+    stat: { flex: 1, alignItems: 'center', padding: space.sm, borderRadius: radius.md, borderWidth: 1, borderColor: c.border },
     history: { gap: space.sm },
     row: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
     dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: c.primary },

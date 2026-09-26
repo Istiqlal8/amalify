@@ -2,7 +2,7 @@ import { Link } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Txt } from '@/components/ui/Txt';
-import { fonts, type Palette, radius, space } from '@/constants/theme';
+import { fonts, type Palette, radius, space, frostOf } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
 import type { Surah } from '@/services/quranApi';
 
@@ -38,9 +38,7 @@ const makeStyles = (c: Palette) =>
       minHeight: 64,
       paddingHorizontal: space.md,
       borderRadius: radius.md,
-      borderWidth: 2,
-      borderColor: c.border,
-      backgroundColor: c.card,
+      ...frostOf(c),
     },
     flex: { flex: 1 },
     arab: { fontFamily: fonts.arabic, fontSize: 22, lineHeight: 40, color: c.primaryDeep },

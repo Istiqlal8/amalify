@@ -81,8 +81,9 @@ export function firstOfMonth(day: string = dateKey(new Date())): string {
 const makeStyles = (c: Palette) =>
   StyleSheet.create({
     grid: { flexDirection: 'row', flexWrap: 'wrap', rowGap: space.xs },
-    head: { width: `${100 / 7}%`, textAlign: 'center' },
-    cell: { width: `${100 / 7}%`, alignItems: 'center', minHeight: 48 },
+    // Just under a seventh: an exact 100/7 % can round past the row width and wrap the last column.
+    head: { width: '14.28%', textAlign: 'center' },
+    cell: { width: '14.28%', alignItems: 'center', minHeight: 48 },
     circle: { width: 38, height: 38, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'transparent' },
     haid: { backgroundColor: c.primary },
     predicted: { borderColor: c.primary, borderStyle: 'dashed' },

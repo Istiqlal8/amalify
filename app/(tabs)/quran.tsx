@@ -8,9 +8,11 @@ import { TextField } from '@/components/ui/TextField';
 import { Txt } from '@/components/ui/Txt';
 import { type Palette, space } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
+import { useTabBarSpace } from '@/hooks/useTabBarSpace';
 import { useTheme } from '@/providers/ThemeProvider';
 import { useSurahList } from '@/hooks/useQuran';
 import type { Surah } from '@/services/quranApi';
+import { SoftBackdrop } from '@/components/ui/SoftBackdrop';
 
 /** Matches "al baqarah", "Baqarah", "sapi" or "2" alike. */
 function matches(s: Surah, query: string): boolean {
@@ -22,6 +24,7 @@ function matches(s: Surah, query: string): boolean {
 
 export default function QuranScreen() {
   const styles = useStyles(makeStyles);
+  const tabBarSpace = useTabBarSpace();
   const { colors } = useTheme();
   const { data, error, retry } = useSurahList();
   const [query, setQuery] = useState('');
@@ -29,11 +32,12 @@ export default function QuranScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
+      <SoftBackdrop />
       <FlatList
         data={surahs}
         keyExtractor={(s) => String(s.nomor)}
         renderItem={({ item }) => <SurahRow surah={item} />}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: tabBarSpace }]}
         keyboardShouldPersistTaps="handled"
         ListHeaderComponent={
           <View style={styles.header}>
@@ -55,7 +59,7 @@ export default function QuranScreen() {
 
 const makeStyles = (c: Palette) =>
   StyleSheet.create({
-    safe: { flex: 1, backgroundColor: c.background },
+    safe: { flex: 1 },
     content: { padding: space.md, gap: space.sm, paddingBottom: space.xl },
     header: { gap: space.md, marginBottom: space.sm },
   });

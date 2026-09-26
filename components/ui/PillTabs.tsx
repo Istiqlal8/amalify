@@ -41,7 +41,7 @@ const makeStyles = (c: Palette) =>
       justifyContent: 'center',
       paddingHorizontal: space.md,
       borderRadius: radius.pill,
-      borderWidth: 2,
+      borderWidth: 1,
       borderColor: c.border,
       backgroundColor: c.card,
     },

@@ -1,6 +1,6 @@
 import { expect, test } from '@jest/globals';
 
-import { doaCategory, DOA_CATEGORIES, repeatCount } from '../doa';
+import { doaCategory, doaOfDay, DOA_CATEGORIES, repeatCount } from '../doa';
 
 test('test_repeatCount_threeTimes_returnsThree', () => {
   expect(repeatCount('Dibaca 3x')).toBe(3);
@@ -20,4 +20,12 @@ test('test_categories_allHaveArabicText', () => {
 
 test('test_doaCategory_unknownId_isUndefined', () => {
   expect(doaCategory('x')).toBeUndefined();
+});
+
+test('test_doaOfDay_sameDay_sameDoa', () => {
+  expect(doaOfDay(new Date(2026, 8, 26, 5))).toBe(doaOfDay(new Date(2026, 8, 26, 23)));
+});
+
+test('test_doaOfDay_nextDay_changes', () => {
+  expect(doaOfDay(new Date(2026, 8, 27))).not.toBe(doaOfDay(new Date(2026, 8, 26)));
 });

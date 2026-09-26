@@ -1,18 +1,15 @@
 import { Stack } from 'expo-router';
 
-import { fonts } from '@/constants/theme';
 import { useTheme } from '@/providers/ThemeProvider';
+import { stackHeader } from '@/components/ui/stackHeader';
 
 export default function HaidLayout() {
   const { colors } = useTheme();
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: colors.background },
-        headerTintColor: colors.primaryDeep,
-        headerTitleStyle: { fontFamily: fonts.display },
-        headerShadowVisible: false,
-        contentStyle: { backgroundColor: colors.background },
+        ...stackHeader(colors),
+        contentStyle: { backgroundColor: 'transparent' },
       }}>
       <Stack.Screen name="index" options={{ title: 'Haid' }} />
       <Stack.Screen name="calendar" options={{ title: 'Kalender' }} />

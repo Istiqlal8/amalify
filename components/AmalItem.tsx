@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 
-import { type Palette, radius, space } from '@/constants/theme';
+import { type Palette, radius, space, frostOf } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
 import { useTheme } from '@/providers/ThemeProvider';
 
@@ -60,9 +60,7 @@ const makeStyles = (c: Palette) =>
       minHeight: 56,
       paddingHorizontal: space.md,
       borderRadius: radius.md,
-      backgroundColor: c.card,
-      borderWidth: 2,
-      borderColor: c.border,
+      ...frostOf(c),
     },
     rowDone: { backgroundColor: c.muted, borderColor: c.secondary },
     box: {

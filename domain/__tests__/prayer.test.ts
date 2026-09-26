@@ -1,6 +1,6 @@
 import { expect, test } from '@jest/globals';
 
-import { countdown, monthsToLoad, todayOf, upcomingPrayers, type PrayerDay } from '../prayer';
+import { cityLabel, countdown, monthsToLoad, todayOf, upcomingPrayers, type PrayerDay } from '../prayer';
 
 const day = (date: string): PrayerDay => ({
   date, subuh: '04:35', dzuhur: '11:53', ashar: '15:11', maghrib: '17:56', isya: '19:01',
@@ -30,4 +30,8 @@ test('test_countdown_underAMinute_saysSo', () => {
 
 test('test_monthsToLoad_december_rollsIntoNextYear', () => {
   expect(monthsToLoad(new Date(2026, 11, 20))).toEqual([{ year: 2026, month: 12 }, { year: 2027, month: 1 }]);
+});
+
+test('test_cityLabel_capitals_becomeTitleCase', () => {
+  expect(cityLabel('KAB. BANDUNG BARAT')).toBe('Kab. Bandung Barat');
 });

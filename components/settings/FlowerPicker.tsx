@@ -50,7 +50,7 @@ const makeStyles = (c: Palette) =>
       gap: space.sm,
       paddingHorizontal: space.sm,
       borderRadius: radius.md,
-      borderWidth: 2,
+      borderWidth: 1,
       borderColor: c.border,
       backgroundColor: c.background,
     },

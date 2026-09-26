@@ -6,6 +6,7 @@ import { DoaCard } from '@/components/doa/DoaCard';
 import { type Palette, space } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
 import { doaCategory } from '@/domain/doa';
+import { SoftBackdrop } from '@/components/ui/SoftBackdrop';
 
 export default function DoaListScreen() {
   const styles = useStyles(makeStyles);
@@ -14,6 +15,7 @@ export default function DoaListScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={['bottom']}>
+      <SoftBackdrop />
       <Stack.Screen options={{ title: category?.title ?? 'Doa' }} />
       <FlatList
         data={category?.items ?? []}
@@ -27,6 +29,6 @@ export default function DoaListScreen() {
 
 const makeStyles = (c: Palette) =>
   StyleSheet.create({
-    safe: { flex: 1, backgroundColor: c.background },
+    safe: { flex: 1 },
     content: { padding: space.md, gap: space.md, paddingBottom: space.xl },
   });

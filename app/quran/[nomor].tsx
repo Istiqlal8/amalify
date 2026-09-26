@@ -3,7 +3,11 @@ import { FlatList, StyleSheet, View } from 'react-native';
 
 import { AyahCard } from '@/components/quran/AyahCard';
 import { ClayButton } from '@/components/ui/ClayButton';
+import { GradientFill } from '@/components/ui/GradientFill';
+import { SoftBackdrop } from '@/components/ui/SoftBackdrop';
+import { stackHeader } from '@/components/ui/stackHeader';
 import { Txt } from '@/components/ui/Txt';
+import { pastels } from '@/constants/pastel';
 import { fonts, type Palette, radius, space } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
 import { useTheme } from '@/providers/ThemeProvider';
@@ -17,6 +21,7 @@ function Header({ surah }: { surah: SurahDetail }) {
   const styles = useStyles(makeStyles);
   return (
     <View style={styles.hero}>
+      <GradientFill from={pastels.lavender.tint} to={pastels.rose.tint} />
       <Txt style={styles.heroArab}>{surah.nama}</Txt>
       <Txt variant="heading" style={styles.onPink}>{surah.namaLatin}</Txt>
       <Txt style={styles.onPinkSoft}>
@@ -35,13 +40,11 @@ export default function SurahScreen() {
 
   return (
     <View style={styles.screen}>
+      <SoftBackdrop />
       <Stack.Screen
         options={{
           title: data?.namaLatin ?? '',
-          headerStyle: { backgroundColor: colors.background },
-          headerTintColor: colors.primaryDeep,
-          headerTitleStyle: { fontFamily: fonts.display },
-          headerShadowVisible: false,
+          ...stackHeader(colors),
         }}
       />
       {error && (
@@ -68,7 +71,7 @@ export default function SurahScreen() {
 
 const makeStyles = (c: Palette) =>
   StyleSheet.create({
-    screen: { flex: 1, backgroundColor: c.background },
+    screen: { flex: 1 },
     content: { padding: space.md, gap: space.sm, paddingBottom: space.xl },
     message: { padding: space.md, gap: space.md },
     hero: {
@@ -77,10 +80,12 @@ const makeStyles = (c: Palette) =>
       padding: space.lg,
       marginBottom: space.sm,
       borderRadius: radius.lg,
-      backgroundColor: c.primaryDeep,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.95)',
     },
-    heroArab: { fontFamily: fonts.arabic, fontSize: 34, lineHeight: 64, color: c.onPrimary },
-    basmalah: { fontFamily: fonts.arabic, fontSize: 24, lineHeight: 52, color: c.onPrimary, marginTop: space.sm },
-    onPink: { color: c.onPrimary },
-    onPinkSoft: { color: c.onPrimarySoft, textAlign: 'center' },
+    heroArab: { fontFamily: fonts.arabic, fontSize: 34, lineHeight: 64, color: c.foreground },
+    basmalah: { fontFamily: fonts.arabic, fontSize: 24, lineHeight: 52, color: c.foreground, marginTop: space.sm },
+    onPink: { color: c.foreground },
+    onPinkSoft: { color: c.foreground, textAlign: 'center' },
   });

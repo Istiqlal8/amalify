@@ -88,7 +88,7 @@ const makeStyles = (c: Palette) =>
       paddingHorizontal: space.md,
       borderRadius: radius.pill,
       backgroundColor: c.muted,
-      borderWidth: 2,
+      borderWidth: 1,
       borderColor: c.border,
     },
     card: {
