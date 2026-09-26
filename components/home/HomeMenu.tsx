@@ -12,6 +12,7 @@ type Entry = { href: Href; label: string; icon: SymbolViewProps['name'] };
 const ENTRIES: Entry[] = [
   { href: '/amal-yaumi', label: 'Amal Yaumi', icon: { ios: 'checklist', android: 'checklist', web: 'checklist' } },
   { href: '/quran', label: 'Baca Quran', icon: { ios: 'book', android: 'menu_book', web: 'menu_book' } },
+  { href: '/murottal', label: 'Murottal', icon: { ios: 'headphones', android: 'headphones', web: 'headphones' } },
   { href: '/tilawah', label: 'Tilawah', icon: { ios: 'bookmark', android: 'bookmark_added', web: 'bookmark_added' } },
   { href: '/doa', label: 'Doa', icon: { ios: 'hands.sparkles', android: 'front_hand', web: 'front_hand' } },
   { href: '/haid', label: 'Haid', icon: { ios: 'drop', android: 'water_drop', web: 'water_drop' } },

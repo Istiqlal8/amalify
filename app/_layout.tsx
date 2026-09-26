@@ -11,6 +11,7 @@ import 'react-native-reanimated';
 import { pastels } from '@/constants/pastel';
 import { AuthProvider } from '@/providers/AuthProvider';
 import { LogsProvider } from '@/providers/LogsProvider';
+import { MurottalProvider } from '@/providers/MurottalProvider';
 import { PrayerProvider } from '@/providers/PrayerProvider';
 import { ReminderProvider } from '@/providers/ReminderProvider';
 import { AppThemeProvider, useTheme } from '@/providers/ThemeProvider';
@@ -59,12 +60,15 @@ export default function RootLayout() {
         <LogsProvider>
           <PrayerProvider>
             <ReminderProvider>
-              <StatusBar style="dark" />
-              <Stack>
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="haid" options={{ headerShown: false }} />
-                <Stack.Screen name="doa" options={{ headerShown: false }} />
-              </Stack>
+              <MurottalProvider>
+                <StatusBar style="dark" />
+                <Stack>
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                  <Stack.Screen name="haid" options={{ headerShown: false }} />
+                  <Stack.Screen name="doa" options={{ headerShown: false }} />
+                  <Stack.Screen name="murottal" options={{ headerShown: false }} />
+                </Stack>
+              </MurottalProvider>
             </ReminderProvider>
           </PrayerProvider>
         </LogsProvider>

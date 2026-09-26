@@ -3,6 +3,7 @@ import { BottomTabBar, Tabs } from 'expo-router/tabs';
 import { View, type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { MiniPlayer } from '@/components/murottal/MiniPlayer';
 import { fonts, radius } from '@/constants/theme';
 import { useTheme } from '@/providers/ThemeProvider';
 
@@ -22,6 +23,7 @@ export default function TabLayout() {
       tabBar={(props) => (
         // Overlays the screen so content scrolls behind the translucent pill.
         <View pointerEvents="box-none" style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}>
+          <MiniPlayer />
           <BottomTabBar {...props} />
         </View>
       )}
