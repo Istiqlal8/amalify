@@ -1,14 +1,15 @@
 import { type Facing, PLOT_COLS, PLOT_ROWS, type Point, SCENE_COLS, SCENE_ROWS, START } from './farm';
-import { type FlowerId, FLOWERS } from './flowers';
+import { type FlowerId, FLOWERS, isFlowerId } from './flowers';
+import { isPetId, type PetId } from './pets';
 import { type PlantStage, stageFromPercent } from './plantStage';
 
-export const ANIMALS = ['rabbit', 'chick', 'cat', 'pig', 'fox', 'mouse'] as const;
+export const ANIMALS = ['rabbit', 'chick', 'cat', 'fox'] as const;
 export type Animal = (typeof ANIMALS)[number];
 /** The fenced field holds 4 rows of 7 beds. */
 export const MAX_BEDS = PLOT_COLS * PLOT_ROWS;
 
 export type MemberBed = { userId: string; name: string; percent: number; stage: PlantStage; row: number; col: number };
-export type PresenceMeta = { userId: string; name: string; animal: Animal };
+export type PresenceMeta = { userId: string; name: string; animal: Animal; flower: FlowerId; pet: PetId | null };
 export type Player = PresenceMeta & Point & { facing: Facing; moving: boolean };
 export type Players = Record<string, Player>;
 export type PosMessage = Point & { userId: string; facing: Facing; moving: boolean };
@@ -57,7 +58,8 @@ export function parsePresence(state: Record<string, unknown[]>): PresenceMeta[] 
     if (!isRecord(meta) || typeof meta.userId !== 'string') return [];
     const name = typeof meta.name === 'string' ? meta.name.slice(0, 40) : 'Teman';
     const animal = ANIMALS.includes(meta.animal as Animal) ? (meta.animal as Animal) : animalFor(meta.userId);
-    return [{ userId: meta.userId, name, animal }];
+    const flower = typeof meta.flower === 'string' && isFlowerId(meta.flower) ? meta.flower : flowerFor(meta.userId);
+    return [{ userId: meta.userId, name, animal, flower, pet: isPetId(meta.pet) ? meta.pet : null }];
   });
 }
 

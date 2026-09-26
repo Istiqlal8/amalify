@@ -74,7 +74,8 @@ export function mergeLogs(a: Logs, b: Logs): Logs {
   return merged;
 }
 
-function hasProgress(entry: DayEntry | undefined): boolean {
+/** A day counts towards a streak once anything was done. */
+export function hasProgress(entry: DayEntry | undefined): boolean {
   return Object.values(entry?.counts ?? {}).some((n) => n > 0);
 }
 

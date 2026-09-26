@@ -14,6 +14,7 @@ import { CELL_ASPECT, type Facing, facing, nearPlot, type Point, START, step } f
 import type { Animal } from '@/domain/groupFarm';
 
 import { CharacterSprite } from './CharacterSprite';
+import { CHARACTERS } from './farmSprites';
 
 const HOPS_PER_SEC = 3;
 const MAX_DT = 0.05; // seconds; avoids a big jump after a dropped frame
@@ -28,18 +29,26 @@ export function useMotion(): Motion {
   return useMemo(() => ({ vec, pos, face }), [vec, pos, face]);
 }
 
-type Props = { cell: number; motion: Motion; animal: Animal; onNearPlot: (index: number) => void };
+type Props = {
+  cell: number;
+  motion: Motion;
+  animal: Animal;
+  grid?: string[]; // collision grid; the single-field farm when absent
+  near?: (pos: Point) => number; // worklet: bed index at a position
+  onNearPlot: (index: number) => void;
+};
 
 /** The joystick-driven character; purely visual, never catches taps. */
-export function Walker({ cell, motion, animal, onNearPlot }: Props) {
+export function Walker({ cell, motion, animal, grid, near, onNearPlot }: Props) {
   const { pos, face } = motion;
   const walked = useSharedValue(-1); // seconds spent walking, drives the hop; -1 = idle
-  useFrameCallback(({ timeSincePreviousFrame }) => tick(motion, walked, timeSincePreviousFrame ?? 16));
+  useFrameCallback(({ timeSincePreviousFrame }) => tick(motion, walked, timeSincePreviousFrame ?? 16, grid));
   useAnimatedReaction(
-    () => nearPlot(pos.value),
+    () => (near ? near(pos.value) : nearPlot(pos.value)),
     (index, prev) => {
       if (index !== prev) scheduleOnRN(onNearPlot, index);
     },
+    [near],
   );
   const move = useAnimatedStyle(() => ({
     transform: [{ translateX: pos.value.x * cell }, { translateY: (pos.value.y + 1) * cell * CELL_ASPECT - cell }],
@@ -47,13 +56,13 @@ export function Walker({ cell, motion, animal, onNearPlot }: Props) {
   const hop = useDerivedValue(() => (walked.value < 0 ? 0 : Math.abs(Math.sin(walked.value * HOPS_PER_SEC * Math.PI))));
   return (
     <Animated.View style={[styles.walker, { width: cell, height: cell }, move]}>
-      <CharacterSprite animal={animal} face={face} hop={hop} cell={cell} />
+      <CharacterSprite art={CHARACTERS[animal]} face={face} hop={hop} cell={cell} />
     </Animated.View>
   );
 }
 
 /** One frame of movement: face the stick, step with collisions, advance the hop clock. */
-function tick(m: Motion, walked: SharedValue<number>, frameMs: number): void {
+function tick(m: Motion, walked: SharedValue<number>, frameMs: number, grid: string[] | undefined): void {
   'worklet';
   const v = m.vec.value;
   m.face.value = facing(v, m.face.value);
@@ -62,7 +71,7 @@ function tick(m: Motion, walked: SharedValue<number>, frameMs: number): void {
     return;
   }
   const dt = Math.min(frameMs / 1000, MAX_DT);
-  m.pos.value = step(m.pos.value, v, dt);
+  m.pos.value = step(m.pos.value, v, dt, grid);
   walked.value = Math.max(walked.value, 0) + dt;
 }
 

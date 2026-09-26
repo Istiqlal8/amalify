@@ -1,16 +1,17 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { space } from '@/constants/theme';
-import { plotTile } from '@/domain/farm';
-import { animalFor, buildGroupFarm, firstName, flowerFor, type MemberBed } from '@/domain/groupFarm';
+import { plotTile, SCENE_ROWS } from '@/domain/farm';
+import { buildGroupFarm, firstName, flowerFor, type MemberBed } from '@/domain/groupFarm';
 import { useFarmPresence } from '@/hooks/useFarmPresence';
+import { useLogs } from '@/providers/LogsProvider';
 import { useTheme } from '@/providers/ThemeProvider';
 import type { MemberToday } from '@/services/groupService';
 
+import { GroupBackground } from './Backgrounds';
 import { BedTile } from './BedTile';
 import { FarmStage } from './FarmStage';
-import { SCENE_GROUP } from './farmSprites';
 import { RemotePlayer } from './RemotePlayer';
 import { useMotion } from './Walker';
 
@@ -23,19 +24,24 @@ export function GroupFarmScene({ groupId, members, userId, name }: Props) {
   const [near, setNear] = useState(-1);
   const motion = useMotion();
   const { flower } = useTheme();
-  const players = useFarmPresence(groupId, userId, name, motion);
+  const { animal, theme, pet } = useLogs().unlocks;
+  const me = useMemo(() => ({ userId, name, animal, flower, pet }), [userId, name, animal, flower, pet]);
+  const players = useFarmPresence(groupId, me, motion);
   const bottom = useSafeAreaInsets().bottom + space.md;
   const beds = buildGroupFarm(members);
   const current = beds[near];
 
   return (
     <FarmStage
-      scene={SCENE_GROUP}
+      theme={theme}
+      rows={SCENE_ROWS}
+      background={(cell, art) => <GroupBackground cell={cell} art={art} />}
       top={0}
       bottom={bottom}
       caption={current ? captionOf(current) : null}
       motion={motion}
-      animal={animalFor(userId)}
+      animal={animal}
+      pet={pet}
       onNearPlot={setNear}>
       {(cell) => (
         <>
@@ -45,7 +51,7 @@ export function GroupFarmScene({ groupId, members, userId, name }: Props) {
               x={plotTile(bed).x}
               y={plotTile(bed).y}
               cell={cell}
-              flower={bed.userId === userId ? flower : flowerFor(bed.userId)}
+              flower={bed.userId === userId ? flower : (players[bed.userId]?.flower ?? flowerFor(bed.userId))}
               stage={bed.stage}
               drawBed
               label={captionOf(bed)}

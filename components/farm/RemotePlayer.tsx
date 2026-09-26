@@ -4,6 +4,7 @@ import Animated, {
   cancelAnimation,
   Easing,
   useAnimatedStyle,
+  useDerivedValue,
   useSharedValue,
   withRepeat,
   withSequence,
@@ -15,6 +16,8 @@ import { CELL_ASPECT, type Facing } from '@/domain/farm';
 import { firstName, type Player } from '@/domain/groupFarm';
 
 import { CharacterSprite } from './CharacterSprite';
+import { PetFollower } from './PetFollower';
+import { CHARACTERS } from './farmSprites';
 
 const GLIDE_MS = 150; // a little longer than the ~125ms between updates, so motion stays smooth
 const HOP_MS = 160;
@@ -39,13 +42,17 @@ export function RemotePlayer({ player, cell }: { player: Player; cell: number })
   const move = useAnimatedStyle(() => ({
     transform: [{ translateX: x.value * cell }, { translateY: (y.value + 1) * cell * CELL_ASPECT - cell }],
   }));
+  const owner = useDerivedValue(() => ({ x: x.value, y: y.value }));
   return (
-    <Animated.View style={[styles.player, { width: cell, height: cell }, move]}>
-      <CharacterSprite animal={player.animal} face={face} hop={hop} cell={cell} />
-      <Text numberOfLines={1} style={[styles.name, { width: cell + 24, fontSize, top: -fontSize - 2 }]}>
-        {firstName(player.name)}
-      </Text>
-    </Animated.View>
+    <>
+      {player.pet && <PetFollower key={player.pet} owner={owner} pet={player.pet} cell={cell} />}
+      <Animated.View style={[styles.player, { width: cell, height: cell }, move]}>
+        <CharacterSprite art={CHARACTERS[player.animal]} face={face} hop={hop} cell={cell} />
+        <Text numberOfLines={1} style={[styles.name, { width: cell + 24, fontSize, top: -fontSize - 2 }]}>
+          {firstName(player.name)}
+        </Text>
+      </Animated.View>
+    </>
   );
 }
 

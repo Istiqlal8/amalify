@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { AppState } from 'react-native';
 
 import type { Motion } from '@/components/farm/Walker';
-import { animalFor, applyPos, mergePresence, parsePresence, type Players, type PosMessage } from '@/domain/groupFarm';
+import { applyPos, mergePresence, parsePresence, type Players, type PosMessage, type PresenceMeta } from '@/domain/groupFarm';
 import { supabase } from '@/services/supabase';
 
 const SEND_EVERY_MS = 125; // ~8 position updates per second while moving
@@ -19,11 +19,12 @@ const posOf = (userId: string, m: Motion): PosMessage => ({
  * Joins the realtime channel `group-farm:<groupId>`: tracks who is on the farm (presence) and
  * shares positions (broadcast 'pos'). Leaves when unmounted or when the app goes to the background.
  */
-export function useFarmPresence(groupId: string | null, userId: string | null, name: string, motion: Motion): Players {
+export function useFarmPresence(groupId: string | null, me: PresenceMeta | null, motion: Motion): Players {
   const [players, setPlayers] = useState<Players>({});
   const active = useAppActive();
   useEffect(() => {
-    if (!supabase || !groupId || !userId || !active) return;
+    if (!supabase || !groupId || !me || !active) return;
+    const { userId } = me;
     const db = supabase;
     const channel = db.channel(`group-farm:${groupId}`, { config: { presence: { key: userId } } });
     const send = () => channel.send({ type: 'broadcast', event: 'pos', payload: posOf(userId, motion) });
@@ -31,7 +32,7 @@ export function useFarmPresence(groupId: string | null, userId: string | null, n
       .on('presence', { event: 'sync' }, () => setPlayers((p) => mergePresence(p, parsePresence(channel.presenceState()), userId)))
       .on('presence', { event: 'join' }, ({ key }) => key !== userId && send())
       .on('broadcast', { event: 'pos' }, ({ payload }) => setPlayers((p) => applyPos(p, payload)))
-      .subscribe((status) => status === 'SUBSCRIBED' && channel.track({ userId, name, animal: animalFor(userId) }));
+      .subscribe((status) => status === 'SUBSCRIBED' && channel.track(me));
     let wasMoving = false;
     const timer = setInterval(() => {
       const moving = motion.vec.value.x !== 0 || motion.vec.value.y !== 0;
@@ -43,7 +44,7 @@ export function useFarmPresence(groupId: string | null, userId: string | null, n
       db.removeChannel(channel);
       setPlayers({});
     };
-  }, [groupId, userId, name, active, motion]);
+  }, [groupId, me, active, motion]);
   return players;
 }
 

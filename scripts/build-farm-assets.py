@@ -19,11 +19,13 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
+from farm_themes import THEMES, night_tint, recolour_cat
+
 CW, CH = 256, 128  # one cell at the packs' @2x size
 COLS, ROWS = 9, 36
 OUT_SCALE = 0.5
 PLOT_LEFT, PLOT_TOP, PLOT_ROW_STEP = 1, 14, 2
-ANIMALS = ['Rabbit', 'Chick', 'Cat', 'Pig', 'Fox', 'Mouse']
+ANIMALS = ['Rabbit', 'Chick', 'Cat', 'Fox']
 
 GRASS, GRASS_DARK = (99, 166, 66), (87, 157, 78)
 PATH, PATH_EDGE = (217, 162, 77), (186, 132, 58)
@@ -132,8 +134,8 @@ def save(img: Image.Image, name: str) -> None:
     shrink(img).save(OUT / name, optimize=True)
 
 
-def build_scene(packs: Packs, with_beds: bool, name: str) -> None:
-    """scene.png has the 28 empty beds baked in; scene_group.png leaves the field open."""
+def compose_scene(packs: Packs, with_beds: bool) -> Image.Image:
+    """The single-field farm (group farm), optionally with the 28 empty beds (shop previews)."""
     canvas = Image.new('RGBA', (COLS * CW, ROWS * CH), GRASS + (255,))
     draw_ground(canvas)
     draw_pond(canvas, packs)
@@ -142,7 +144,66 @@ def build_scene(packs: Packs, with_beds: bool, name: str) -> None:
     if with_beds:
         draw_beds(canvas, packs)
     draw_fence(canvas, packs)
-    save(canvas.convert('RGB'), name)
+    return shrink(canvas.convert('RGB'))
+
+
+def save_with_themes(img: Image.Image, name: str) -> None:
+    img.save(OUT / f'{name}.png', optimize=True)
+    for theme, recolour in THEMES.items():
+        save_quantized(recolour(img), f'{name}_{theme}.png')
+
+
+# --- Kebun world: header (houses + path), one block per month, a closing row of trees --------
+HEADER_ROWS, BLOCK_ROWS, TAIL_ROWS = 11, 16, 3  # keep in sync with domain/farmWorld.ts
+
+
+def month_block(packs: Packs) -> Image.Image:
+    """One month: a fenced field with gates top and bottom on the path; beds are drawn at runtime."""
+    canvas = Image.new('RGBA', (COLS * CW, BLOCK_ROWS * CH), GRASS + (255,))
+    draw = ImageDraw.Draw(canvas)
+    draw.rectangle((0.5 * CW, 1.5 * CH, 8.5 * CW, 15.5 * CH), fill=GRASS_DARK)
+    band(draw, (4.2 * CW, -60, 4.8 * CW, 2.4 * CH))
+    band(draw, (4.2 * CW, 14.6 * CH, 4.8 * CW, BLOCK_ROWS * CH + 60))
+    f = lambda name: packs.art('Fences', f'Fence_{name}')  # noqa: E731
+    gate = [f('Horizontal')] * 2 + [f('Right'), None, f('Left')] + [f('Horizontal')] * 2
+    for col, piece in enumerate([f('Corner_Bottom_Right')] + gate + [f('Corner_Bottom_Left')]):
+        if piece:
+            put(canvas, piece, col, 1)
+    for row in range(2, 15):
+        put(canvas, f('Vertical'), 0, row)
+        put(canvas, f('Vertical'), 8, row)
+    for col, piece in enumerate([f('Corner_Top_Right')] + gate + [f('Corner_Top_Left')]):
+        if piece:
+            put(canvas, piece, col, 15)
+    return shrink(canvas.convert('RGB'))
+
+
+def world_tail(packs: Packs) -> Image.Image:
+    canvas = Image.new('RGBA', (COLS * CW, TAIL_ROWS * CH), GRASS + (255,))
+    band(ImageDraw.Draw(canvas), (4.2 * CW, -60, 4.8 * CW, 0.8 * CH))
+    tree = packs.art('Objects', 'Tree')
+    for col in (-0.4, 1.0, 2.6, 4.2, 5.8, 7.4):
+        put(canvas, tree, col, TAIL_ROWS - 1)
+    return shrink(canvas.convert('RGB'))
+
+
+def build_world(packs: Packs, open_field: Image.Image) -> None:
+    rows = round(HEADER_ROWS * CH * OUT_SCALE)
+    save_with_themes(open_field.crop((0, 0, open_field.width, rows)), 'world_top')
+    save_with_themes(month_block(packs), 'world_month')
+    save_with_themes(world_tail(packs), 'world_bottom')
+
+
+def save_quantized(img: Image.Image, name: str) -> None:
+    img.quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE).save(OUT / name, optimize=True)
+
+
+def build_previews(scene: Image.Image) -> None:
+    """Shop thumbnails: the houses, path and top of the field in each theme."""
+    crop = scene.crop((0, 2 * CH * OUT_SCALE, COLS * CW * OUT_SCALE, 15 * CH * OUT_SCALE))
+    looks = {'musim-semi': crop, 'malam': night_tint(crop), **{t: f(crop) for t, f in THEMES.items()}}
+    for theme, img in looks.items():
+        save_quantized(img.resize((288, round(288 * img.height / img.width)), Image.LANCZOS), f'theme_{theme}.png')
 
 
 def build_beds(packs: Packs) -> None:
@@ -155,15 +216,31 @@ def build_animals(packs: Packs) -> None:
             save(packs.art('Characters', f'{animal}_{facing}'), f'{animal.lower()}_{facing.lower()}.png')
 
 
+PETS = {'kucing': ('Cat', None), 'anak-ayam': ('Chick', None), 'kelinci': ('Rabbit', None), 'kucing-oranye': ('Cat', 'oranye'), 'kucing-putih': ('Cat', 'putih')}
+PET_SCALE = 0.375  # pets are drawn at about three quarters of a cell
+
+
+def build_pets(packs: Packs) -> None:
+    for pet, (animal, look) in PETS.items():
+        for facing in ('Down', 'Left', 'Up', 'Right'):
+            img = packs.art('Characters', f'{animal}_{facing}')
+            img = recolour_cat(img, look) if look else img
+            size = (round(img.width * PET_SCALE), round(img.height * PET_SCALE))
+            img.resize(size, Image.LANCZOS).save(OUT / f'pet_{pet}_{facing.lower()}.png', optimize=True)
+
+
 def main() -> None:
     if len(sys.argv) != 2:
         sys.exit('usage: build-farm-assets.py <assets_dir>')
     packs = Packs(Path(sys.argv[1]).resolve())
     OUT.mkdir(parents=True, exist_ok=True)
-    build_scene(packs, True, 'scene.png')
-    build_scene(packs, False, 'scene_group.png')
+    build_previews(compose_scene(packs, True))
+    open_field = compose_scene(packs, False)
+    save_with_themes(open_field, 'scene_group')
+    build_world(packs, open_field)
     build_beds(packs)
     build_animals(packs)
+    build_pets(packs)
 
 
 if __name__ == '__main__':

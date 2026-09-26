@@ -5,7 +5,7 @@ import { FLOWERS } from '../flowers';
 import { animalFor, ANIMALS, applyPos, flowerFor, buildGroupFarm, firstName, mergePresence, parsePresence, type Players } from '../groupFarm';
 
 const member = (name: string, percent = 0) => ({ userId: `id-${name}`, name, percent });
-const player = { userId: 'b', name: 'Bila', animal: 'cat' as const, x: 4, y: 10, facing: 'down' as const, moving: false };
+const player = { userId: 'b', name: 'Bila', animal: 'cat' as const, flower: 'mawar' as const, pet: null, x: 4, y: 10, facing: 'down' as const, moving: false };
 
 test('test_buildGroupFarm_eightMembers_wrapsToSecondRow', () => {
   const beds = buildGroupFarm(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map((n) => member(n)));
@@ -54,8 +54,8 @@ test('test_flowerFor_manyIds_usesSeveralValidSpecies', () => {
 });
 
 test('test_parsePresence_badEntries_areSkipped', () => {
-  expect(parsePresence({ a: [{ userId: 'a', name: 'Ana', animal: 'fox' }], b: [{ nope: 1 }] })).toEqual([
-    { userId: 'a', name: 'Ana', animal: 'fox' },
+  expect(parsePresence({ a: [{ userId: 'a', name: 'Ana', animal: 'fox', flower: 'tulip' }], b: [{ nope: 1 }] })).toEqual([
+    { userId: 'a', name: 'Ana', animal: 'fox', flower: 'tulip', pet: null },
   ]);
 });
 
@@ -63,18 +63,26 @@ test('test_parsePresence_unknownAnimal_fallsBackToHash', () => {
   expect(parsePresence({ a: [{ userId: 'a', name: 'Ana', animal: 'dragon' }] })[0].animal).toBe(animalFor('a'));
 });
 
+test('test_parsePresence_missingFlower_fallsBackToHash', () => {
+  expect(parsePresence({ a: [{ userId: 'a', name: 'Ana', animal: 'fox' }] })[0].flower).toBe(flowerFor('a'));
+});
+
+test('test_parsePresence_removedPig_fallsBackToHash', () => {
+  expect(parsePresence({ a: [{ userId: 'a', name: 'Ana', animal: 'pig' }] })[0].animal).toBe(animalFor('a'));
+});
+
 test('test_mergePresence_newcomer_startsAtStart', () => {
-  const next = mergePresence({}, [{ userId: 'b', name: 'Bila', animal: 'cat' }], 'me');
+  const next = mergePresence({}, [{ userId: 'b', name: 'Bila', animal: 'cat', flower: 'mawar', pet: null }], 'me');
   expect(next.b).toMatchObject({ x: START.x, y: START.y });
 });
 
 test('test_mergePresence_me_isSkipped', () => {
-  expect(mergePresence({}, [{ userId: 'me', name: 'Aku', animal: 'pig' }], 'me')).toEqual({});
+  expect(mergePresence({}, [{ userId: 'me', name: 'Aku', animal: 'cat', flower: 'daisy', pet: null }], 'me')).toEqual({});
 });
 
 test('test_mergePresence_leaver_isDropped_knownKeepsPosition', () => {
   const players: Players = { b: { ...player, x: 6 }, c: { ...player, userId: 'c' } };
-  const next = mergePresence(players, [{ userId: 'b', name: 'Bila', animal: 'cat' }], 'me');
+  const next = mergePresence(players, [{ userId: 'b', name: 'Bila', animal: 'cat', flower: 'mawar', pet: null }], 'me');
   expect(Object.keys(next)).toEqual(['b']);
   expect(next.b.x).toBe(6);
 });
@@ -92,4 +100,9 @@ test('test_applyPos_unknownOrMalformed_isIgnored', () => {
 
 test('test_applyPos_outOfBounds_isClamped', () => {
   expect(applyPos({ b: player }, { userId: 'b', x: 999, y: -5, facing: 'up', moving: false }).b).toMatchObject({ x: 8, y: 0 });
+});
+
+test('test_parsePresence_pet_keptWhenAllowedElseNone', () => {
+  const metas = parsePresence({ a: [{ userId: 'a', name: 'A', pet: 'kelinci' }], b: [{ userId: 'b', name: 'B', pet: 'anjing' }] });
+  expect(metas.map((m) => m.pet)).toEqual(['kelinci', null]);
 });

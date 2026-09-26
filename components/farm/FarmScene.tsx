@@ -1,52 +1,97 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { type SharedValue, useAnimatedReaction } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { type FarmPlot, plotCaption, plotTile } from '@/domain/farm';
+import { pastPercent } from '@/domain/dayLog';
+import { type FarmDay, plotCaption, type Point } from '@/domain/farm';
+import { buildWorld, fieldAtRow, slotIndex, type WorldField, type WorldPlot, worldCollision, worldNear, worldRows } from '@/domain/farmWorld';
+import { isHaidDay, itemsForDay } from '@/domain/haid';
 import { useTabBarSpace } from '@/hooks/useTabBarSpace';
+import { useLogs } from '@/providers/LogsProvider';
 import { useTheme } from '@/providers/ThemeProvider';
 
-import { BedTile } from './BedTile';
+import { WorldBackground } from './Backgrounds';
 import { FarmStage } from './FarmStage';
-import { SCENE } from './farmSprites';
+import { MonthField } from './MonthField';
 import { useMotion } from './Walker';
 
-const captionOf = (plot: FarmPlot, isToday: boolean) => `${plotCaption(plot.key, plot.percent)}${isToday ? ' · hari ini' : ''}`;
+const GRID = worldCollision();
+const ROWS = worldRows();
 
-/** The personal Kebun: one bed per day for the last 28 days, oldest top-left, today last. */
-export function FarmScene({ plots }: { plots: FarmPlot[] }) {
+const captionOf = (plot: WorldPlot, today: string) => `${plotCaption(plot.key, plot.percent)}${plot.key === today ? ' · hari ini' : ''}`;
+
+/** Kebunku: one fenced field per month for the last 12 months, this month by the house; the camera follows the character. */
+export function FarmScene() {
   const [near, setNear] = useState(-1);
   const motion = useMotion();
   const { flower } = useTheme();
+  const { animal, theme, pet } = useLogs().unlocks;
   const top = useSafeAreaInsets().top;
   const bottom = useTabBarSpace();
-  const todayIndex = plots.length - 1;
+  const { today, fields, plots, nearFn } = useWorld();
+  const field = useCameraField(motion.pos);
   const current = plots[near];
 
   return (
     <FarmStage
-      scene={SCENE}
+      theme={theme}
+      rows={ROWS}
+      background={(cell, art) => <WorldBackground cell={cell} art={art} />}
+      grid={GRID}
+      near={nearFn}
+      camera
       top={top}
       bottom={bottom}
-      caption={current ? captionOf(current, near === todayIndex) : null}
+      caption={current ? captionOf(current, today) : null}
       motion={motion}
-      animal="rabbit"
+      animal={animal}
+      pet={pet}
       onNearPlot={setNear}>
       {(cell) =>
-        plots.map((plot, i) => (
-          <BedTile
-            key={plot.key}
-            x={plotTile(plot).x}
-            y={plotTile(plot).y}
+        fields.map((f) => (
+          <MonthField
+            key={f.label}
+            field={f}
             cell={cell}
             flower={flower}
-            stage={plot.stage}
-            label={`${captionOf(plot, i === todayIndex)}${plot.onHaid ? ', haid' : ''}`}
-            highlight={i === todayIndex}
-            active={i === near}
-            marker={plot.onHaid}
+            today={today}
+            active={current?.key ?? null}
+            showBeds={f.index >= field - 1 && f.index <= field + 2}
           />
         ))
       }
     </FarmStage>
   );
+}
+
+/** The 12 fields from the logs, the flat plot list and a worklet that finds the bed at a position. */
+function useWorld(): { today: string; fields: WorldField[]; plots: WorldPlot[]; nearFn: (p: Point) => number } {
+  const { logs, plan, haid, today, todayPercent } = useLogs();
+  return useMemo(() => {
+    const dayOf = (key: string): FarmDay => {
+      const onHaid = isHaidDay(haid, key);
+      const percent = key === today ? todayPercent : pastPercent(logs[key], itemsForDay(plan.items, onHaid));
+      return { key, percent, onHaid };
+    };
+    const fields = buildWorld(today, dayOf);
+    const slots = slotIndex(fields);
+    const nearFn = (p: Point) => {
+      'worklet';
+      return worldNear(slots, p);
+    };
+    return { today, fields, plots: fields.flatMap((f) => f.plots), nearFn };
+  }, [logs, plan.items, haid, today, todayPercent]);
+}
+
+/** The field the character is in, updated on the JS side only when it changes. */
+function useCameraField(pos: SharedValue<Point>): number {
+  const [field, setField] = useState(0);
+  useAnimatedReaction(
+    () => fieldAtRow(pos.value.y + 0.55),
+    (f, prev) => {
+      if (f !== prev) scheduleOnRN(setField, f);
+    },
+  );
+  return field;
 }

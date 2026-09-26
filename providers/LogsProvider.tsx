@@ -3,12 +3,14 @@ import { createContext, useCallback, useContext, useEffect, useMemo, type Dispat
 import { countOf, dateKey, dayPercent, mergeLogs, resnapshot, setCount, type DayEntry, type Logs } from '@/domain/dayLog';
 import * as haids from '@/domain/haid';
 import * as plans from '@/domain/plan';
+import { EMPTY_UNLOCKS, mergeUnlocks, type Unlocks } from '@/domain/shop';
 import { useDriveSync, type SyncStatus } from '@/hooks/useDriveSync';
 import { useGroupSummary } from '@/hooks/useGroupSummary';
 import { usePersisted } from '@/hooks/usePersisted';
 import { useAuth } from '@/providers/AuthProvider';
 import type { DriveFile } from '@/storage/driveStore';
 import * as store from '@/storage/localStore';
+import { loadUnlocks, saveUnlocks } from '@/storage/unlockStore';
 
 type Actions = {
   setToday: (id: string, value: number) => void;
@@ -20,6 +22,9 @@ type Actions = {
 };
 
 type LogsState = Actions & {
+  /** Shop purchases; read and changed through useRewards. */
+  unlocks: Unlocks;
+  setUnlocks: Dispatch<SetStateAction<Unlocks>>;
   setHaidStart: (start: string) => void;
   removeHaid: (start: string) => void;
   addHaid: (start: string, end: string) => void;
@@ -43,15 +48,17 @@ export function LogsProvider({ children }: { children: ReactNode }) {
   const [logs, setLogs, logsLoaded] = usePersisted<Logs>({}, store.loadLogs, store.saveLogs);
   const [plan, setPlan, planLoaded] = usePersisted(plans.DEFAULT_PLAN, store.loadPlan, store.savePlan);
   const [haid, setHaid, haidLoaded] = usePersisted(haids.EMPTY_HAID, store.loadHaid, store.saveHaid);
-  const loaded = logsLoaded && planLoaded && haidLoaded;
+  const [unlocks, setUnlocks, unlocksLoaded] = usePersisted<Unlocks>(EMPTY_UNLOCKS, loadUnlocks, saveUnlocks);
+  const loaded = logsLoaded && planLoaded && haidLoaded && unlocksLoaded;
   const today = dateKey(new Date());
 
   const applyRemote = useCallback((remote: DriveFile) => {
     setLogs((l) => mergeLogs(l, remote.logs));
     setPlan((p) => plans.newerPlan(p, remote.plan));
     setHaid((h) => haids.newerHaid(h, remote.haid));
-  }, [setLogs, setPlan, setHaid]);
-  const local = useMemo(() => ({ logs, plan, haid }), [logs, plan, haid]);
+    setUnlocks((u) => mergeUnlocks(u, remote.unlocks));
+  }, [setLogs, setPlan, setHaid, setUnlocks]);
+  const local = useMemo(() => ({ logs, plan, haid, unlocks }), [logs, plan, haid, unlocks]);
   const sync = useDriveSync(user !== null, loaded, local, applyRemote);
 
   const todayHaid = haids.isHaidDay(haid, today);
@@ -87,8 +94,8 @@ export function LogsProvider({ children }: { children: ReactNode }) {
     [setHaid],
   );
   const value = useMemo(
-    () => ({ logs, plan, haid, today, todayHaid, loaded, todayEntry, todayPercent, sync, setHaidStart, removeHaid, addHaid, editHaid, ...actions }),
-    [logs, plan, haid, today, todayHaid, loaded, todayEntry, todayPercent, sync, setHaidStart, removeHaid, addHaid, editHaid, actions],
+    () => ({ logs, plan, haid, today, todayHaid, loaded, todayEntry, todayPercent, sync, setHaidStart, removeHaid, addHaid, editHaid, unlocks, setUnlocks, ...actions }),
+    [logs, plan, haid, today, todayHaid, loaded, todayEntry, todayPercent, sync, setHaidStart, removeHaid, addHaid, editHaid, unlocks, setUnlocks, actions],
   );
   return <LogsContext.Provider value={value}>{children}</LogsContext.Provider>;
 }

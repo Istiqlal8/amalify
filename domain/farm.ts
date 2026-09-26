@@ -1,4 +1,3 @@
-import { type PlantStage, stageFromPercent } from './plantStage';
 
 /**
  * Collision grid in scene cells ('#' solid, '.' walkable). Top: hedge, trees and
@@ -58,17 +57,8 @@ export const PLOT_ROWS = 4;
 export const WALK_CELLS_PER_SEC = 3;
 
 export type FarmDay = { key: string; percent: number; onHaid: boolean };
-export type FarmPlot = FarmDay & { row: number; col: number; stage: PlantStage };
 export type Point = { x: number; y: number };
 export type Facing = 'down' | 'left' | 'up' | 'right';
-
-/** Lays the days (oldest first) out in rows of seven: row = week, col = day within that week. */
-export function buildFarm(days: FarmDay[]): FarmPlot[] {
-  return days.map((day, i) => {
-    const row = Math.floor(i / PLOT_COLS);
-    return { ...day, row, col: i % PLOT_COLS, stage: stageFromPercent(day.percent) };
-  });
-}
 
 /** Scene cell a plot's bed stands on. */
 export function plotTile(plot: { row: number; col: number }): Point {
@@ -87,34 +77,34 @@ export function plotCaption(key: string, percent: number): string {
 /** Where the character starts: on the path, just above the gate. */
 export const START: Point = { x: 4, y: 10 };
 
-export function isWalkable(cellX: number, cellY: number): boolean {
+export function isWalkable(cellX: number, cellY: number, grid?: string[]): boolean {
   'worklet';
-  const row = COLLISION[cellY];
+  const row = (grid ?? COLLISION)[cellY];
   return row !== undefined && row[cellX] === '.';
 }
 
 // Feet hitbox inside the character's cell (position = the cell's top-left corner, in cells).
 const FEET = { left: 0.25, right: 0.75, top: 0.2, bottom: 0.9 };
 
-function feetFit(x: number, y: number): boolean {
+function feetFit(x: number, y: number, grid?: string[]): boolean {
   'worklet';
   const x0 = Math.floor(x + FEET.left);
   const x1 = Math.floor(x + FEET.right);
   const y0 = Math.floor(y + FEET.top);
   const y1 = Math.floor(y + FEET.bottom);
-  return isWalkable(x0, y0) && isWalkable(x1, y0) && isWalkable(x0, y1) && isWalkable(x1, y1);
+  return isWalkable(x0, y0, grid) && isWalkable(x1, y0, grid) && isWalkable(x0, y1, grid) && isWalkable(x1, y1, grid);
 }
 
 /**
- * Moves `pos` by joystick `vec` (each axis -1..1) for `dt` seconds, resolving
+ * Moves `pos` by joystick `vec` (each axis -1..1) for `dt` seconds on `grid` (default: the single-field farm), resolving
  * collisions per axis so the character slides along walls instead of sticking.
  */
-export function step(pos: Point, vec: Point, dt: number): Point {
+export function step(pos: Point, vec: Point, dt: number, grid?: string[]): Point {
   'worklet';
   const nx = pos.x + vec.x * WALK_CELLS_PER_SEC * dt;
-  const x = feetFit(nx, pos.y) ? nx : pos.x;
+  const x = feetFit(nx, pos.y, grid) ? nx : pos.x;
   const ny = pos.y + (vec.y * WALK_CELLS_PER_SEC * dt) / CELL_ASPECT;
-  const y = feetFit(x, ny) ? ny : pos.y;
+  const y = feetFit(x, ny, grid) ? ny : pos.y;
   return { x, y };
 }
 

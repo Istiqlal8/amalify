@@ -1,25 +1,6 @@
 import { expect, test } from '@jest/globals';
 
-import { buildFarm, type FarmDay, facing, isWalkable, nearPlot, plotCaption, plotTile, START, step } from '../farm';
-
-const days = (percents: number[]): FarmDay[] =>
-  percents.map((percent, i) => ({ key: `2026-09-${String(i + 1).padStart(2, '0')}`, percent, onHaid: false }));
-
-test('test_buildFarm_28days_fillsFourRowsOfSeven', () => {
-  const plots = buildFarm(days(Array(28).fill(50)));
-  expect(plots).toHaveLength(28);
-  expect(plots[27]).toMatchObject({ row: 3, col: 6 });
-});
-
-test('test_buildFarm_oldestDay_isTopLeft', () => {
-  const plots = buildFarm(days(Array(28).fill(0)));
-  expect(plots[0]).toMatchObject({ key: '2026-09-01', row: 0, col: 0 });
-});
-
-test('test_buildFarm_percent_mapsToPlantStage', () => {
-  const plots = buildFarm(days([0, 10, 40, 70, 100]));
-  expect(plots.map((p) => p.stage)).toEqual([0, 1, 2, 3, 4]);
-});
+import { facing, isWalkable, nearPlot, plotCaption, plotTile, START, step } from '../farm';
 
 test('test_plotTile_secondRow_skipsAWalkway', () => {
   expect(plotTile({ row: 1, col: 0 })).toEqual({ x: 1, y: 16 });
