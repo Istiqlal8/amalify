@@ -1,6 +1,6 @@
 import { expect, test } from '@jest/globals';
 
-import { HOUSE_PRICES, isHouseId, isMountId, MOUNT_PRICES } from '../estate';
+import { HOUSE_PRICES, isHouseId, isMountId, JUMP_SECONDS, jumpArc, MOUNT_PRICES } from '../estate';
 import { buy, chooseHouse, chooseMount, EMPTY_UNLOCKS, mergeUnlocks, owns, spent } from '../shop';
 
 const horse = { kind: 'mount', id: 'kuda' } as const;
@@ -45,4 +45,10 @@ test('test_mergeUnlocks_mountsAndHouses_unionAndNewerChoice', () => {
   const merged = mergeUnlocks(EMPTY_UNLOCKS, remote);
   expect(merged.mounts).toEqual(['kuda']);
   expect(merged).toMatchObject({ houses: ['bata'], mount: 'kuda', house: 'bata' });
+});
+
+test('test_jumpArc_peaksMidJumpAndRestsOnGround', () => {
+  expect(jumpArc(-1)).toBe(0);
+  expect(jumpArc(JUMP_SECONDS / 2)).toBeCloseTo(1);
+  expect(jumpArc(JUMP_SECONDS)).toBe(0);
 });

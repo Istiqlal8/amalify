@@ -50,10 +50,14 @@ function fade(player: ReturnType<typeof useAudioPlayer>, target: number): () => 
   let step = 0;
   const timer = setInterval(() => {
     step += 1;
-    player.volume = from + ((target - from) * step) / FADE_STEPS;
-    if (step < FADE_STEPS) return;
-    clearInterval(timer);
-    if (target === 0) player.pause();
+    try {
+      player.volume = from + ((target - from) * step) / FADE_STEPS;
+      if (step < FADE_STEPS) return;
+      clearInterval(timer);
+      if (target === 0) player.pause();
+    } catch {
+      clearInterval(timer); // the player was released (screen left mid-fade)
+    }
   }, FADE_MS / FADE_STEPS);
   return () => clearInterval(timer);
 }

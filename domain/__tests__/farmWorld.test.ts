@@ -1,6 +1,6 @@
 import { expect, test } from '@jest/globals';
 
-import { step } from '../farm';
+import { land, step } from '../farm';
 import {
   BLOCK_COLS,
   BLOCK_FIELD,
@@ -14,6 +14,7 @@ import {
   groupLayout,
   monthAverage,
   monthLabel,
+  pondRects,
   monthList,
   RING,
   slotIndex,
@@ -93,7 +94,7 @@ test('test_worldCollision_size_isWholeMap', () => {
 test('test_worldCollision_startAndGates_areOpen', () => {
   expect(grid[WORLD_START.y][WORLD_START.x]).toBe('.');
   expect([4, 5, 6].map((c) => grid[1][BLOCK_COLS + c])).toEqual(['.', '.', '.']);
-  expect(grid[1][BLOCK_COLS + 3]).toBe('#');
+  expect(grid[1][BLOCK_COLS + 3]).toBe('-'); // fence: low, jumpable
 });
 
 test('test_groupLayout_twentyFields_addsTwoRowsBelow', () => {
@@ -128,4 +129,38 @@ test('test_worldNear_emptySlotOrYard_isNone', () => {
 
 test('test_buildingSprite_mainHouse_coversFootprintPlusRoof', () => {
   expect(buildingSprite('H')).toEqual({ x: BLOCK_COLS + 1, y: BLOCK_ROWS + 3 - 0.6, w: 4, h: 6.6 });
+});
+
+test('test_pondRects_yard_hasTwoRectangularPonds', () => {
+  expect(pondRects()).toEqual([
+    { x: BLOCK_COLS + 18, y: BLOCK_ROWS + 3, w: 4, h: 5 },
+    { x: BLOCK_COLS + 7, y: BLOCK_ROWS + 22, w: 4, h: 5 },
+  ]);
+});
+
+test('test_worldCollision_fencesLow_fillersAndTreesTall', () => {
+  expect(grid[5][BLOCK_COLS + 1]).toBe('-'); // side fence
+  expect(grid[5][BLOCK_COLS]).toBe('#'); // trees/hedge filler between fields
+  expect(grid[BLOCK_ROWS + 1][BLOCK_COLS]).toBe('#'); // yard tree
+});
+
+test('test_step_jumping_crossesFenceButWalkingDoesNot', () => {
+  const at = { x: BLOCK_COLS + 2, y: 5 }; // just inside the field, fence on the left
+  const walked = walk(at, { x: -1, y: 0 }, 0.5);
+  let jumped = at;
+  for (let t = 0; t < 0.5; t += 0.05) jumped = step(jumped, { x: -1, y: 0 }, 0.05, grid, true);
+  expect(walked.x).toBeGreaterThan(BLOCK_COLS + 1);
+  expect(jumped.x).toBeLessThan(walked.x);
+});
+
+test('test_land_onFence_carriesOnToOpenGround', () => {
+  const mid = { x: BLOCK_COLS + 3.4, y: 0.3 }; // feet on the top fence row
+  const spot = land(mid, { x: BLOCK_COLS + 3.4, y: 3 }, { x: 0, y: -1 }, grid);
+  expect(spot.y).toBeLessThan(0.3);
+  expect(Math.floor(spot.y + 0.9)).toBe(0); // on the path row, not the fence
+});
+
+test('test_land_nowhereToLand_returnsToTakeoff', () => {
+  const takeoff = { x: BLOCK_COLS + 2, y: 5 };
+  expect(land({ x: BLOCK_COLS + 0.9, y: 5 }, takeoff, { x: -1, y: 0 }, grid)).toEqual(takeoff);
 });

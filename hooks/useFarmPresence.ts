@@ -13,7 +13,12 @@ const posOf = (userId: string, m: Motion): PosMessage => ({
   y: m.pos.value.y,
   facing: m.face.value,
   moving: m.vec.value.x !== 0 || m.vec.value.y !== 0,
+  riding: m.speed.value > 1,
+  jumping: m.jump.value >= 0,
 });
+
+/** What others need to redraw us: changes in this trigger a send even when standing still. */
+const stanceOf = (m: Motion) => `${m.speed.value > 1}|${m.jump.value >= 0}`;
 
 /**
  * Joins the realtime channel `group-farm:<groupId>`: tracks who is on the farm (presence) and
@@ -34,10 +39,14 @@ export function useFarmPresence(groupId: string | null, me: PresenceMeta | null,
       .on('broadcast', { event: 'pos' }, ({ payload }) => setPlayers((p) => applyPos(p, payload)))
       .subscribe((status) => status === 'SUBSCRIBED' && channel.track(me));
     let wasMoving = false;
+    let stance = stanceOf(motion);
     const timer = setInterval(() => {
       const moving = motion.vec.value.x !== 0 || motion.vec.value.y !== 0;
-      if (moving || wasMoving) send(); // keep sending while moving, plus once on stopping
+      const now = stanceOf(motion);
+      // Keep sending while moving, once on stopping, and whenever we mount, dismount or jump.
+      if (moving || wasMoving || now !== stance) send();
       wasMoving = moving;
+      stance = now;
     }, SEND_EVERY_MS);
     return () => {
       clearInterval(timer);

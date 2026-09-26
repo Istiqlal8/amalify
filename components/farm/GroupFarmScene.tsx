@@ -18,6 +18,8 @@ import { FarmStage } from './FarmStage';
 import { MonthField } from './MonthField';
 import { RemotePlayer } from './RemotePlayer';
 import { useCurrentBlock } from './useCurrentBlock';
+import { RideButton } from './RideButton';
+import { useRiding } from './useRiding';
 import { placeCharacter, useMotion } from './Walker';
 import { MapControls, WorldMap } from './WorldMap';
 
@@ -31,7 +33,7 @@ export function GroupFarmScene({ groupId, members, userId, name }: Props) {
   const [mapOpen, setMapOpen] = useState(false);
   const motion = useMotion(world.WORLD_START);
   const { flower } = useTheme();
-  const { animal, theme, pet } = useLogs().unlocks;
+  const { animal, theme, pet, house, mount } = useLogs().unlocks;
   const me = useMemo(() => ({ userId, name, animal, flower, pet }), [userId, name, animal, flower, pet]);
   const players = useFarmPresence(groupId, me, motion);
   const bottom = useSafeAreaInsets().bottom + space.md;
@@ -39,7 +41,8 @@ export function GroupFarmScene({ groupId, members, userId, name }: Props) {
   const block = useCurrentBlock(motion.pos, layout.blockRows);
   const current = beds[near];
   const audio = useFarmAudio(theme);
-  const { onStep, onGrab, onBed } = useFarmSfx(audio.sfx, false);
+  const ride = useRiding(motion, mount);
+  const { onStep, onGrab, onBed } = useFarmSfx(audio.sfx, false, ride.riding !== null);
   const flowerOf = (id: string) => (id === userId ? flower : (players[id]?.flower ?? flowerFor(id)));
   const goTo = (index: number) => {
     placeCharacter(motion, world.gateOf(index, layout.ring));
@@ -59,7 +62,7 @@ export function GroupFarmScene({ groupId, members, userId, name }: Props) {
       theme={theme}
       rows={layout.blockRows * world.BLOCK_ROWS}
       cols={world.WORLD_COLS}
-      background={(cell, art) => <WorldBackground cell={cell} art={art} ring={layout.ring} />}
+      background={(cell, art) => <WorldBackground cell={cell} art={art} ring={layout.ring} house={house} />}
       grid={grid}
       near={nearFn}
       camera
@@ -70,11 +73,14 @@ export function GroupFarmScene({ groupId, members, userId, name }: Props) {
       motion={motion}
       animal={animal}
       pet={pet}
+      riding={ride.riding}
       onNearPlot={onNearPlot}
       onStep={onStep}
       onGrab={onGrab}
+      onLand={() => audio.sfx('land')}
       overlay={
         <>
+          {mount && <RideButton bottom={bottom} riding={ride.riding !== null} onToggle={ride.toggle} onJump={ride.jump} />}
           <MapControls top={space.md} onMap={() => setMapOpen(true)} soundOn={audio.on} onSound={audio.toggle} />
           {mapOpen && <WorldMap fields={fields} today={today} pos={motion.pos} layout={layout} onPick={goTo} onClose={() => setMapOpen(false)} />}
         </>

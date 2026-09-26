@@ -5,7 +5,7 @@ import { FLOWERS } from '../flowers';
 import { animalFor, ANIMALS, applyPos, flowerFor, buildGroupWorld, firstName, MAX_FIELDS, mergePresence, parsePresence, type Players } from '../groupFarm';
 
 const member = (name: string, days: Record<string, number> = {}) => ({ userId: `id-${name}`, name, days });
-const player = { userId: 'b', name: 'Bila', animal: 'cat' as const, flower: 'mawar' as const, pet: null, x: 4, y: 10, facing: 'down' as const, moving: false };
+const player = { userId: 'b', name: 'Bila', animal: 'cat' as const, flower: 'mawar' as const, pet: null, x: 4, y: 10, facing: 'down' as const, moving: false, riding: false, jumping: false };
 const TODAY = '2026-09-26';
 
 test('test_buildGroupWorld_me_getsFirstSlotOthersByName', () => {
@@ -109,4 +109,19 @@ test('test_applyPos_outOfBounds_isClamped', () => {
 test('test_parsePresence_pet_keptWhenAllowedElseNone', () => {
   const metas = parsePresence({ a: [{ userId: 'a', name: 'A', pet: 'kelinci' }], b: [{ userId: 'b', name: 'B', pet: 'anjing' }] });
   expect(metas.map((m) => m.pet)).toEqual(['kelinci', null]);
+});
+
+test('test_applyPos_riding_andJumpingAreKept', () => {
+  const next = applyPos({ b: player }, { userId: 'b', x: 2, y: 15, facing: 'left', moving: true, riding: true, jumping: true });
+  expect(next.b).toMatchObject({ riding: true, jumping: true });
+});
+
+test('test_applyPos_jumpingWithoutHorseOrJunk_isFalse', () => {
+  const next = applyPos({ b: player }, { userId: 'b', x: 2, y: 15, riding: 'yes', jumping: true });
+  expect(next.b).toMatchObject({ riding: false, jumping: false });
+});
+
+test('test_mergePresence_newcomer_isOnFoot', () => {
+  const next = mergePresence({}, [{ userId: 'b', name: 'Bila', animal: 'cat', flower: 'mawar', pet: null }], 'me');
+  expect(next.b).toMatchObject({ riding: false, jumping: false });
 });

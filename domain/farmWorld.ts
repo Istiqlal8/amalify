@@ -67,7 +67,7 @@ export const CENTER_MAP = [
 // CENTER_MAP_END
 
 /** A field block: path on row 0, fence with a 3-cell gate on rows 1 and 15, hedges/trees on the outer columns. */
-const FIELD_BLOCK = ['...........', '####...####', ...Array<string>(13).fill('##.......##'), '####...####'];
+const FIELD_BLOCK = ['...........', '#---...---#', ...Array<string>(13).fill('#-.......-#'), '#---...---#'];
 
 /** Sprites rise this far above their footprint (keep in sync with scripts/farm_world.py). */
 export const HOUSE_EXTRA_ROWS = 0.6;
@@ -83,6 +83,24 @@ export function buildingSprite(mark: 'H' | 'B'): { x: number; y: number; w: numb
   const r0 = Math.min(...cells.map((p) => p.r));
   const r1 = Math.max(...cells.map((p) => p.r));
   return { x: BLOCK_COLS + c0, y: BLOCK_ROWS + r0 - HOUSE_EXTRA_ROWS, w: c1 - c0 + 1, h: r1 - r0 + 1 + HOUSE_EXTRA_ROWS };
+}
+
+/** The yard's ponds as rectangles in map cells (each connected run of 'W'). */
+export function pondRects(): { x: number; y: number; w: number; h: number }[] {
+  const seen = new Set<string>();
+  const rects: { x: number; y: number; w: number; h: number }[] = [];
+  CENTER_MAP.forEach((line, r) =>
+    [...line].forEach((c, col) => {
+      if (c !== 'W' || seen.has(`${col},${r}`)) return;
+      let w = 0;
+      while (line[col + w] === 'W') w++;
+      let h = 0;
+      while (CENTER_MAP[r + h]?.[col] === 'W') h++;
+      for (let y = r; y < r + h; y++) for (let x = col; x < col + w; x++) seen.add(`${x},${y}`);
+      rects.push({ x: BLOCK_COLS + col, y: BLOCK_ROWS + r, w, h });
+    }),
+  );
+  return rects;
 }
 
 /** Lantern glow for the night theme: in front of the house and the barn doors. */
@@ -158,7 +176,9 @@ export function gateOf(index: number, ring = RING): Point {
   return { x: bx * BLOCK_COLS + GATE_COL, y: by * BLOCK_ROWS };
 }
 
-const SOLID_YARD = new Set(['H', 'B', 'W', 'T', 'b', 'r']);
+const SOLID_YARD = new Set(['H', 'B', 'W', 'T', 'b']);
+/** Low enough for a horse to jump. */
+const LOW_YARD = new Set(['r']);
 
 /** Collision grid for the whole map (blockRows × BLOCK_ROWS strings of WORLD_COLS). */
 export function worldCollision(blockRows = GRID): string[] {
@@ -173,7 +193,7 @@ function blockRow(bx: number, by: number, local: number): string {
   const inYard = bx >= 1 && bx <= 2 && by >= 1 && by <= 2;
   if (!inYard) return FIELD_BLOCK[local];
   const yard = CENTER_MAP[(by - 1) * BLOCK_ROWS + local].slice((bx - 1) * BLOCK_COLS, bx * BLOCK_COLS);
-  return [...yard].map((c) => (SOLID_YARD.has(c) ? '#' : '.')).join('');
+  return [...yard].map((c) => (SOLID_YARD.has(c) ? '#' : LOW_YARD.has(c) ? '-' : '.')).join('');
 }
 
 /** Which block each field sits on, and how many block rows the map has. */

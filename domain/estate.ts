@@ -20,3 +20,14 @@ export function isMountId(value: unknown): value is MountId {
 export function isHouseId(value: unknown): value is HouseId {
   return typeof value === 'string' && (HOUSES as readonly string[]).includes(value);
 }
+
+/** A horse jump: how long it lasts and how high the arc goes (in cells). */
+export const JUMP_SECONDS = 0.5;
+export const JUMP_HEIGHT = 0.9;
+
+/** 0..1 height of the jump arc at `elapsed` seconds into a jump (0 when not jumping). */
+export function jumpArc(elapsed: number): number {
+  'worklet';
+  if (elapsed < 0 || elapsed >= JUMP_SECONDS) return 0;
+  return Math.sin((elapsed / JUMP_SECONDS) * Math.PI);
+}

@@ -12,54 +12,53 @@ import type { ThemeId } from '@/domain/shop';
 export type Particles = 'petals' | 'snow' | 'fireflies' | null;
 
 /**
- * Per garden theme: the Kebun map tiles (yard and field blocks), the
- * group farm scene (one open field), the grass colour past the scene's edge, the shop preview and
+ * Per garden theme: the village map tiles (yard and field blocks), the grass colour past the scene's edge, the shop preview and
  * runtime extras.
  */
 export type ThemeArt = {
   /** Kebunku map tiles: the yard (middle 2×2 blocks) and field blocks, used in turn around the ring. */
   world: { yard: ImageSourcePropType; fields: ImageSourcePropType[] };
-  groupScene: ImageSourcePropType;
   fill: string;
   preview: ImageSourcePropType;
   particles: Particles;
   night: boolean;
+  /** Winter: snowy houses and frozen ponds (no fish). */
+  frozen: boolean;
 };
 
 const BASE = {
   world: { yard: require('@/assets/farm/world_yard.png'), fields: [require('@/assets/farm/world_field_trees.png'), require('@/assets/farm/world_field_roses.png'), require('@/assets/farm/world_field_bushes.png')] },
-  groupScene: require('@/assets/farm/scene_group.png'),
   fill: '#63A642',
 };
 
 export const THEME_ART: Record<ThemeId, ThemeArt> = {
-  'musim-semi': { ...BASE, preview: require('@/assets/farm/theme_musim-semi.png'), particles: null, night: false },
+  'musim-semi': { ...BASE, preview: require('@/assets/farm/theme_musim-semi.png'), particles: null, night: false, frozen: false },
   sakura: {
     world: { yard: require('@/assets/farm/world_yard_sakura.png'), fields: [require('@/assets/farm/world_field_trees_sakura.png'), require('@/assets/farm/world_field_roses_sakura.png'), require('@/assets/farm/world_field_bushes_sakura.png')] },
-    groupScene: require('@/assets/farm/scene_group_sakura.png'),
     fill: '#88AE68',
     preview: require('@/assets/farm/theme_sakura.png'),
     particles: 'petals',
     night: false,
+    frozen: false,
   },
   pantai: {
     world: { yard: require('@/assets/farm/world_yard_pantai.png'), fields: [require('@/assets/farm/world_field_trees_pantai.png'), require('@/assets/farm/world_field_roses_pantai.png'), require('@/assets/farm/world_field_bushes_pantai.png')] },
-    groupScene: require('@/assets/farm/scene_group_pantai.png'),
     fill: '#F0DBA8',
     preview: require('@/assets/farm/theme_pantai.png'),
     particles: null,
     night: false,
+    frozen: false,
   },
   salju: {
     world: { yard: require('@/assets/farm/world_yard_salju.png'), fields: [require('@/assets/farm/world_field_trees_salju.png'), require('@/assets/farm/world_field_roses_salju.png'), require('@/assets/farm/world_field_bushes_salju.png')] },
-    groupScene: require('@/assets/farm/scene_group_salju.png'),
     fill: '#F0F6FC',
     preview: require('@/assets/farm/theme_salju.png'),
     particles: 'snow',
     night: false,
+    frozen: true,
   },
   // Night tints the scene at runtime; the fill is the grass under the same tint.
-  malam: { ...BASE, fill: '#3D6248', preview: require('@/assets/farm/theme_malam.png'), particles: 'fireflies', night: true },
+  malam: { ...BASE, fill: '#3D6248', preview: require('@/assets/farm/theme_malam.png'), particles: 'fireflies', night: true, frozen: false },
 };
 
 const ANIMAL_ART = {
@@ -151,4 +150,16 @@ export const HOUSE_ART: Record<HouseId, { main: ImageSourcePropType; side: Image
   kayu: { main: require('@/assets/farm/house_kayu_main.png'), side: require('@/assets/farm/house_kayu_side.png') },
   bata: { main: require('@/assets/farm/house_bata_main.png'), side: require('@/assets/farm/house_bata_side.png') },
   mewah: { main: require('@/assets/farm/house_mewah_main.png'), side: require('@/assets/farm/house_mewah_side.png') },
+};
+
+/** Snow-capped houses for the winter theme, and warm window light drawn over the night tint. */
+export const HOUSE_SNOW: Record<HouseId, { main: ImageSourcePropType; side: ImageSourcePropType }> = {
+  kayu: { main: require('@/assets/farm/house_kayu_main_salju.png'), side: require('@/assets/farm/house_kayu_side_salju.png') },
+  bata: { main: require('@/assets/farm/house_bata_main_salju.png'), side: require('@/assets/farm/house_bata_side_salju.png') },
+  mewah: { main: require('@/assets/farm/house_mewah_main_salju.png'), side: require('@/assets/farm/house_mewah_side_salju.png') },
+};
+export const HOUSE_GLOW: Record<HouseId, { main: ImageSourcePropType; side: ImageSourcePropType }> = {
+  kayu: { main: require('@/assets/farm/house_kayu_main_glow.png'), side: require('@/assets/farm/house_kayu_side_glow.png') },
+  bata: { main: require('@/assets/farm/house_bata_main_glow.png'), side: require('@/assets/farm/house_bata_side_glow.png') },
+  mewah: { main: require('@/assets/farm/house_mewah_main_glow.png'), side: require('@/assets/farm/house_mewah_side_glow.png') },
 };

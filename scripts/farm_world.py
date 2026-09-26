@@ -6,18 +6,37 @@ at runtime, and the outer columns hold the decoration between fields (trees, ros
 """
 import re
 from pathlib import Path
-from typing import Callable
-
 from PIL import Image, ImageDraw
 
 from farm_art import BARN, CH, CW, GRASS, GRASS_DARK, HOUSE, OUT, PATH, Packs, band, kenney, put, shrink
-from farm_themes import recolour_roof
+from farm_props import dress, snow_cap, window_glow
+from farm_themes import THEMES, recolour_roof
 
 BLOCK_COLS, BLOCK_ROWS = 11, 16  # keep in sync with domain/farmWorld.ts
 GATE = 5
 WATER, WATER_EDGE = (88, 169, 255), (49, 118, 255)
 FLOWERS = [(244, 143, 177), (255, 213, 79), (255, 255, 255)]
 DOMAIN = Path(__file__).resolve().parent.parent / 'domain' / 'farmWorld.ts'
+
+
+# Which dressing a pack sprite gets (see farm_props.dress).
+PROP_KIND = {'Tree': 'tree', 'Bush': 'bush', 'Hedge_Roses': 'hedge'}
+
+
+class DressedPacks:
+    """The same packs, with every prop sprite dressed for one theme (None = plain spring)."""
+
+    def __init__(self, packs: Packs, theme: str | None) -> None:
+        self.packs, self.theme, self.svg = packs, theme, packs.svg
+        self.cache: dict[tuple[str, str], Image.Image] = {}
+
+    def art(self, folder: str, name: str) -> Image.Image:
+        key = (folder, name)
+        if key not in self.cache:
+            kind = 'fence' if folder == 'Fences' else PROP_KIND.get(name)
+            img = self.packs.art(folder, name)
+            self.cache[key] = dress(img, self.theme, kind) if kind else img
+        return self.cache[key]
 
 
 def center_map() -> list[str]:
@@ -123,16 +142,31 @@ def _building(packs: Packs, box: tuple[float, float, float, float], cols: int, r
 
 
 def build_houses(packs: Packs) -> None:
-    """house_<tier>_main.png (on the 'H' footprint) and house_<tier>_side.png (on 'B'), drawn over the yard at runtime."""
+    """Per tier and building ('main' on 'H', 'side' on 'B'): the house, a snowy variant and a night window-glow layer."""
     grid = center_map()
     for tier, (main, side, roof) in HOUSE_TIERS.items():
         for mark, box, part in (('H', main, 'main'), ('B', side, 'side')):
             c0, r0, c1, r1 = _bbox(grid, mark)
-            shrink(_building(packs, box, c1 - c0 + 1, r1 - r0 + 1, roof)).save(OUT / f'house_{tier}_{part}.png', optimize=True)
+            house = _building(packs, box, c1 - c0 + 1, r1 - r0 + 1, roof)
+            name = f'house_{tier}_{part}'
+            shrink(house).save(OUT / f'{name}.png', optimize=True)
+            shrink(snow_cap(house, 48)).save(OUT / f'{name}_salju.png', optimize=True)
+            shrink(window_glow(house)).save(OUT / f'{name}_glow.png', optimize=True)
 
 
-def build_world(packs: Packs, save: Callable[[Image.Image, str], None]) -> None:
-    save(yard(packs), 'world_yard')
+def _save(img: Image.Image, name: str, theme: str | None) -> None:
+    if theme is None:
+        img.save(OUT / f'{name}.png', optimize=True)
+    else:
+        themed = THEMES[theme](img).quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
+        themed.save(OUT / f'{name}_{theme}.png', optimize=True)
+
+
+def build_world(packs: Packs) -> None:
+    """Yard and field blocks for spring and every theme: props dressed first, then the ground recoloured."""
+    for theme in (None, *THEMES):
+        dressed = DressedPacks(packs, theme)
+        _save(yard(dressed), 'world_yard', theme)
+        for variant in ('trees', 'roses', 'bushes'):
+            _save(field_block(dressed, variant), f'world_field_{variant}', theme)
     build_houses(packs)
-    for variant in ('trees', 'roses', 'bushes'):
-        save(field_block(packs, variant), f'world_field_{variant}')

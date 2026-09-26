@@ -30,6 +30,8 @@ type Props = {
   lanterns?: Point[]; // night theme glow, in scene cells
   /** Extra UI above the scene and joystick (e.g. the map button). */
   overlay?: ReactNode;
+  /** Lights that shine through the night tint (house windows), in scene coordinates. */
+  nightLights?: (cell: number) => ReactNode;
   top: number; // scene offset from the top of the screen
   bottom: number; // space to keep clear at the bottom (tab bar, home indicator)
   caption: string | null;
@@ -39,6 +41,7 @@ type Props = {
   riding?: MountId | null; // the horse the character sits on, if riding
   onNearPlot: (index: number) => void;
   onStep?: (x: number, y: number) => void;
+  onLand?: () => void;
   onGrab?: () => void;
   /** Beds and other characters, placed in scene coordinates with the given cell width. */
   children: (cell: number) => ReactNode;
@@ -64,8 +67,9 @@ export function FarmStage(props: Props) {
           {props.background(cell, art)}
           {children(cell)}
           {props.pet && <PetFollower key={props.pet} owner={motion.pos} pet={props.pet} cell={cell} />}
-          <Walker cell={cell} motion={motion} animal={props.animal} mount={props.riding} grid={props.grid} near={props.near} onNearPlot={props.onNearPlot} onStep={props.onStep} />
+          <Walker cell={cell} motion={motion} animal={props.animal} mount={props.riding} grid={props.grid} near={props.near} onNearPlot={props.onNearPlot} onStep={props.onStep} onLand={props.onLand} />
           {art.night && <NightOverlay cell={cell} width={size.width} height={size.height} lanterns={props.lanterns} />}
+          {art.night && props.nightLights?.(cell)}
         </Animated.View>
       )}
       <ThemeParticles kind={art.particles} width={area.width} height={area.height} />

@@ -13,6 +13,7 @@ export const AMBIENCE_SOURCES: Record<Ambience, number> = {
 const SFX_SOURCES: Record<Sfx, number> = {
   step: require('@/assets/sounds/farm/sfx_step.m4a'),
   hoof: require('@/assets/sounds/farm/sfx_hoof.m4a'),
+  land: require('@/assets/sounds/farm/sfx_hoof.m4a'), // same clop, louder, as the horse touches down
   bed: require('@/assets/sounds/farm/sfx_bed.m4a'),
   grab: require('@/assets/sounds/farm/sfx_grab.m4a'),
   buy: require('@/assets/sounds/farm/sfx_buy.m4a'),

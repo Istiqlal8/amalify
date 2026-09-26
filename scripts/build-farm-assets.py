@@ -102,12 +102,6 @@ def compose_scene(packs: Packs, with_beds: bool) -> Image.Image:
     return shrink(canvas.convert('RGB'))
 
 
-def save_with_themes(img: Image.Image, name: str) -> None:
-    img.save(OUT / f'{name}.png', optimize=True)
-    for theme, recolour in THEMES.items():
-        save_quantized(recolour(img), f'{name}_{theme}.png')
-
-
 def save_quantized(img: Image.Image, name: str) -> None:
     img.quantize(colors=256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE).save(OUT / name, optimize=True)
 
@@ -149,9 +143,7 @@ def main() -> None:
     packs = Packs(Path(sys.argv[1]).resolve())
     OUT.mkdir(parents=True, exist_ok=True)
     build_previews(compose_scene(packs, True))
-    open_field = compose_scene(packs, False)
-    save_with_themes(open_field, 'scene_group')
-    build_world(packs, save_with_themes)
+    build_world(packs)
     build_beds(packs)
     build_animals(packs)
     build_pets(packs)

@@ -6,9 +6,10 @@ import { isPetId, type PetId } from './pets';
 export const ANIMALS = ['rabbit', 'chick', 'cat', 'fox'] as const;
 export type Animal = (typeof ANIMALS)[number];
 export type PresenceMeta = { userId: string; name: string; animal: Animal; flower: FlowerId; pet: PetId | null };
-export type Player = PresenceMeta & Point & { facing: Facing; moving: boolean };
+/** `riding`: on their horse; `jumping`: mid horse-jump (only while riding). */
+export type Player = PresenceMeta & Point & { facing: Facing; moving: boolean; riding: boolean; jumping: boolean };
 export type Players = Record<string, Player>;
-export type PosMessage = Point & { userId: string; facing: Facing; moving: boolean };
+export type PosMessage = Point & { userId: string; facing: Facing; moving: boolean; riding: boolean; jumping: boolean };
 
 /** A member and their shared percentage per day (YYYY-MM-DD). */
 export type MemberMonth = { userId: string; name: string; days: Record<string, number> };
@@ -83,7 +84,7 @@ export function mergePresence(players: Players, metas: PresenceMeta[], me: strin
   for (const meta of metas) {
     if (meta.userId === me) continue;
     const known = players[meta.userId];
-    next[meta.userId] = known ? { ...known, ...meta } : { ...meta, ...WORLD_START, facing: 'down', moving: false };
+    next[meta.userId] = known ? { ...known, ...meta } : { ...meta, ...WORLD_START, facing: 'down', moving: false, riding: false, jumping: false };
   }
   return next;
 }
@@ -91,9 +92,11 @@ export function mergePresence(players: Players, metas: PresenceMeta[], me: strin
 /** Applies a 'pos' broadcast (untrusted) to a present player; ignores anything malformed. */
 export function applyPos(players: Players, msg: unknown): Players {
   if (!isRecord(msg) || typeof msg.userId !== 'string' || !players[msg.userId]) return players;
-  const { x, y, facing, moving } = msg;
+  const { x, y, facing, moving, riding } = msg;
   if (typeof x !== 'number' || typeof y !== 'number' || !Number.isFinite(x) || !Number.isFinite(y)) return players;
   const face = FACINGS.includes(facing as Facing) ? (facing as Facing) : 'down';
   const pos = { x: clamp(x, WORLD_COLS - 1), y: clamp(y, MAX_ROWS - 1) };
-  return { ...players, [msg.userId]: { ...players[msg.userId], ...pos, facing: face, moving: moving === true } };
+  const onHorse = riding === true;
+  const state = { facing: face, moving: moving === true, riding: onHorse, jumping: onHorse && msg.jumping === true };
+  return { ...players, [msg.userId]: { ...players[msg.userId], ...pos, ...state } };
 }
