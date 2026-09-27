@@ -11,6 +11,8 @@ export type Group = {
   dues_amount: number | null;
   logo_url: string | null;
   created_by: string | null;
+  /** Pinned by an admin; null when there is none. */
+  announcement: string | null;
   /** What the weekly report asks; set by the creator. */
   report_fields: ReportField[];
 };
@@ -43,7 +45,7 @@ export async function signInSupabase(db: SupabaseClient, idToken: string, name: 
 }
 
 export async function listGroups(db: SupabaseClient): Promise<Group[]> {
-  const { data, error } = await db.from('groups').select('id, name, invite_code, dues_amount, logo_url, created_by, report_fields').order('created_at');
+  const { data, error } = await db.from('groups').select('id, name, invite_code, dues_amount, logo_url, created_by, announcement, report_fields').order('created_at');
   if (error) throw error;
   return data;
 }
@@ -109,5 +111,11 @@ export async function removeMember(db: SupabaseClient, groupId: string, userId: 
 
 export async function setMemberRole(db: SupabaseClient, groupId: string, userId: string, role: GroupRole): Promise<void> {
   const { error } = await db.rpc('set_member_role', { g: groupId, member: userId, new_role: role });
+  if (error) throw error;
+}
+
+/** An empty message clears the announcement. */
+export async function setAnnouncement(db: SupabaseClient, groupId: string, message: string): Promise<void> {
+  const { error } = await db.rpc('set_group_announcement', { g: groupId, message });
   if (error) throw error;
 }

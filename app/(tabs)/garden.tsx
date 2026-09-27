@@ -5,9 +5,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FarmScene } from '@/components/farm/FarmScene';
 import { Txt } from '@/components/ui/Txt';
+import { streak } from '@/domain/dayLog';
 import { frostOf, type Palette, radius, space } from '@/constants/theme';
 import { useRewards } from '@/hooks/useRewards';
 import { useStyles } from '@/hooks/useStyles';
+import { useLogs } from '@/providers/LogsProvider';
 import { useTheme } from '@/providers/ThemeProvider';
 
 export default function GardenScreen() {
@@ -25,6 +27,7 @@ export default function GardenScreen() {
           </Txt>
         </View>
         <PointsChip />
+        <StreakChip />
       </View>
       <Link href="/amal-yaumi" asChild>
         <Pressable
@@ -36,6 +39,21 @@ export default function GardenScreen() {
           <SymbolView name={{ ios: 'checklist', android: 'checklist', web: 'checklist' }} tintColor={colors.onPrimary} size={26} />
         </Pressable>
       </Link>
+    </View>
+  );
+}
+
+/** Days in a row with any amal done; hidden until the first one. */
+function StreakChip() {
+  const styles = useStyles(makeStyles);
+  const { colors } = useTheme();
+  const days = streak(useLogs().logs);
+  if (days === 0) return null;
+  return (
+    <View accessible accessibilityLabel={`${days} hari beruntun`} style={StyleSheet.flatten([styles.pill, styles.points])}>
+      <SymbolView name={{ ios: 'flame.fill', android: 'local_fire_department', web: 'local_fire_department' }} tintColor={colors.primaryDeep} size={18} />
+      <Txt variant="bold">{days}</Txt>
+      <Txt variant="caption">hari</Txt>
     </View>
   );
 }
