@@ -23,7 +23,7 @@ type Actions = {
   endHaid: () => void;
 };
 
-type LogsState = Actions & Pick<TilawahState, 'tilawah' | 'addTilawah' | 'removeTilawah'> & {
+type LogsState = Actions & Pick<TilawahState, 'tilawah' | 'addTilawah' | 'editTilawah' | 'removeTilawah'> & {
   setHaidStart: (start: string) => void;
   removeHaid: (start: string) => void;
   addHaid: (start: string, end: string) => void;
@@ -52,7 +52,7 @@ export function LogsProvider({ children }: { children: ReactNode }) {
   const [haid, setHaid, haidLoaded] = usePersisted(haids.EMPTY_HAID, store.loadHaid, store.saveHaid);
   const [unlocks, setUnlocks, unlocksLoaded] = usePersisted<Unlocks>(EMPTY_UNLOCKS, loadUnlocks, saveUnlocks);
   const today = dateKey(new Date());
-  const { tilawah, tilawahLoaded, setTilawah, addTilawah, removeTilawah } = useTilawahLog(today, plan.items, haid, setLogs);
+  const { tilawah, tilawahLoaded, setTilawah, addTilawah, editTilawah, removeTilawah } = useTilawahLog(today, plan.items, haid, setLogs);
   const loaded = logsLoaded && planLoaded && haidLoaded && tilawahLoaded && unlocksLoaded;
 
   const applyRemote = useCallback((remote: DriveFile) => {
@@ -98,8 +98,8 @@ export function LogsProvider({ children }: { children: ReactNode }) {
     [setHaid],
   );
   const value = useMemo(
-    () => ({ logs, plan, haid, today, todayHaid, loaded, todayEntry, todayPercent, sync, setHaidStart, removeHaid, addHaid, editHaid, tilawah, addTilawah, removeTilawah, unlocks, setUnlocks, ...actions }),
-    [logs, plan, haid, today, todayHaid, loaded, todayEntry, todayPercent, sync, setHaidStart, removeHaid, addHaid, editHaid, tilawah, addTilawah, removeTilawah, unlocks, setUnlocks, actions],
+    () => ({ logs, plan, haid, today, todayHaid, loaded, todayEntry, todayPercent, sync, setHaidStart, removeHaid, addHaid, editHaid, tilawah, addTilawah, editTilawah, removeTilawah, unlocks, setUnlocks, ...actions }),
+    [logs, plan, haid, today, todayHaid, loaded, todayEntry, todayPercent, sync, setHaidStart, removeHaid, addHaid, editHaid, tilawah, addTilawah, editTilawah, removeTilawah, unlocks, setUnlocks, actions],
   );
   return <LogsContext.Provider value={value}>{children}</LogsContext.Provider>;
 }

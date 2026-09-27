@@ -1,6 +1,6 @@
 import { expect, test } from '@jest/globals';
 
-import { addSession, EMPTY_TILAWAH, khatamCount, nextStart, pageOf, pagesBetween, removeSession, type TilawahSession } from '../tilawah';
+import { addSession, EMPTY_TILAWAH, khatamCount, nextStart, pageOf, pagesBetween, removeSession, type TilawahSession, updateSession } from '../tilawah';
 
 const session = (id: string, from: [number, number], to: [number, number], at: number): TilawahSession => ({
   id, day: '2026-09-23', from: { surah: from[0], ayah: from[1] }, to: { surah: to[0], ayah: to[1] }, pages: 1, at,
@@ -45,4 +45,10 @@ test('test_khatamCount_countsEndingSessions', () => {
 test('test_removeSession_fallsBackToPreviousLastRead', () => {
   const log = addSession(addSession(EMPTY_TILAWAH, session('a', [2, 1], [2, 5], 1), 1), session('b', [2, 6], [2, 20], 2), 2);
   expect(nextStart(removeSession(log, 'b', 3))).toEqual({ surah: 2, ayah: 6 });
+});
+
+test('test_updateSession_newRange_keepsDay', () => {
+  const log = addSession(EMPTY_TILAWAH, session('a', [2, 1], [2, 5], 1), 1);
+  const edited = updateSession(log, 'a', { surah: 2, ayah: 1 }, { surah: 2, ayah: 20 }, 2, 2).sessions[0];
+  expect([edited.to.ayah, edited.pages, edited.day]).toEqual([20, 2, '2026-09-23']);
 });

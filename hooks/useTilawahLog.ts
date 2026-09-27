@@ -13,6 +13,8 @@ export type TilawahState = {
   setTilawah: Dispatch<SetStateAction<tilawahs.TilawahLog>>;
   /** Records a sitting and adds its pages to today's tilawah count; false when the range is invalid. */
   addTilawah: (from: tilawahs.AyahRef, to: tilawahs.AyahRef) => boolean;
+  /** Changes a sitting's range and moves the page difference onto its day; false when invalid. */
+  editTilawah: (id: string, from: tilawahs.AyahRef, to: tilawahs.AyahRef) => boolean;
   /** Deletes a sitting and takes its pages back off the day it was read. */
   removeTilawah: (id: string) => void;
 };
@@ -36,6 +38,15 @@ export function useTilawahLog(today: string, items: PlanItem[], haid: HaidLog, s
     return true;
   }, [today, setTilawah, shiftPages]);
 
+  const editTilawah = useCallback((id: string, from: tilawahs.AyahRef, to: tilawahs.AyahRef) => {
+    const session = tilawah.sessions.find((s) => s.id === id);
+    const pages = tilawahs.pagesBetween(from, to);
+    if (!session || pages === null) return false;
+    setTilawah((t) => tilawahs.updateSession(t, id, from, to, pages, Date.now()));
+    shiftPages(session.day, pages - session.pages);
+    return true;
+  }, [tilawah, setTilawah, shiftPages]);
+
   const removeTilawah = useCallback((id: string) => {
     const session = tilawah.sessions.find((s) => s.id === id);
     if (!session) return;
@@ -43,5 +54,5 @@ export function useTilawahLog(today: string, items: PlanItem[], haid: HaidLog, s
     shiftPages(session.day, -session.pages);
   }, [tilawah, setTilawah, shiftPages]);
 
-  return { tilawah, tilawahLoaded, setTilawah, addTilawah, removeTilawah };
+  return { tilawah, tilawahLoaded, setTilawah, addTilawah, editTilawah, removeTilawah };
 }

@@ -77,6 +77,11 @@ export function addSession(log: TilawahLog, session: TilawahSession, now: number
   return { sessions: [...log.sessions, session], at: now };
 }
 
+/** Replaces a sitting's range; its day and id stay. */
+export function updateSession(log: TilawahLog, id: string, from: AyahRef, to: AyahRef, pages: number, now: number): TilawahLog {
+  return { sessions: log.sessions.map((s) => (s.id === id ? { ...s, from, to, pages } : s)), at: now };
+}
+
 export function removeSession(log: TilawahLog, id: string, now: number): TilawahLog {
   return { sessions: log.sessions.filter((s) => s.id !== id), at: now };
 }

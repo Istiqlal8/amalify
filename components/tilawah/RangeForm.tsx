@@ -6,7 +6,7 @@ import { Txt } from '@/components/ui/Txt';
 import { clayOf, fonts, type Palette, radius, space } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
 import { useTheme } from '@/providers/ThemeProvider';
-import { ayahAfter, nextStart, pagesBetween, type AyahRef } from '@/domain/tilawah';
+import { ayahAfter, nextStart, pagesBetween, type AyahRef, type TilawahSession } from '@/domain/tilawah';
 import { useLogs } from '@/providers/LogsProvider';
 
 import { SurahPicker } from './SurahPicker';
@@ -16,17 +16,23 @@ type Draft = { surah: number; ayah: string };
 const toDraft = (ref: AyahRef): Draft => ({ surah: ref.surah, ayah: String(ref.ayah) });
 const toRef = (d: Draft): AyahRef => ({ surah: d.surah, ayah: Number(d.ayah) });
 
-/** From–to ayah range; pages are counted from the mushaf and added to today. */
-export function RangeForm() {
+type Props = { session?: TilawahSession; onDone?: () => void };
+
+/** From–to ayah range; pages are counted from the mushaf and added to today, or to the edited sitting's day. */
+export function RangeForm({ session, onDone }: Props) {
   const styles = useStyles(makeStyles);
   const { colors } = useTheme();
-  const { tilawah, addTilawah } = useLogs();
+  const { tilawah, addTilawah, editTilawah } = useLogs();
   const start = nextStart(tilawah);
-  const [from, setFrom] = useState<Draft>(toDraft(start));
-  const [to, setTo] = useState<Draft>(toDraft(start));
+  const [from, setFrom] = useState<Draft>(toDraft(session?.from ?? start));
+  const [to, setTo] = useState<Draft>(toDraft(session?.to ?? start));
   const pages = pagesBetween(toRef(from), toRef(to));
 
   function save() {
+    if (session) {
+      if (editTilawah(session.id, toRef(from), toRef(to))) onDone?.();
+      return;
+    }
     if (!addTilawah(toRef(from), toRef(to))) return;
     const after = ayahAfter(toRef(to));
     setFrom(toDraft(after));
@@ -35,13 +41,14 @@ export function RangeForm() {
 
   return (
     <View style={[clayOf(colors), styles.card]}>
-      <Txt variant="heading" accessibilityRole="header">Catat bacaan</Txt>
+      <Txt variant="heading" accessibilityRole="header">{session ? 'Ubah bacaan' : 'Catat bacaan'}</Txt>
       <Row label="Dari" draft={from} onChange={setFrom} />
       <Row label="Sampai" draft={to} onChange={setTo} />
       <Txt variant="bold" style={{ color: pages === null ? colors.destructive : colors.primaryDeep }}>
         {pages === null ? 'Ayat tidak valid atau terbalik' : `${pages} halaman`}
       </Txt>
       <ClayButton label="Simpan" onPress={save} disabled={pages === null} />
+      {onDone && <ClayButton label="Batal" tone="soft" onPress={onDone} />}
     </View>
   );
 }

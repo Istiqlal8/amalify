@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { Txt } from '@/components/ui/Txt';
@@ -8,12 +9,15 @@ import { formatDay } from '@/domain/cycle';
 import { formatRef, type TilawahSession } from '@/domain/tilawah';
 import { useLogs } from '@/providers/LogsProvider';
 
+import { RangeForm } from './RangeForm';
+
 const SHOWN = 10;
 
 export function SessionHistory() {
   const styles = useStyles(makeStyles);
   const { colors } = useTheme();
   const { tilawah, removeTilawah } = useLogs();
+  const [editing, setEditing] = useState<string | null>(null);
   const sessions = [...tilawah.sessions].sort((a, b) => b.at - a.at).slice(0, SHOWN);
   if (sessions.length === 0) return null;
 
@@ -27,17 +31,24 @@ export function SessionHistory() {
   return (
     <View style={[clayOf(colors), styles.card]}>
       <Txt variant="heading" accessibilityRole="header">Riwayat</Txt>
-      {sessions.map((s) => (
-        <View key={s.id} style={styles.row}>
-          <View style={styles.flex}>
-            <Txt variant="bold">{`${formatRef(s.from)} – ${s.to.surah === s.from.surah ? s.to.ayah : formatRef(s.to)}`}</Txt>
-            <Txt variant="caption">{`${formatDay(s.day)} · ${s.pages} halaman`}</Txt>
+      {sessions.map((s) =>
+        editing === s.id ? (
+          <RangeForm key={s.id} session={s} onDone={() => setEditing(null)} />
+        ) : (
+          <View key={s.id} style={styles.row}>
+            <View style={styles.flex}>
+              <Txt variant="bold">{`${formatRef(s.from)} – ${s.to.surah === s.from.surah ? s.to.ayah : formatRef(s.to)}`}</Txt>
+              <Txt variant="caption">{`${formatDay(s.day)} · ${s.pages} halaman`}</Txt>
+            </View>
+            <Pressable accessibilityRole="button" accessibilityLabel="Ubah catatan" onPress={() => setEditing(s.id)} style={styles.remove}>
+              <Txt variant="bold">Ubah</Txt>
+            </Pressable>
+            <Pressable accessibilityRole="button" accessibilityLabel="Hapus catatan" onPress={() => confirmRemove(s)} style={styles.remove}>
+              <Txt variant="bold" style={{ color: colors.destructive }}>Hapus</Txt>
+            </Pressable>
           </View>
-          <Pressable accessibilityRole="button" accessibilityLabel="Hapus catatan" onPress={() => confirmRemove(s)} style={styles.remove}>
-            <Txt variant="bold" style={{ color: colors.destructive }}>Hapus</Txt>
-          </Pressable>
-        </View>
-      ))}
+        ),
+      )}
     </View>
   );
 }
