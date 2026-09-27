@@ -1,4 +1,4 @@
-import { Share, StyleSheet, View } from 'react-native';
+import { Pressable, Share, StyleSheet, View } from 'react-native';
 
 import { PlantArt } from '@/components/plant/PlantArt';
 import { Avatar } from '@/components/ui/Avatar';
@@ -11,10 +11,11 @@ import { isTree } from '@/domain/flowers';
 import { stageFromPercent, stageName } from '@/domain/plantStage';
 import type { Group, MemberToday } from '@/services/groupService';
 
-type Props = { group: Group; members: MemberToday[] };
+/** `onPressMember` is set only for admins, who manage members from here. */
+type Props = { group: Group; members: MemberToday[]; onPressMember?: (member: MemberToday) => void };
 
 /** The invite button, then each member with today's plant and progress. */
-export function MemberGarden({ group, members }: Props) {
+export function MemberGarden({ group, members, onPressMember }: Props) {
   const { flower } = useTheme();
   const styles = useStyles(makeStyles);
   function invite() {
@@ -30,16 +31,23 @@ export function MemberGarden({ group, members }: Props) {
       {members.map((m) => {
         const stage = stageFromPercent(m.percent);
         return (
-          <View key={m.userId} style={styles.row} accessible accessibilityLabel={m.hidden ? `${m.name}, progres disembunyikan` : `${m.name}, ${stageName(stage, isTree(flower))}, ${m.percent}%`}>
+          <Pressable
+            key={m.userId}
+            style={styles.row}
+            disabled={!onPressMember}
+            onPress={() => onPressMember?.(m)}
+            accessibilityRole={onPressMember ? 'button' : undefined}
+            accessibilityLabel={`${m.name}${m.role === 'admin' ? ', admin' : ''}, ${m.hidden ? 'progres disembunyikan' : `${stageName(stage, isTree(flower))}, ${m.percent}%`}`}
+          >
             <PlantArt stage={stage} size={48} />
             <Avatar name={m.name} url={m.avatarUrl} />
             <View style={styles.flex}>
-              <Txt variant="bold">{m.name}</Txt>
+              <Txt variant="bold">{m.name}{m.role === 'admin' && <Txt variant="caption"> · Admin</Txt>}</Txt>
               {m.bio && <Txt variant="caption" numberOfLines={1}>{m.bio}</Txt>}
               <Txt variant="caption">{m.hidden ? 'Progres disembunyikan' : stageName(stage, isTree(flower))}</Txt>
             </View>
             <Txt variant="bold">{m.hidden ? '—' : `${m.percent}%`}</Txt>
-          </View>
+          </Pressable>
         );
       })}
     </View>

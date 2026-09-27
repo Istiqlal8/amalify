@@ -27,7 +27,8 @@ export function GroupCard({ group, today, initiallyOpen, onChanged }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [logoOpen, setLogoOpen] = useState(false);
   const members = useMembersToday(group.id, today);
-  const isCreator = useMyUserId() === group.created_by;
+  const me = useMyUserId();
+  const isAdmin = members.some((m) => m.userId === me && m.role === 'admin');
 
   async function removeLogo() {
     setLogoOpen(false);
@@ -59,10 +60,10 @@ export function GroupCard({ group, today, initiallyOpen, onChanged }: Props) {
     <View style={[clayOf(colors), styles.card]}>
       <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen((o) => !o)} style={styles.head}>
         <Pressable
-          disabled={!isCreator}
+          disabled={!isAdmin}
           onPress={() => setLogoOpen(true)}
-          accessibilityRole={isCreator ? 'button' : undefined}
-          accessibilityLabel={isCreator ? 'Ganti logo grup' : undefined}
+          accessibilityRole={isAdmin ? 'button' : undefined}
+          accessibilityLabel={isAdmin ? 'Ganti logo grup' : undefined}
           hitSlop={4}
         >
           <Avatar name={group.name} url={group.logo_url} size={52} />

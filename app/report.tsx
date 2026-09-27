@@ -33,6 +33,7 @@ function GroupReports({ group, onFormatSaved }: { group: Group; onFormatSaved: (
   const members = useMembersToday(group.id, today);
   const { data, error, run } = useGroupData(group.id, listReports, 'group_reports');
   const [mode, setMode] = useState<string | null>(null);
+  const isAdmin = members.some((m) => m.userId === me && m.role === 'admin');
   const nameOf = (id: string | null) => members.find((m) => m.userId === id)?.name ?? null;
   const blank: ReportDraft = { day: today, time: '19:30', location: '', entries: entriesFor(group.report_fields) };
 
@@ -60,7 +61,7 @@ function GroupReports({ group, onFormatSaved }: { group: Group; onFormatSaved: (
   return (
     <>
       <ClayButton label="Buat laporan" onPress={() => setMode('new')} />
-      {me === group.created_by && <ClayButton label="Atur format laporan" tone="soft" onPress={() => setMode('format')} />}
+      {isAdmin && <ClayButton label="Atur format laporan" tone="soft" onPress={() => setMode('format')} />}
       {error && <Txt style={{ color: colors.destructive }}>{error}</Txt>}
       {data.length === 0 && <Txt variant="caption">Belum ada laporan.</Txt>}
       {sortReports(data).map((r) =>

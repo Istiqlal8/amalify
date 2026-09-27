@@ -34,7 +34,8 @@ export function useGroups(ready: boolean): GroupsState {
   useEffect(() => {
     if (ready) refresh();
   }, [ready, refresh]);
-  useLiveRefresh(ready, [], refresh);
+  // Membership rows change when the user leaves or an admin removes them.
+  useLiveRefresh(ready, [{ table: 'group_members' }], refresh);
 
   return { list, error, create, join, refresh };
 }

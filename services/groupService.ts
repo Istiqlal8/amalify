@@ -14,9 +14,11 @@ export type Group = {
   /** What the weekly report asks; set by the creator. */
   report_fields: ReportField[];
 };
+export type GroupRole = 'admin' | 'member';
 /** `hidden` members keep their percentage off the server; `percent` is then 0. */
 export type MemberToday = {
   userId: string;
+  role: GroupRole;
   name: string;
   avatarUrl: string | null;
   bio: string | null;
@@ -26,6 +28,7 @@ export type MemberToday = {
 
 type MemberRow = {
   user_id: string;
+  role: GroupRole;
   profiles: { display_name: string; avatar_url: string | null; bio: string | null } | null;
 };
 type SummaryRow = { user_id: string; percent: number | null };
@@ -66,7 +69,7 @@ export async function pushToday(db: SupabaseClient, day: string, percent: number
 export async function membersToday(db: SupabaseClient, groupId: string, day: string): Promise<MemberToday[]> {
   const members = await db
     .from('group_members')
-    .select('user_id, profiles(display_name, avatar_url, bio)')
+    .select('user_id, role, profiles(display_name, avatar_url, bio)')
     .eq('group_id', groupId)
     .returns<MemberRow[]>();
   if (members.error) throw members.error;
@@ -78,6 +81,7 @@ export async function membersToday(db: SupabaseClient, groupId: string, day: str
   return members.data
     .map((m) => ({
       userId: m.user_id,
+      role: m.role,
       name: m.profiles?.display_name ?? 'Teman',
       avatarUrl: m.profiles?.avatar_url ?? null,
       bio: m.profiles?.bio ?? null,
@@ -90,5 +94,20 @@ export async function membersToday(db: SupabaseClient, groupId: string, day: str
 /** Clears today's shared percentage right away when the user starts hiding it. */
 export async function hideToday(db: SupabaseClient, day: string): Promise<void> {
   const { error } = await db.from('daily_summaries').update({ percent: null }).eq('day', day);
+  if (error) throw error;
+}
+
+export async function leaveGroup(db: SupabaseClient, groupId: string, userId: string): Promise<void> {
+  const { error } = await db.from('group_members').delete().eq('group_id', groupId).eq('user_id', userId);
+  if (error) throw error;
+}
+
+export async function removeMember(db: SupabaseClient, groupId: string, userId: string): Promise<void> {
+  const { error } = await db.rpc('remove_member', { g: groupId, member: userId });
+  if (error) throw error;
+}
+
+export async function setMemberRole(db: SupabaseClient, groupId: string, userId: string, role: GroupRole): Promise<void> {
+  const { error } = await db.rpc('set_member_role', { g: groupId, member: userId, new_role: role });
   if (error) throw error;
 }
