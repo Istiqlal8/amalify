@@ -1,6 +1,6 @@
 import { expect, test } from '@jest/globals';
 
-import { addPeriod, dayOfPeriod, earliestStart, EMPTY_HAID, endHaid, isHaidDay, itemsForDay, removePeriod, restampHaidChange, setOpenStart, startHaid, startNifas, suciDays, type HaidLog } from '../haid';
+import { addPeriod, dayOfPeriod, editPeriod, earliestStart, EMPTY_HAID, endHaid, isHaidDay, itemsForDay, removePeriod, restampHaidChange, setOpenStart, startHaid, startNifas, suciDays, type HaidLog } from '../haid';
 import type { PlanItem } from '../plan';
 
 const open: HaidLog = { periods: [{ start: '2026-09-20' }], at: 1 };
@@ -118,4 +118,15 @@ test('test_isHaidDay_nifasDay40_isStillNifas', () => {
 
 test('test_startNifas_endsPregnancyMode', () => {
   expect(startNifas({ ...EMPTY_HAID, pregnant: '2026-01-01' }, '2026-09-01', 1).pregnant).toBeUndefined();
+});
+
+test('test_editPeriod_newDates_replacesPeriod', () => {
+  const log = addPeriod(EMPTY_HAID, '2026-08-01', '2026-08-05', '2026-09-23', 1);
+  expect(editPeriod(log, '2026-08-01', '2026-08-02', '2026-08-07', '2026-09-23', 2).periods).toEqual([{ start: '2026-08-02', end: '2026-08-07' }]);
+});
+
+test('test_editPeriod_clashesWithOther_unchanged', () => {
+  const one = addPeriod(EMPTY_HAID, '2026-08-01', '2026-08-05', '2026-09-23', 1);
+  const two = addPeriod(one, '2026-08-29', '2026-09-03', '2026-09-23', 2);
+  expect(editPeriod(two, '2026-08-01', '2026-08-01', '2026-08-30', '2026-09-23', 3)).toBe(two);
 });

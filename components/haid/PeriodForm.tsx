@@ -8,28 +8,33 @@ import { clayOf, type Palette, space } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
 import { useTheme } from '@/providers/ThemeProvider';
 import { addDays } from '@/domain/cycle';
-import { addPeriod } from '@/domain/haid';
+import { addPeriod, editPeriod, type Period } from '@/domain/haid';
 import { useLogs } from '@/providers/LogsProvider';
 
-/** Records a period that was never marked, so predictions have history to work from. */
-export function PeriodForm() {
+type Props = { period?: Period; onDone?: () => void };
+
+/** Records a period that was never marked, so predictions have history to work from; with `period`, changes its dates. */
+export function PeriodForm({ period, onDone }: Props) {
   const styles = useStyles(makeStyles);
   const { colors } = useTheme();
-  const { haid, today, addHaid } = useLogs();
-  const [start, setStart] = useState(addDays(today, -30));
-  const [end, setEnd] = useState(addDays(today, -25));
+  const { haid, today, addHaid, moveHaid } = useLogs();
+  const [start, setStart] = useState(period?.start ?? addDays(today, -30));
+  const [end, setEnd] = useState(period?.end ?? addDays(today, -25));
 
   function save() {
-    if (addPeriod(haid, start, end, today, 0) === haid) {
+    const next = period ? editPeriod(haid, period.start, start, end, today, 0) : addPeriod(haid, start, end, today, 0);
+    if (next === haid) {
       Alert.alert('Tanggal bertabrakan', 'Pilih rentang yang tidak menimpa catatan haid lain dan tidak melewati hari ini.');
       return;
     }
-    addHaid(start, end);
+    if (period) moveHaid(period.start, start, end);
+    else addHaid(start, end);
+    onDone?.();
   }
 
   return (
     <View style={[clayOf(colors), styles.card]}>
-      <Txt variant="heading" accessibilityRole="header">Tambah haid lama</Txt>
+      <Txt variant="heading" accessibilityRole="header">{period ? 'Ubah haid' : 'Tambah haid lama'}</Txt>
       <View style={styles.row}>
         <Txt style={styles.flex}>Mulai</Txt>
         <DateButton label="Mulai" value={start} max={today} onChange={setStart} />
@@ -39,6 +44,7 @@ export function PeriodForm() {
         <DateButton label="Selesai" value={end} min={start} max={today} onChange={setEnd} />
       </View>
       <ClayButton label="Simpan" tone="soft" onPress={save} />
+      {onDone && <ClayButton label="Batal" tone="soft" onPress={onDone} />}
     </View>
   );
 }

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
 import { Txt } from '@/components/ui/Txt';
@@ -6,6 +7,8 @@ import { useStyles } from '@/hooks/useStyles';
 import { useTheme } from '@/providers/ThemeProvider';
 import { cycleStats, daysBetween, formatDay, sortedPeriods } from '@/domain/cycle';
 import { useLogs } from '@/providers/LogsProvider';
+
+import { PeriodForm } from './PeriodForm';
 
 const HISTORY = 4;
 
@@ -22,6 +25,7 @@ export function CycleCard() {
   const styles = useStyles(makeStyles);
   const { colors } = useTheme();
   const { haid, today, removeHaid } = useLogs();
+  const [editing, setEditing] = useState<string | null>(null);
   const periods = sortedPeriods(haid);
   if (periods.length === 0) return null;
   const stats = cycleStats(haid);
@@ -53,22 +57,31 @@ export function CycleCard() {
         <Txt variant="caption">Perkiraan muncul setelah 2 kali haid tercatat.</Txt>
       )}
       <View style={styles.history}>
-        {periods.slice(-HISTORY).reverse().map((p) => (
-          <View key={p.start} style={styles.row}>
-            <View style={styles.dot} />
-            <Txt style={styles.flex}>
-              {formatDay(p.start)} – {p.end ? formatDay(p.end) : 'sekarang'}
-            </Txt>
-            {p.end && <Txt variant="caption">{daysBetween(p.start, p.end) + 1} hari</Txt>}
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`Hapus catatan ${formatDay(p.start)}`}
-              onPress={() => confirmRemove(p.start)}
-              style={styles.remove}>
-              <Txt variant="bold" style={{ color: colors.destructive }}>Hapus</Txt>
-            </Pressable>
-          </View>
-        ))}
+        {periods.slice(-HISTORY).reverse().map((p) =>
+          editing === p.start ? (
+            <PeriodForm key={p.start} period={p} onDone={() => setEditing(null)} />
+          ) : (
+            <View key={p.start} style={styles.row}>
+              <View style={styles.dot} />
+              <Txt style={styles.flex}>
+                {formatDay(p.start)} – {p.end ? formatDay(p.end) : 'sekarang'}
+              </Txt>
+              {p.end && <Txt variant="caption">{daysBetween(p.start, p.end) + 1} hari</Txt>}
+              {p.end && (
+                <Pressable accessibilityRole="button" accessibilityLabel={`Ubah catatan ${formatDay(p.start)}`} onPress={() => setEditing(p.start)} style={styles.remove}>
+                  <Txt variant="bold">Ubah</Txt>
+                </Pressable>
+              )}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Hapus catatan ${formatDay(p.start)}`}
+                onPress={() => confirmRemove(p.start)}
+                style={styles.remove}>
+                <Txt variant="bold" style={{ color: colors.destructive }}>Hapus</Txt>
+              </Pressable>
+            </View>
+          ),
+        )}
       </View>
     </View>
   );

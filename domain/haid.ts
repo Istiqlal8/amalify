@@ -132,6 +132,13 @@ export function addPeriod(log: HaidLog, start: string, end: string, today: strin
   return { ...log, periods: [...log.periods, { start, end }], at: now };
 }
 
+/** Moves a finished period to new dates; unchanged when the new range would be refused by addPeriod. */
+export function editPeriod(log: HaidLog, oldStart: string, start: string, end: string, today: string, now: number): HaidLog {
+  const without = removePeriod(log, oldStart, now);
+  const next = addPeriod(without, start, end, today, now);
+  return next === without ? log : next;
+}
+
 export function removePeriod(log: HaidLog, start: string, now: number): HaidLog {
   return { ...log, periods: log.periods.filter((p) => p.start !== start), at: now };
 }

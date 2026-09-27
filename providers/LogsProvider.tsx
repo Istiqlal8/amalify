@@ -27,6 +27,8 @@ type LogsState = Actions & Pick<TilawahState, 'tilawah' | 'addTilawah' | 'editTi
   setHaidStart: (start: string) => void;
   removeHaid: (start: string) => void;
   addHaid: (start: string, end: string) => void;
+  /** Moves a finished period; ignored when the new dates clash. */
+  moveHaid: (oldStart: string, start: string, end: string) => void;
   /** Day notes and care changes; these never touch which days pause sholat. */
   editHaid: (change: (h: haids.HaidLog, now: number) => haids.HaidLog) => void;
   logs: Logs;
@@ -93,13 +95,19 @@ export function LogsProvider({ children }: { children: ReactNode }) {
     setLogs((l) => haids.restampHaidChange(l, haid, next, plan.items, today));
     setHaid(next);
   }, [haid, today, plan.items, setLogs, setHaid]);
+  const moveHaid = useCallback((oldStart: string, start: string, end: string) => {
+    const next = haids.editPeriod(haid, oldStart, start, end, today, Date.now());
+    if (next === haid) return;
+    setLogs((l) => haids.restampHaidChange(l, haid, next, plan.items, today));
+    setHaid(next);
+  }, [haid, today, plan.items, setLogs, setHaid]);
   const editHaid = useCallback(
     (change: (h: haids.HaidLog, now: number) => haids.HaidLog) => setHaid((h) => change(h, Date.now())),
     [setHaid],
   );
   const value = useMemo(
-    () => ({ logs, plan, haid, today, todayHaid, loaded, todayEntry, todayPercent, sync, setHaidStart, removeHaid, addHaid, editHaid, tilawah, addTilawah, editTilawah, removeTilawah, unlocks, setUnlocks, ...actions }),
-    [logs, plan, haid, today, todayHaid, loaded, todayEntry, todayPercent, sync, setHaidStart, removeHaid, addHaid, editHaid, tilawah, addTilawah, editTilawah, removeTilawah, unlocks, setUnlocks, actions],
+    () => ({ logs, plan, haid, today, todayHaid, loaded, todayEntry, todayPercent, sync, setHaidStart, removeHaid, addHaid, moveHaid, editHaid, tilawah, addTilawah, editTilawah, removeTilawah, unlocks, setUnlocks, ...actions }),
+    [logs, plan, haid, today, todayHaid, loaded, todayEntry, todayPercent, sync, setHaidStart, removeHaid, addHaid, moveHaid, editHaid, tilawah, addTilawah, editTilawah, removeTilawah, unlocks, setUnlocks, actions],
   );
   return <LogsContext.Provider value={value}>{children}</LogsContext.Provider>;
 }
