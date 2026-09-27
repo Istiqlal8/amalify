@@ -79,7 +79,7 @@ function GroupReports({ group, onFormatSaved }: { group: Group; onFormatSaved: (
             report={r}
             groupName={group.name}
             author={nameOf(r.createdBy)}
-            mine={r.createdBy === me}
+            canManage={r.createdBy === me || isAdmin}
             onEdit={() => setMode(r.id)}
             onRemove={() => confirmRemove(r)}
           />

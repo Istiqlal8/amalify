@@ -7,10 +7,10 @@ import { entryText, reportDate, reportShareText, type GroupReport } from '@/doma
 import { useStyles } from '@/hooks/useStyles';
 import { useTheme } from '@/providers/ThemeProvider';
 
-type Props = { report: GroupReport; groupName: string; author: string | null; mine: boolean; onEdit: () => void; onRemove: () => void };
+type Props = { report: GroupReport; groupName: string; author: string | null; canManage: boolean; onEdit: () => void; onRemove: () => void };
 
 /** A meeting's report: date band, numbers as stat tiles, text answers underneath. */
-export function ReportCard({ report, groupName, author, mine, onEdit, onRemove }: Props) {
+export function ReportCard({ report, groupName, author, canManage, onEdit, onRemove }: Props) {
   const styles = useStyles(makeStyles);
   const { colors } = useTheme();
   const filled = report.entries.filter((e) => e.value.trim());
@@ -59,7 +59,7 @@ export function ReportCard({ report, groupName, author, mine, onEdit, onRemove }
         <Txt accessibilityRole="button" style={styles.link} onPress={() => Share.share({ message: reportShareText(report, groupName) })}>
           Bagikan
         </Txt>
-        {mine && (
+        {canManage && (
           <>
             <Txt accessibilityRole="button" style={styles.link} onPress={onEdit}>
               Edit

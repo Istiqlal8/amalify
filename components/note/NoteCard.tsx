@@ -8,9 +8,9 @@ import { useStyles } from '@/hooks/useStyles';
 import { useTheme } from '@/providers/ThemeProvider';
 import type { GroupNote } from '@/services/noteService';
 
-type Props = { note: GroupNote; author: string | null; mine: boolean; onEdit: () => void; onRemove: () => void };
+type Props = { note: GroupNote; author: string | null; canManage: boolean; onEdit: () => void; onRemove: () => void };
 
-export function NoteCard({ note, author, mine, onEdit, onRemove }: Props) {
+export function NoteCard({ note, author, canManage, onEdit, onRemove }: Props) {
   const styles = useStyles(makeStyles);
   const { colors } = useTheme();
   return (
@@ -20,7 +20,7 @@ export function NoteCard({ note, author, mine, onEdit, onRemove }: Props) {
       <Txt variant="caption">
         {author ?? 'Anggota'} · {formatDay(dateKey(new Date(note.updatedAt)))}
       </Txt>
-      {mine && (
+      {canManage && (
         <View style={styles.actions}>
           <Txt accessibilityRole="button" onPress={onEdit} style={styles.link}>
             Edit

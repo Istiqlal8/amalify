@@ -29,6 +29,7 @@ function GroupNotes({ group }: { group: Group }) {
   const { today } = useLogs();
   const me = useMyUserId();
   const members = useMembersToday(group.id, today);
+  const isAdmin = members.some((m) => m.userId === me && m.role === 'admin');
   const { data, error, run } = useGroupData(group.id, listNotes, 'group_notes');
   const [editing, setEditing] = useState<string | null>(null);
   const nameOf = (id: string | null) => members.find((m) => m.userId === id)?.name ?? null;
@@ -63,7 +64,7 @@ function GroupNotes({ group }: { group: Group }) {
             key={n.id}
             note={n}
             author={nameOf(n.createdBy)}
-            mine={n.createdBy === me}
+            canManage={n.createdBy === me || isAdmin}
             onEdit={() => setEditing(n.id)}
             onRemove={() => confirmRemove(n)}
           />
