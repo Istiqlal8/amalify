@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
-import type { CashEntry } from '@/domain/cash';
+import type { CashEntry, DuesPeriod } from '@/domain/cash';
 
 type Row = {
   id: string;
@@ -53,8 +53,8 @@ export async function removeCash(db: SupabaseClient, id: string): Promise<void> 
   if (error) throw error;
 }
 
-/** `amount` null turns monthly dues off. */
-export async function setDues(db: SupabaseClient, groupId: string, amount: number | null): Promise<void> {
-  const { error } = await db.rpc('set_group_dues', { g: groupId, amount });
+/** `amount` null turns dues off. */
+export async function setDues(db: SupabaseClient, groupId: string, amount: number | null, period: DuesPeriod): Promise<void> {
+  const { error } = await db.rpc('set_group_dues', { g: groupId, amount, period });
   if (error) throw error;
 }

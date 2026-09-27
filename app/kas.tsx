@@ -9,7 +9,7 @@ import { ClayButton } from '@/components/ui/ClayButton';
 import { StackScreen } from '@/components/ui/StackScreen';
 import { Txt } from '@/components/ui/Txt';
 import { clayOf, type Palette, space } from '@/constants/theme';
-import { balance, formatRupiah, monthOf, paidFor } from '@/domain/cash';
+import { balance, duesPeriodStart, formatRupiah, paidFor } from '@/domain/cash';
 import { useGroupData } from '@/hooks/useGroupData';
 import { useMembersToday } from '@/hooks/useGroups';
 import { useMyUserId } from '@/hooks/useMyUserId';
@@ -37,7 +37,7 @@ function GroupCash({ group, refreshGroups }: { group: Group; refreshGroups: () =
   /** 'new' for the add form, an entry id while editing it, or null. */
   const [editing, setEditing] = useState<string | null>(null);
   const editedEntry = data.find((e) => e.id === editing);
-  const month = monthOf(today);
+  const periodStart = duesPeriodStart(today, group.dues_period);
 
   function save(draft: CashDraft) {
     const id = editing;
@@ -47,7 +47,7 @@ function GroupCash({ group, refreshGroups }: { group: Group; refreshGroups: () =
 
   function pay(member: MemberToday) {
     const amount = group.dues_amount ?? 0;
-    run((db) => addCash(db, group.id, { amount, note: `Iuran ${member.name}`, day: today, duesFor: member.userId, duesMonth: month }));
+    run((db) => addCash(db, group.id, { amount, note: `Iuran ${member.name}`, day: today, duesFor: member.userId, duesMonth: periodStart }));
   }
 
   return (
@@ -58,9 +58,10 @@ function GroupCash({ group, refreshGroups }: { group: Group; refreshGroups: () =
       </View>
       <DuesCard
         amount={group.dues_amount}
+        period={group.dues_period}
         members={members}
-        paid={paidFor(data, month)}
-        onSetAmount={(amount) => run((db) => setDues(db, group.id, amount)).then(refreshGroups)}
+        paid={paidFor(data, periodStart)}
+        onSet={(amount, period) => run((db) => setDues(db, group.id, amount, period)).then(refreshGroups)}
         onPay={pay}
       />
       {editing ? (

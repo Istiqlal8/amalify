@@ -1,3 +1,5 @@
+import { dateKey } from './dayLog';
+
 export type CashEntry = {
   id: string;
   /** Rupiah; positive = masuk, negative = keluar. */
@@ -7,7 +9,7 @@ export type CashEntry = {
   day: string;
   /** Member whose dues this pays; null for other entries. */
   duesFor: string | null;
-  /** First day of the month the dues cover, `YYYY-MM-01`. */
+  /** Start of the dues period paid for: the 1st of a month, or a Monday for weekly dues. */
   duesMonth: string | null;
   createdBy: string;
 };
@@ -20,9 +22,22 @@ export function monthOf(day: string): string {
   return `${day.slice(0, 7)}-01`;
 }
 
-/** Members who paid dues for `month` (`YYYY-MM-01`). */
-export function paidFor(entries: CashEntry[], month: string): Set<string> {
-  return new Set(entries.filter((e) => e.duesMonth === month && e.duesFor).map((e) => e.duesFor as string));
+export type DuesPeriod = 'week' | 'month';
+
+/** Monday of the week containing `day`. */
+export function weekOf(day: string): string {
+  const [y, m, d] = day.split('-').map(Number);
+  const monday = new Date(y, m - 1, d - ((new Date(y, m - 1, d).getDay() + 6) % 7));
+  return dateKey(monday);
+}
+
+export function duesPeriodStart(day: string, period: DuesPeriod): string {
+  return period === 'week' ? weekOf(day) : monthOf(day);
+}
+
+/** Members who paid dues for the period starting on `start`. */
+export function paidFor(entries: CashEntry[], start: string): Set<string> {
+  return new Set(entries.filter((e) => e.duesMonth === start && e.duesFor).map((e) => e.duesFor as string));
 }
 
 export function formatRupiah(amount: number): string {

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import type { DuesPeriod } from '@/domain/cash';
 import type { ReportField } from '@/domain/groupReport';
 import { isProgressHidden } from '@/storage/privacyPrefs';
 
@@ -9,6 +10,7 @@ export type Group = {
   name: string;
   invite_code: string;
   dues_amount: number | null;
+  dues_period: DuesPeriod;
   logo_url: string | null;
   created_by: string | null;
   /** Pinned by an admin; null when there is none. */
@@ -45,7 +47,7 @@ export async function signInSupabase(db: SupabaseClient, idToken: string, name: 
 }
 
 export async function listGroups(db: SupabaseClient): Promise<Group[]> {
-  const { data, error } = await db.from('groups').select('id, name, invite_code, dues_amount, logo_url, created_by, announcement, report_fields').order('created_at');
+  const { data, error } = await db.from('groups').select('id, name, invite_code, dues_amount, dues_period, logo_url, created_by, announcement, report_fields').order('created_at');
   if (error) throw error;
   return data;
 }
@@ -117,5 +119,10 @@ export async function setMemberRole(db: SupabaseClient, groupId: string, userId:
 /** An empty message clears the announcement. */
 export async function setAnnouncement(db: SupabaseClient, groupId: string, message: string): Promise<void> {
   const { error } = await db.rpc('set_group_announcement', { g: groupId, message });
+  if (error) throw error;
+}
+
+export async function renameGroup(db: SupabaseClient, groupId: string, name: string): Promise<void> {
+  const { error } = await db.rpc('rename_group', { g: groupId, new_name: name });
   if (error) throw error;
 }

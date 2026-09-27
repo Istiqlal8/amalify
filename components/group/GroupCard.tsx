@@ -12,11 +12,11 @@ import { useMyUserId } from '@/hooks/useMyUserId';
 import { useStyles } from '@/hooks/useStyles';
 import { useTheme } from '@/providers/ThemeProvider';
 import { clearGroupLogo, setGroupLogo } from '@/services/groupLogoService';
-import type { Group } from '@/services/groupService';
+import { type Group, renameGroup } from '@/services/groupService';
 import { supabase } from '@/services/supabase';
 
 import { GroupAnnouncement } from './GroupAnnouncement';
-import { LogoDialog } from './LogoDialog';
+import { GroupEditDialog } from './GroupEditDialog';
 
 type Props = { group: Group; today: string; initiallyOpen: boolean; onChanged: () => void };
 
@@ -26,17 +26,18 @@ export function GroupCard({ group, today, initiallyOpen, onChanged }: Props) {
   const { colors } = useTheme();
   const [open, setOpen] = useState(initiallyOpen);
   const [error, setError] = useState<string | null>(null);
-  const [logoOpen, setLogoOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const members = useMembersToday(group.id, today);
   const me = useMyUserId();
   const isAdmin = members.some((m) => m.userId === me && m.role === 'admin');
 
-  async function removeLogo() {
-    setLogoOpen(false);
+  /** Closes the editor, runs one admin change, then reloads the groups. */
+  async function change(task: (db: NonNullable<typeof supabase>) => Promise<unknown>) {
+    setEditOpen(false);
     if (!supabase) return;
     setError(null);
     try {
-      await clearGroupLogo(supabase, group.id);
+      await task(supabase);
       onChanged();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -44,17 +45,10 @@ export function GroupCard({ group, today, initiallyOpen, onChanged }: Props) {
   }
 
   async function changeLogo() {
-    setLogoOpen(false);
+    setEditOpen(false);
     const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.6 });
     const asset = picked.canceled ? null : picked.assets[0];
-    if (!asset || !supabase) return;
-    setError(null);
-    try {
-      await setGroupLogo(supabase, group.id, asset.uri, asset.mimeType ?? 'image/jpeg');
-      onChanged();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    }
+    if (asset) change((db) => setGroupLogo(db, group.id, asset.uri, asset.mimeType ?? 'image/jpeg'));
   }
 
   return (
@@ -62,9 +56,9 @@ export function GroupCard({ group, today, initiallyOpen, onChanged }: Props) {
       <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen((o) => !o)} style={styles.head}>
         <Pressable
           disabled={!isAdmin}
-          onPress={() => setLogoOpen(true)}
+          onPress={() => setEditOpen(true)}
           accessibilityRole={isAdmin ? 'button' : undefined}
-          accessibilityLabel={isAdmin ? 'Ganti logo grup' : undefined}
+          accessibilityLabel={isAdmin ? 'Ubah grup' : undefined}
           hitSlop={4}
         >
           <Avatar name={group.name} url={group.logo_url} size={52} />
@@ -91,13 +85,14 @@ export function GroupCard({ group, today, initiallyOpen, onChanged }: Props) {
         </View>
       )}
       {error && <Txt style={{ color: colors.destructive }}>{error}</Txt>}
-      {logoOpen && (
-        <LogoDialog
+      {editOpen && (
+        <GroupEditDialog
           name={group.name}
           url={group.logo_url}
-          onChange={changeLogo}
-          onRemove={removeLogo}
-          onClose={() => setLogoOpen(false)}
+          onRename={(name) => change((db) => renameGroup(db, group.id, name))}
+          onChangeLogo={changeLogo}
+          onRemoveLogo={() => change((db) => clearGroupLogo(db, group.id))}
+          onClose={() => setEditOpen(false)}
         />
       )}
     </View>
