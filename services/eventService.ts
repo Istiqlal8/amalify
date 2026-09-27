@@ -39,6 +39,12 @@ export async function addEvent(db: SupabaseClient, groupId: string, draft: Event
   if (error) throw error;
 }
 
+export async function updateEvent(db: SupabaseClient, id: string, draft: EventDraft): Promise<void> {
+  const { title, startsAt, pic, target, unit } = draft;
+  const { error } = await db.from('group_events').update({ title, starts_at: startsAt, pic, target, unit }).eq('id', id);
+  if (error) throw error;
+}
+
 export async function setEventProgress(db: SupabaseClient, id: string, progress: number): Promise<void> {
   const { error } = await db.from('group_events').update({ progress }).eq('id', id);
   if (error) throw error;

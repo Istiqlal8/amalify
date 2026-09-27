@@ -16,6 +16,7 @@ type Props = {
   picName: string | null;
   mine: boolean;
   onProgress: (value: number) => void;
+  onEdit: () => void;
   onRemove: () => void;
 };
 
@@ -24,7 +25,7 @@ function when(iso: string): string {
   return `${formatDay(dateKey(d))} · ${formatClock(d.getHours(), d.getMinutes())}`;
 }
 
-export function EventCard({ event, picName, mine, onProgress, onRemove }: Props) {
+export function EventCard({ event, picName, mine, onProgress, onEdit, onRemove }: Props) {
   const styles = useStyles(makeStyles);
   const { colors } = useTheme();
   const status = eventStatus(event, new Date());
@@ -67,11 +68,16 @@ export function EventCard({ event, picName, mine, onProgress, onRemove }: Props)
         />
       )}
       {mine && (
-        <Pressable accessibilityRole="button" onPress={onRemove} style={styles.remove}>
-          <Txt variant="caption" style={{ color: colors.destructive }}>
-            Hapus
-          </Txt>
-        </Pressable>
+        <View style={styles.actions}>
+          <Pressable accessibilityRole="button" onPress={onEdit} style={styles.remove}>
+            <Txt variant="caption">Ubah</Txt>
+          </Pressable>
+          <Pressable accessibilityRole="button" onPress={onRemove} style={styles.remove}>
+            <Txt variant="caption" style={{ color: colors.destructive }}>
+              Hapus
+            </Txt>
+          </Pressable>
+        </View>
       )}
     </View>
   );
@@ -87,5 +93,6 @@ const makeStyles = (c: Palette) =>
     track: { height: 8, borderRadius: radius.pill, backgroundColor: c.muted, overflow: 'hidden' },
     fill: { height: '100%', borderRadius: radius.pill, backgroundColor: c.primary },
     row: { flexDirection: 'row', gap: space.sm },
-    remove: { alignSelf: 'flex-end', minHeight: 44, justifyContent: 'center', paddingHorizontal: space.sm },
+    actions: { flexDirection: 'row', justifyContent: 'flex-end' },
+    remove: { minHeight: 44, justifyContent: 'center', paddingHorizontal: space.sm },
   });

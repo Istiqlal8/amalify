@@ -41,6 +41,13 @@ export async function addCash(db: SupabaseClient, groupId: string, draft: CashDr
   if (error) throw error;
 }
 
+/** Dues entries keep the member and month they pay for. */
+export async function updateCash(db: SupabaseClient, id: string, draft: CashDraft): Promise<void> {
+  const { amount, note, day } = draft;
+  const { error } = await db.from('cash_entries').update({ amount, note, day }).eq('id', id);
+  if (error) throw error;
+}
+
 export async function removeCash(db: SupabaseClient, id: string): Promise<void> {
   const { error } = await db.from('cash_entries').delete().eq('id', id);
   if (error) throw error;

@@ -8,13 +8,15 @@ import { TextField } from '@/components/ui/TextField';
 import { TimeButton } from '@/components/ui/TimeButton';
 import { Txt } from '@/components/ui/Txt';
 import { clayOf, type Palette, space } from '@/constants/theme';
-import type { EventDraft } from '@/domain/groupEvent';
-import { parseClock, type Clock } from '@/domain/reminders';
+import type { EventDraft, GroupEvent } from '@/domain/groupEvent';
+import { formatClock, parseClock, type Clock } from '@/domain/reminders';
+import { dateKey } from '@/domain/dayLog';
 import { useStyles } from '@/hooks/useStyles';
 import type { MemberToday } from '@/services/groupService';
 
 type Kind = 'check' | 'count';
-type Props = { today: string; members: MemberToday[]; onSave: (draft: EventDraft) => void; onCancel: () => void };
+/** `initial` fills the form when editing an existing program. */
+type Props = { today: string; members: MemberToday[]; initial?: GroupEvent; onSave: (draft: EventDraft) => void; onCancel: () => void };
 
 const KINDS: { id: Kind; label: string }[] = [
   { id: 'check', label: 'Centang' },
@@ -28,15 +30,17 @@ function toIso(day: string, clock: Clock): string {
   return new Date(y, m - 1, d, hour, minute).toISOString();
 }
 
-export function EventForm({ today, members, onSave, onCancel }: Props) {
+export function EventForm({ today, members, initial, onSave, onCancel }: Props) {
   const styles = useStyles(makeStyles);
-  const [title, setTitle] = useState('');
-  const [day, setDay] = useState(today);
-  const [clock, setClock] = useState<Clock>('08:00');
-  const [pic, setPic] = useState(NO_PIC);
-  const [kind, setKind] = useState<Kind>('check');
-  const [target, setTarget] = useState('');
-  const [unit, setUnit] = useState('');
+  const start = initial ? new Date(initial.startsAt) : null;
+  const wasCounted = initial !== undefined && (initial.target > 1 || initial.unit !== '');
+  const [title, setTitle] = useState(initial?.title ?? '');
+  const [day, setDay] = useState(start ? dateKey(start) : today);
+  const [clock, setClock] = useState<Clock>(start ? formatClock(start.getHours(), start.getMinutes()) : '08:00');
+  const [pic, setPic] = useState(initial?.pic ?? NO_PIC);
+  const [kind, setKind] = useState<Kind>(wasCounted ? 'count' : 'check');
+  const [target, setTarget] = useState(wasCounted ? String(initial.target) : '');
+  const [unit, setUnit] = useState(initial?.unit ?? '');
   const counted = kind === 'count';
   const valid = title.trim() !== '' && (!counted || Number(target) >= 1);
 

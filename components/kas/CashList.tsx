@@ -7,17 +7,25 @@ import { formatDay } from '@/domain/cycle';
 import { useStyles } from '@/hooks/useStyles';
 import { useTheme } from '@/providers/ThemeProvider';
 
-type Props = { entries: CashEntry[]; me: string | null; onRemove: (id: string) => void };
+type Props = { entries: CashEntry[]; me: string | null; onEdit: (entry: CashEntry) => void; onRemove: (id: string) => void };
 
-export function CashList({ entries, me, onRemove }: Props) {
+export function CashList({ entries, me, onEdit, onRemove }: Props) {
   const styles = useStyles(makeStyles);
   const { colors } = useTheme();
   if (entries.length === 0) return <Txt variant="caption">Belum ada catatan kas.</Txt>;
 
-  function confirm(e: CashEntry) {
+  function confirmRemove(e: CashEntry) {
     Alert.alert(`Hapus "${e.note}"?`, formatRupiah(e.amount), [
       { text: 'Batal', style: 'cancel' },
       { text: 'Hapus', style: 'destructive', onPress: () => onRemove(e.id) },
+    ]);
+  }
+
+  function actions(e: CashEntry) {
+    Alert.alert(e.note, formatRupiah(e.amount), [
+      { text: 'Ubah', onPress: () => onEdit(e) },
+      { text: 'Hapus', style: 'destructive', onPress: () => confirmRemove(e) },
+      { text: 'Batal', style: 'cancel' },
     ]);
   }
 
@@ -27,8 +35,8 @@ export function CashList({ entries, me, onRemove }: Props) {
         <Pressable
           key={e.id}
           disabled={e.createdBy !== me}
-          onLongPress={() => confirm(e)}
-          accessibilityHint={e.createdBy === me ? 'Tekan lama untuk hapus' : undefined}
+          onPress={() => actions(e)}
+          accessibilityRole={e.createdBy === me ? 'button' : undefined}
           style={styles.row}>
           <View style={styles.flex}>
             <Txt variant="bold" numberOfLines={1}>

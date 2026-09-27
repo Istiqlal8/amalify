@@ -13,7 +13,7 @@ import { useMembersToday } from '@/hooks/useGroups';
 import { useMyUserId } from '@/hooks/useMyUserId';
 import { useLogs } from '@/providers/LogsProvider';
 import { useTheme } from '@/providers/ThemeProvider';
-import { addEvent, listEvents, removeEvent, setEventProgress } from '@/services/eventService';
+import { addEvent, listEvents, removeEvent, setEventProgress, updateEvent } from '@/services/eventService';
 import type { Group } from '@/services/groupService';
 
 export default function EventScreen() {
@@ -30,12 +30,14 @@ function GroupEvents({ group }: { group: Group }) {
   const me = useMyUserId();
   const members = useMembersToday(group.id, today);
   const { data, error, run } = useGroupData(group.id, listEvents, 'group_events');
-  const [adding, setAdding] = useState(false);
+  /** 'new' for the add form, an event id while editing it, or null. */
+  const [editing, setEditing] = useState<string | null>(null);
   const nameOf = (id: string | null) => members.find((m) => m.userId === id)?.name ?? null;
 
   function save(draft: EventDraft) {
-    setAdding(false);
-    run((db) => addEvent(db, group.id, draft));
+    const id = editing;
+    setEditing(null);
+    run((db) => (id === 'new' ? addEvent(db, group.id, draft) : updateEvent(db, id!, draft)));
   }
 
   function confirmRemove(event: GroupEvent) {
@@ -47,23 +49,28 @@ function GroupEvents({ group }: { group: Group }) {
 
   return (
     <>
-      {adding ? (
-        <EventForm today={today} members={members} onSave={save} onCancel={() => setAdding(false)} />
+      {editing === 'new' ? (
+        <EventForm today={today} members={members} onSave={save} onCancel={() => setEditing(null)} />
       ) : (
-        <ClayButton label="Tambah program" onPress={() => setAdding(true)} />
+        <ClayButton label="Tambah program" onPress={() => setEditing('new')} />
       )}
       {error && <Txt style={{ color: colors.destructive }}>{error}</Txt>}
-      {data.length === 0 && !adding && <Txt variant="caption">Belum ada program.</Txt>}
-      {sortEvents(data, new Date()).map((e) => (
-        <EventCard
-          key={e.id}
-          event={e}
-          picName={nameOf(e.pic)}
-          mine={e.createdBy === me}
-          onProgress={(value) => run((db) => setEventProgress(db, e.id, value))}
-          onRemove={() => confirmRemove(e)}
-        />
-      ))}
+      {data.length === 0 && editing !== 'new' && <Txt variant="caption">Belum ada program.</Txt>}
+      {sortEvents(data, new Date()).map((e) =>
+        editing === e.id ? (
+          <EventForm key={e.id} today={today} members={members} initial={e} onSave={save} onCancel={() => setEditing(null)} />
+        ) : (
+          <EventCard
+            key={e.id}
+            event={e}
+            picName={nameOf(e.pic)}
+            mine={e.createdBy === me}
+            onProgress={(value) => run((db) => setEventProgress(db, e.id, value))}
+            onEdit={() => setEditing(e.id)}
+            onRemove={() => confirmRemove(e)}
+          />
+        ),
+      )}
     </>
   );
 }

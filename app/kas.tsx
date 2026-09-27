@@ -16,7 +16,7 @@ import { useMyUserId } from '@/hooks/useMyUserId';
 import { useStyles } from '@/hooks/useStyles';
 import { useLogs } from '@/providers/LogsProvider';
 import { useTheme } from '@/providers/ThemeProvider';
-import { addCash, listCash, removeCash, setDues, type CashDraft } from '@/services/cashService';
+import { addCash, listCash, removeCash, setDues, updateCash, type CashDraft } from '@/services/cashService';
 import type { Group, MemberToday } from '@/services/groupService';
 
 export default function KasScreen() {
@@ -34,12 +34,15 @@ function GroupCash({ group, refreshGroups }: { group: Group; refreshGroups: () =
   const me = useMyUserId();
   const members = useMembersToday(group.id, today);
   const { data, error, run } = useGroupData(group.id, listCash, 'cash_entries');
-  const [adding, setAdding] = useState(false);
+  /** 'new' for the add form, an entry id while editing it, or null. */
+  const [editing, setEditing] = useState<string | null>(null);
+  const editedEntry = data.find((e) => e.id === editing);
   const month = monthOf(today);
 
   function save(draft: CashDraft) {
-    setAdding(false);
-    run((db) => addCash(db, group.id, draft));
+    const id = editing;
+    setEditing(null);
+    run((db) => (id === 'new' ? addCash(db, group.id, draft) : updateCash(db, id!, draft)));
   }
 
   function pay(member: MemberToday) {
@@ -60,13 +63,13 @@ function GroupCash({ group, refreshGroups }: { group: Group; refreshGroups: () =
         onSetAmount={(amount) => run((db) => setDues(db, group.id, amount)).then(refreshGroups)}
         onPay={pay}
       />
-      {adding ? (
-        <CashForm today={today} onSave={save} onCancel={() => setAdding(false)} />
+      {editing ? (
+        <CashForm key={editing} today={today} initial={editedEntry} onSave={save} onCancel={() => setEditing(null)} />
       ) : (
-        <ClayButton label="Catat kas" onPress={() => setAdding(true)} />
+        <ClayButton label="Catat kas" onPress={() => setEditing('new')} />
       )}
       {error && <Txt style={{ color: colors.destructive }}>{error}</Txt>}
-      <CashList entries={data} me={me} onRemove={(id) => run((db) => removeCash(db, id))} />
+      <CashList entries={data} me={me} onEdit={(e) => setEditing(e.id)} onRemove={(id) => run((db) => removeCash(db, id))} />
     </>
   );
 }
