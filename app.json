@@ -84,6 +84,7 @@
           "color": "#EC4899"
         }
       ],
+      "./plugins/withEasDebugSigning",
       [
         "./plugins/withPinkAccent",
         {
