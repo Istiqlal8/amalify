@@ -37,6 +37,7 @@ function GroupCash({ group, refreshGroups }: { group: Group; refreshGroups: () =
   /** 'new' for the add form, an entry id while editing it, or null. */
   const [editing, setEditing] = useState<string | null>(null);
   const editedEntry = data.find((e) => e.id === editing);
+  const isAdmin = members.some((m) => m.userId === me && m.role === 'admin');
   const periodStart = duesPeriodStart(today, group.dues_period);
 
   function save(draft: CashDraft) {
@@ -70,7 +71,7 @@ function GroupCash({ group, refreshGroups }: { group: Group; refreshGroups: () =
         <ClayButton label="Catat kas" onPress={() => setEditing('new')} />
       )}
       {error && <Txt style={{ color: colors.destructive }}>{error}</Txt>}
-      <CashList entries={data} me={me} onEdit={(e) => setEditing(e.id)} onRemove={(id) => run((db) => removeCash(db, id))} />
+      <CashList entries={data} me={me} isAdmin={isAdmin} onEdit={(e) => setEditing(e.id)} onRemove={(id) => run((db) => removeCash(db, id))} />
     </>
   );
 }

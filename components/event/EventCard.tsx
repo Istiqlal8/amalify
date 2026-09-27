@@ -14,7 +14,7 @@ import { useTheme } from '@/providers/ThemeProvider';
 type Props = {
   event: GroupEvent;
   picName: string | null;
-  mine: boolean;
+  canManage: boolean;
   onProgress: (value: number) => void;
   onEdit: () => void;
   onRemove: () => void;
@@ -25,7 +25,7 @@ function when(iso: string): string {
   return `${formatDay(dateKey(d))} · ${formatClock(d.getHours(), d.getMinutes())}`;
 }
 
-export function EventCard({ event, picName, mine, onProgress, onEdit, onRemove }: Props) {
+export function EventCard({ event, picName, canManage, onProgress, onEdit, onRemove }: Props) {
   const styles = useStyles(makeStyles);
   const { colors } = useTheme();
   const status = eventStatus(event, new Date());
@@ -67,7 +67,7 @@ export function EventCard({ event, picName, mine, onProgress, onEdit, onRemove }
           onPress={() => onProgress(event.progress >= 1 ? 0 : 1)}
         />
       )}
-      {mine && (
+      {canManage && (
         <View style={styles.actions}>
           <Pressable accessibilityRole="button" onPress={onEdit} style={styles.remove}>
             <Txt variant="caption">Ubah</Txt>

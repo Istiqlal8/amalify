@@ -32,6 +32,7 @@ function GroupEvents({ group }: { group: Group }) {
   const { data, error, run } = useGroupData(group.id, listEvents, 'group_events');
   /** 'new' for the add form, an event id while editing it, or null. */
   const [editing, setEditing] = useState<string | null>(null);
+  const isAdmin = members.some((m) => m.userId === me && m.role === 'admin');
   const nameOf = (id: string | null) => members.find((m) => m.userId === id)?.name ?? null;
 
   function save(draft: EventDraft) {
@@ -64,7 +65,7 @@ function GroupEvents({ group }: { group: Group }) {
             key={e.id}
             event={e}
             picName={nameOf(e.pic)}
-            mine={e.createdBy === me}
+            canManage={e.createdBy === me || isAdmin}
             onProgress={(value) => run((db) => setEventProgress(db, e.id, value))}
             onEdit={() => setEditing(e.id)}
             onRemove={() => confirmRemove(e)}
