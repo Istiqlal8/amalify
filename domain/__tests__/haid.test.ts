@@ -1,6 +1,6 @@
 import { expect, test } from '@jest/globals';
 
-import { addPeriod, dayOfPeriod, editPeriod, earliestStart, EMPTY_HAID, endHaid, isHaidDay, itemsForDay, removePeriod, restampHaidChange, setOpenStart, startHaid, startNifas, suciDays, type HaidLog } from '../haid';
+import { addPeriod, containingPeriod, dayOfPeriod, editPeriod, earliestStart, EMPTY_HAID, endHaid, isHaidDay, itemsForDay, removePeriod, restampHaidChange, saveOpenPeriod, setOpenStart, startHaid, startNifas, suciDays, type HaidLog } from '../haid';
 import type { PlanItem } from '../plan';
 
 const open: HaidLog = { periods: [{ start: '2026-09-20' }], at: 1 };
@@ -129,4 +129,34 @@ test('test_editPeriod_clashesWithOther_unchanged', () => {
   const one = addPeriod(EMPTY_HAID, '2026-08-01', '2026-08-05', '2026-09-23', 1);
   const two = addPeriod(one, '2026-08-29', '2026-09-03', '2026-09-23', 2);
   expect(editPeriod(two, '2026-08-01', '2026-08-01', '2026-08-30', '2026-09-23', 3)).toBe(two);
+});
+
+test('test_saveOpenPeriod_moveStartOnly_keepsRunning', () => {
+  const next = saveOpenPeriod(withPast, '2026-09-21', undefined, '2026-09-23', 5);
+  expect(next.periods).toEqual([{ start: '2026-08-25', end: '2026-08-31' }, { start: '2026-09-21', end: undefined }]);
+});
+
+test('test_saveOpenPeriod_withEnd_closesRunning', () => {
+  const next = saveOpenPeriod(withPast, '2026-09-20', '2026-09-22', '2026-09-23', 5);
+  expect(next.periods).toEqual([{ start: '2026-08-25', end: '2026-08-31' }, { start: '2026-09-20', end: '2026-09-22' }]);
+});
+
+test('test_saveOpenPeriod_endBeforeStart_isRefused', () => {
+  expect(saveOpenPeriod(withPast, '2026-09-22', '2026-09-21', '2026-09-23', 5)).toBe(withPast);
+});
+
+test('test_saveOpenPeriod_overlapsPrevious_isRefused', () => {
+  expect(saveOpenPeriod(withPast, '2026-08-30', undefined, '2026-09-23', 5)).toBe(withPast);
+});
+
+test('test_saveOpenPeriod_noChange_isSameRef', () => {
+  expect(saveOpenPeriod(withPast, '2026-09-23', undefined, '2026-09-23', 5)).toBe(withPast);
+});
+
+test('test_containingPeriod_openPeriod_findsIt', () => {
+  expect(containingPeriod(withPast, '2026-09-23')?.start).toBe('2026-09-23');
+});
+
+test('test_containingPeriod_gapDay_isUndefined', () => {
+  expect(containingPeriod(withPast, '2026-09-10')).toBeUndefined();
 });

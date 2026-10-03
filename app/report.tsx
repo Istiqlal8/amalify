@@ -6,11 +6,13 @@ import { FieldEditor } from '@/components/report/FieldEditor';
 import { ReportCard } from '@/components/report/ReportCard';
 import { ReportForm } from '@/components/report/ReportForm';
 import { ClayButton } from '@/components/ui/ClayButton';
+import { FormDialog } from '@/components/ui/FormDialog';
 import { StackScreen } from '@/components/ui/StackScreen';
 import { Txt } from '@/components/ui/Txt';
 import { entriesFor, sortReports, type GroupReport, type ReportDraft, type ReportField } from '@/domain/groupReport';
 import { useGroupData } from '@/hooks/useGroupData';
 import { useMembersToday } from '@/hooks/useGroups';
+import { useMyRole } from '@/hooks/useMyRole';
 import { useMyUserId } from '@/hooks/useMyUserId';
 import { useLogs } from '@/providers/LogsProvider';
 import { useTheme } from '@/providers/ThemeProvider';
@@ -33,9 +35,13 @@ function GroupReports({ group, onFormatSaved }: { group: Group; onFormatSaved: (
   const members = useMembersToday(group.id, today);
   const { data, error, run } = useGroupData(group.id, listReports, 'group_reports');
   const [mode, setMode] = useState<string | null>(null);
-  const isAdmin = members.some((m) => m.userId === me && m.role === 'admin');
+  const { isAdmin, canManageRecords } = useMyRole(members, me);
   const nameOf = (id: string | null) => members.find((m) => m.userId === id)?.name ?? null;
   const blank: ReportDraft = { day: today, time: '19:30', location: '', entries: entriesFor(group.report_fields) };
+  const edited = data.find((r) => r.id === mode);
+  /** What the report dialog edits: the blank draft when adding, otherwise the report on the fields it has now. */
+  const draft: ReportDraft | undefined =
+    mode === 'new' ? blank : edited && { ...edited, entries: entriesFor(group.report_fields, edited.entries) };
 
   function save(draft: ReportDraft) {
     const id = mode;
@@ -55,35 +61,32 @@ function GroupReports({ group, onFormatSaved }: { group: Group; onFormatSaved: (
     ]);
   }
 
-  if (mode === 'format') return <FieldEditor initial={group.report_fields} onSave={saveFormat} onCancel={() => setMode(null)} />;
-  if (mode === 'new') return <ReportForm initial={blank} today={today} onSave={save} onCancel={() => setMode(null)} />;
-
   return (
     <>
       <ClayButton label="Buat laporan" onPress={() => setMode('new')} />
       {isAdmin && <ClayButton label="Atur format laporan" tone="soft" onPress={() => setMode('format')} />}
       {error && <Txt style={{ color: colors.destructive }}>{error}</Txt>}
       {data.length === 0 && <Txt variant="caption">Belum ada laporan.</Txt>}
-      {sortReports(data).map((r) =>
-        mode === r.id ? (
-          <ReportForm
-            key={r.id}
-            initial={{ ...r, entries: entriesFor(group.report_fields, r.entries) }}
-            today={today}
-            onSave={save}
-            onCancel={() => setMode(null)}
-          />
-        ) : (
-          <ReportCard
-            key={r.id}
-            report={r}
-            groupName={group.name}
-            author={nameOf(r.createdBy)}
-            canManage={r.createdBy === me || isAdmin}
-            onEdit={() => setMode(r.id)}
-            onRemove={() => confirmRemove(r)}
-          />
-        ),
+      {sortReports(data).map((r) => (
+        <ReportCard
+          key={r.id}
+          report={r}
+          groupName={group.name}
+          author={nameOf(r.createdBy)}
+          canManage={r.createdBy === me || canManageRecords}
+          onEdit={() => setMode(r.id)}
+          onRemove={() => confirmRemove(r)}
+        />
+      ))}
+      {mode === 'format' && (
+        <FormDialog onClose={() => setMode(null)}>
+          <FieldEditor initial={group.report_fields} onSave={saveFormat} onCancel={() => setMode(null)} />
+        </FormDialog>
+      )}
+      {draft && (
+        <FormDialog onClose={() => setMode(null)}>
+          <ReportForm key={mode} initial={draft} today={today} onSave={save} onCancel={() => setMode(null)} />
+        </FormDialog>
       )}
     </>
   );

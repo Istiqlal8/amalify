@@ -6,8 +6,10 @@ import { ClayButton } from '@/components/ui/ClayButton';
 import { Txt } from '@/components/ui/Txt';
 import { type Palette, space } from '@/constants/theme';
 import { useTheme } from '@/providers/ThemeProvider';
+import { useLogs } from '@/providers/LogsProvider';
 import { useStyles } from '@/hooks/useStyles';
 import { isTree } from '@/domain/flowers';
+import { ROLE_LABELS } from '@/domain/groupRole';
 import { stageFromPercent, stageName } from '@/domain/plantStage';
 import type { Group, MemberToday } from '@/services/groupService';
 
@@ -16,7 +18,9 @@ type Props = { group: Group; members: MemberToday[]; onPressMember?: (member: Me
 
 /** The invite button, then each member with today's plant and progress. */
 export function MemberGarden({ group, members, onPressMember }: Props) {
-  const { flower } = useTheme();
+  const { flowerFor } = useTheme();
+  const { today } = useLogs();
+  const flower = flowerFor(today);
   const styles = useStyles(makeStyles);
   function invite() {
     Share.share({ message: `Yuk tanam kebaikan bareng di grup "${group.name}" Amalify. Kode: ${group.invite_code}` });
@@ -37,12 +41,12 @@ export function MemberGarden({ group, members, onPressMember }: Props) {
             disabled={!onPressMember}
             onPress={() => onPressMember?.(m)}
             accessibilityRole={onPressMember ? 'button' : undefined}
-            accessibilityLabel={`${m.name}${m.role === 'admin' ? ', admin' : ''}, ${m.hidden ? 'progres disembunyikan' : `${stageName(stage, isTree(flower))}, ${m.percent}%`}`}
+            accessibilityLabel={`${m.name}${m.role === 'member' ? '' : `, ${ROLE_LABELS[m.role]}`}, ${m.hidden ? 'progres disembunyikan' : `${stageName(stage, isTree(flower))}, ${m.percent}%`}`}
           >
             <PlantArt stage={stage} size={48} />
             <Avatar name={m.name} url={m.avatarUrl} />
             <View style={styles.flex}>
-              <Txt variant="bold">{m.name}{m.role === 'admin' && <Txt variant="caption"> · Admin</Txt>}</Txt>
+              <Txt variant="bold">{m.name}{m.role !== 'member' && <Txt variant="caption"> · {ROLE_LABELS[m.role]}</Txt>}</Txt>
               {m.bio && <Txt variant="caption" numberOfLines={1}>{m.bio}</Txt>}
               <Txt variant="caption">{m.hidden ? 'Progres disembunyikan' : stageName(stage, isTree(flower))}</Txt>
             </View>

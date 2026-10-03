@@ -1,57 +1,66 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
+import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { pastPercent } from '@/domain/dayLog';
-import { type FarmDay, plotCaption, type Point } from '@/domain/farm';
+import { dayView } from '@/domain/farmDay';
 import * as world from '@/domain/farmWorld';
-import { worldNear } from '@/domain/farmWorld';
-import { isHaidDay, itemsForDay } from '@/domain/haid';
 import { useFarmAudio } from '@/hooks/useFarmAudio';
 import { useFarmSfx } from '@/hooks/useFarmSfx';
 import { useTabBarSpace } from '@/hooks/useTabBarSpace';
+import { space } from '@/constants/theme';
 import { useLogs } from '@/providers/LogsProvider';
 import { useTheme } from '@/providers/ThemeProvider';
 
 import { HouseGlow, WorldBackground } from './Backgrounds';
+import { BedContextCard } from './BedContextCard';
+import { DayDetailSheet } from './DayDetailSheet';
 import { THEME_ART } from './farmSprites';
-import { PondLife } from './PondLife';
-import { FarmStage } from './FarmStage';
+import { CONTROL_SPACE, GardenControls } from './GardenControls';
+import { FarmStage, type StageMode } from './FarmStage';
+import { GardenHeader, HEADER_SPACE } from './GardenHeader';
+import { MonthCalendarSheet } from './MonthCalendarSheet';
 import { MonthField } from './MonthField';
-import { useCurrentBlock } from './useCurrentBlock';
+import { MonthOverviewGrid } from './MonthOverviewGrid';
+import { PlotTapLayer } from './PlotTapLayer';
+import { PondLife } from './PondLife';
 import { RideButton } from './RideButton';
+import { SUMMARY_SPACE, TodayProgressCard } from './TodayProgressCard';
+import { useCurrentBlock } from './useCurrentBlock';
+import { useGardenPanels } from './useGardenPanels';
+import { useGardenWorld } from './useGardenWorld';
 import { useRiding } from './useRiding';
 import { placeCharacter, useMotion } from './Walker';
-import { MapControls, WorldMap } from './WorldMap';
 
 const GRID = world.worldCollision();
 const PONDS = world.pondRects();
 
-/** Ponds are only animated while the camera is in or next to their block. */
+/** Ponds animate only while the camera is in or next to their block. */
 const isNear = (p: { x: number; y: number }, block: { bx: number; by: number }) =>
   Math.abs(Math.floor(p.x / world.BLOCK_COLS) - block.bx) <= 1 && Math.abs(Math.floor(p.y / world.BLOCK_ROWS) - block.by) <= 1;
 
-const captionOf = (plot: world.WorldPlot, today: string) => `${plotCaption(plot.key, plot.percent)}${plot.key === today ? ' · hari ini' : ''}`;
-
-/** Kebunku: a village map with the yard in the middle and a field per month around it; the camera follows the character. */
+/**
+ * Direct play: begin beside today's plot, roam the village with the joystick, and inspect any bed.
+ */
 export function FarmScene() {
+  const [mode, setMode] = useState<StageMode>('jelajah');
   const [near, setNear] = useState(-1);
-  const [mapOpen, setMapOpen] = useState(false);
-  const motion = useMotion(world.WORLD_START);
-  const { flower } = useTheme();
+  const { today, fields, plots, nearFn } = useGardenWorld();
+  const todayPlot = plots.find((plot) => plot.key === today);
+  const motion = useMotion(todayPlot ?? world.WORLD_START);
+  const { flowerFor, colors } = useTheme();
   const { animal, theme, pet, house, mount } = useLogs().unlocks;
   const ride = useRiding(motion, mount);
-  const top = useSafeAreaInsets().top;
-  const bottom = useTabBarSpace();
-  const { today, fields, plots, nearFn } = useWorld();
+  const insets = useSafeAreaInsets();
+  const tabBarSpace = useTabBarSpace();
+  const top = insets.top + HEADER_SPACE;
+  const bottom = tabBarSpace + SUMMARY_SPACE;
+  const { todayPercent, todayHaid, todayEntry } = useLogs();
+  const panels = useGardenPanels();
   const block = useCurrentBlock(motion.pos);
   const current = plots[near];
   const audio = useFarmAudio(theme);
   const { onStep, onGrab, onBed } = useFarmSfx(audio.sfx, true, ride.riding !== null);
-  const goTo = (index: number) => {
-    placeCharacter(motion, world.gateOf(index));
-    setMapOpen(false);
-    audio.sfx('teleport');
-  };
+
   const onNearPlot = useCallback(
     (index: number) => {
       setNear(index);
@@ -59,72 +68,121 @@ export function FarmScene() {
     },
     [onBed],
   );
+  const openMonth = (index: number) => {
+    panels.openMonth(index);
+    audio.sfx('bed');
+  };
+  /** Walking to a month from the calendar also switches into Jelajah, so the move is visible. */
+  const walkTo = (index: number) => {
+    placeCharacter(motion, world.gateOf(index));
+    panels.closeMonth();
+    setMode('jelajah');
+    audio.sfx('teleport');
+  };
+  const month = panels.month === null ? null : fields.find((f) => f.index === panels.month) ?? null;
 
   return (
-    <FarmStage
-      theme={theme}
-      rows={world.WORLD_ROWS}
-      cols={world.WORLD_COLS}
-      background={(cell, art) => <WorldBackground cell={cell} art={art} house={house} />}
-      nightLights={(cell) => <HouseGlow cell={cell} house={house} />}
-      grid={GRID}
-      near={nearFn}
-      camera
-      lanterns={world.WORLD_LANTERNS}
-      top={top}
-      bottom={bottom}
-      caption={current ? captionOf(current, today) : null}
-      motion={motion}
-      animal={animal}
-      pet={pet}
-      riding={ride.riding}
-      onNearPlot={onNearPlot}
-      onStep={onStep}
-      onLand={() => audio.sfx('land')}
-      onGrab={onGrab}
-      overlay={
-        <>
-          {mount && <RideButton bottom={bottom} riding={ride.riding !== null} onToggle={ride.toggle} onJump={ride.jump} />}
-          <MapControls top={top + 64} onMap={() => setMapOpen(true)} soundOn={audio.on} onSound={audio.toggle} />
-          {mapOpen && <WorldMap fields={fields} today={today} pos={motion.pos} onPick={goTo} onClose={() => setMapOpen(false)} />}
-        </>
-      }>
-      {(cell) => (
-        <>
-          {PONDS.filter((p) => isNear(p, block)).map((p) => (
-            <PondLife key={`${p.x},${p.y}`} rect={p} cell={cell} frozen={THEME_ART[theme].frozen} />
-          ))}
-          {fields.map((f) => {
-            const [bx, by] = world.RING[f.index];
-            const nearby = Math.abs(bx - block.bx) <= 1 && Math.abs(by - block.by) <= 1;
-            return <MonthField key={f.label} field={f} cell={cell} flower={flower} today={today} active={current?.key ?? null} showBeds={nearby} />;
-          })}
-        </>
+    <View style={styles.root}>
+      <View pointerEvents="box-none" style={styles.hud}>
+        <GardenHeader title="Kebun pribadi" top={insets.top} />
+      </View>
+      <FarmStage
+        theme={theme}
+        mode={mode}
+        rows={world.WORLD_ROWS}
+        cols={world.WORLD_COLS}
+        background={(cell, art) => <WorldBackground cell={cell} art={art} house={house} />}
+        nightLights={(cell) => <HouseGlow cell={cell} house={house} />}
+        grid={GRID}
+        near={nearFn}
+        lanterns={world.WORLD_LANTERNS}
+        top={top}
+        bottom={bottom}
+        caption={
+          <BedContextCard
+            view={current ? dayView(current, today) : null}
+            bottom={bottom + CONTROL_SPACE}
+            onOpen={panels.openDay}
+          />
+        }
+        motion={motion}
+        animal={animal}
+        pet={pet}
+        riding={ride.riding}
+        onNearPlot={onNearPlot}
+        onStep={onStep}
+        onLand={() => audio.sfx('land')}
+        onGrab={onGrab}
+        overlay={
+          <>
+            {mode === 'jelajah' && mount && (
+              <RideButton bottom={bottom} riding={ride.riding !== null} onToggle={ride.toggle} onJump={ride.jump} />
+            )}
+            <GardenControls
+              mode={mode}
+              top={top}
+              bottom={bottom}
+              soundOn={audio.on}
+              onMode={setMode}
+              onCalendar={panels.openMonths}
+              onSound={audio.toggle}
+            />
+          </>
+        }>
+        {(cell) => (
+          <>
+            {PONDS.filter((p) => isNear(p, block)).map((p) => (
+              <PondLife key={`${p.x},${p.y}`} rect={p} cell={cell} frozen={THEME_ART[theme].frozen} />
+            ))}
+            {fields.map((f) => {
+              const [bx, by] = world.RING[f.index];
+              const nearby = Math.abs(bx - block.bx) <= 1 && Math.abs(by - block.by) <= 1;
+              return (
+                <MonthField
+                  key={f.label}
+                  field={f}
+                  cell={cell}
+                  flowerFor={flowerFor}
+                  today={today}
+                  active={current?.key ?? null}
+                  showBeds={mode === 'jelajah' && nearby}
+                  showSign={mode === 'jelajah'}
+                />
+              );
+            })}
+            {mode === 'overview' && (
+              <PlotTapLayer fields={fields} ring={world.RING} cell={cell} today={today} accent={colors.primary} onPick={openMonth} />
+            )}
+          </>
+        )}
+      </FarmStage>
+      <View pointerEvents="box-none" style={[styles.summary, { bottom: tabBarSpace + space.xs }]}>
+        <TodayProgressCard
+          today={today}
+          percent={todayPercent}
+          onHaid={todayHaid}
+          recorded={todayEntry !== undefined}
+        />
+      </View>
+      {panels.months && <MonthOverviewGrid fields={fields} today={today} onPick={openMonth} onClose={panels.closeMonths} />}
+      {month && (
+        <MonthCalendarSheet
+          field={month}
+          today={today}
+          onClose={panels.closeMonth}
+          onPickDay={panels.openDay}
+          onPrev={month.index + 1 < fields.length ? () => panels.openMonth(month.index + 1) : null}
+          onNext={month.index > 0 ? () => panels.openMonth(month.index - 1) : null}
+          onWalk={() => walkTo(month.index)}
+        />
       )}
-    </FarmStage>
+      {panels.day && <DayDetailSheet view={panels.day} today={today} onClose={panels.closeDay} />}
+    </View>
   );
 }
 
-type World = { today: string; fields: world.WorldField[]; plots: world.WorldPlot[]; nearFn: (p: Point) => number };
-
-/** The 12 fields from the logs, the flat plot list and a worklet that finds the bed at a position. */
-function useWorld(): World {
-  const { logs, plan, haid, today, todayPercent } = useLogs();
-  return useMemo(() => {
-    const dayOf = (key: string): FarmDay => {
-      const onHaid = isHaidDay(haid, key);
-      const percent = key === today ? todayPercent : pastPercent(logs[key], itemsForDay(plan.items, onHaid));
-      return { key, percent, onHaid };
-    };
-    const fields = world.buildWorld(today, dayOf);
-    const plots: world.WorldPlot[] = [];
-    for (const f of fields) plots.push(...f.plots);
-    const slots = world.slotIndex(fields);
-    const blockField = world.BLOCK_FIELD;
-    const nearFn = (p: Point) => {
-      'worklet';
-      return worldNear(slots, blockField, p);
-    };
-    return { today, fields, plots, nearFn };
-  }, [logs, plan.items, haid, today, todayPercent]);
-}
+const styles = StyleSheet.create({
+  root: { flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center', overflow: 'hidden' },
+  hud: { position: 'absolute', zIndex: 2, top: 0, left: 0, right: 0 },
+  summary: { position: 'absolute', zIndex: 2, left: space.md, right: space.md },
+});

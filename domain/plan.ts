@@ -1,4 +1,5 @@
 import type { SectionId } from './amalan';
+import { cadenceOf, type Cadence } from './cadence';
 
 export type PlanItem = {
   id: string;
@@ -9,8 +10,12 @@ export type PlanItem = {
   target: number;
   /** Empty for a checklist item, e.g. "halaman" or "kali" for a counted one. */
   unit: string;
-  /** Daily reminder time, `HH:MM`; absent when the item has no reminder. */
+  /** Reminder time, `HH:MM`; absent when the item has no reminder. */
   reminder?: string;
+  /** Weekdays the reminder fires on, `0` Sunday to `6` Saturday; absent means every day. */
+  reminderDays?: number[];
+  /** How long the item runs; absent in plans stored before cadences existed, which are daily. */
+  cadence?: Cadence;
 };
 
 export type Plan = { items: PlanItem[]; at: number };
@@ -50,13 +55,22 @@ export const DEFAULT_PLAN: Plan = {
   ],
 };
 
+/** Every day and no day both mean the same thing to the scheduler, so both store as absent. */
+function normalizeDays(draft: ItemDraft): number[] | undefined {
+  if (!draft.reminder || !draft.reminderDays) return undefined;
+  const days = [...new Set(draft.reminderDays)].filter((d) => Number.isInteger(d) && d >= 0 && d <= 6).sort();
+  return days.length === 0 || days.length === 7 ? undefined : days;
+}
+
 export function normalizeDraft(draft: ItemDraft): ItemDraft {
   const counted = draft.kind === 'count';
   return {
     ...draft,
     label: draft.label.trim(),
+    cadence: cadenceOf(draft),
     target: counted ? Math.max(1, Math.round(draft.target)) : 1,
     unit: counted ? draft.unit.trim() : '',
+    reminderDays: normalizeDays(draft),
   };
 }
 

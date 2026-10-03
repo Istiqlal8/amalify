@@ -46,3 +46,6 @@ yarn-error.*
 # EAS signing credentials (downloaded with `eas credentials`)
 credentials.json
 credentials/
+
+# Claude local overrides (contains secrets, never commit)
+.claude/settings.local.json

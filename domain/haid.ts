@@ -1,4 +1,5 @@
 import type { Care } from './care';
+import { isDaily } from './cadence';
 import { dateKey, resnapshot, type Logs } from './dayLog';
 import type { DayNote } from './haidDay';
 import type { PlanItem } from './plan';
@@ -46,7 +47,7 @@ function shiftDay(day: string, delta: number): string {
 }
 
 /** Last day that can count as haid: the end, capped at 15 days (60 for nifas). An open period runs to the cap. */
-function lastHaidDay(p: Period): string {
+export function lastHaidDay(p: Period): string {
   const cap = shiftDay(p.start, maxDays(p) - 1);
   return p.end !== undefined && p.end < cap ? p.end : cap;
 }
@@ -124,12 +125,34 @@ export function earliestStart(log: HaidLog): string | null {
   return ends.length ? shiftDay(ends[ends.length - 1], 1) : null;
 }
 
+/**
+ * Edits the running period in one go: moves its start and either keeps it running
+ * (`end` undefined) or closes it on `end`. Refused when the range runs backwards,
+ * passes today or overlaps another period; unchanged when nothing changed.
+ */
+export function saveOpenPeriod(log: HaidLog, start: string, end: string | undefined, today: string, now: number): HaidLog {
+  const open = openPeriod(log);
+  if (!open || start > today) return log;
+  if (end !== undefined && (end < start || end > today)) return log;
+  if (open.start === start && open.end === end) return log;
+  const effectiveEnd = end ?? today;
+  const clash = log.periods.some((p) => p !== open && p.start <= effectiveEnd && (p.end === undefined || p.end >= start));
+  if (clash) return log;
+  const periods = log.periods.map((p) => (p === open ? { ...p, start, end } : p));
+  return { ...log, periods, at: now };
+}
+
 /** Adds a finished period from the past. Refused when it runs backwards, reaches past today or overlaps another. */
 export function addPeriod(log: HaidLog, start: string, end: string, today: string, now: number): HaidLog {
   if (start > end || end > today) return log;
   const clash = log.periods.some((p) => p.start <= end && (p.end === undefined || p.end >= start));
   if (clash) return log;
   return { ...log, periods: [...log.periods, { start, end }], at: now };
+}
+
+/** The period a day belongs to, if any (open periods cover their days up to the fiqh cap). */
+export function containingPeriod(log: HaidLog, day: string): Period | undefined {
+  return log.periods.find((p) => p.start <= day && day <= lastHaidDay(p));
 }
 
 /** Moves a finished period to new dates; unchanged when the new range would be refused by addPeriod. */
@@ -152,9 +175,13 @@ export function dayOfPeriod(period: Period, today: string): number {
   return Math.round((b - a) / 86400000) + 1;
 }
 
-/** On a haid day prayers and fasting drop out, so the day is scored without them. */
+/**
+ * Only harian items score a day; the longer cadences keep their own buckets. On a haid day prayers
+ * and fasting drop out too, so the day is scored without them.
+ */
 export function itemsForDay(items: PlanItem[], haid: boolean): PlanItem[] {
-  return haid ? items.filter((it) => !PAUSED_SECTIONS.has(it.section) && !FASTING.test(it.label)) : items;
+  const daily = items.filter(isDaily);
+  return haid ? daily.filter((it) => !PAUSED_SECTIONS.has(it.section) && !FASTING.test(it.label)) : daily;
 }
 
 export function isPausedSection(section: string): boolean {

@@ -3,10 +3,13 @@ import { Alert, StyleSheet, View } from 'react-native';
 import { ClayButton } from '@/components/ui/ClayButton';
 import { Txt } from '@/components/ui/Txt';
 import { clayOf, type Palette, radius, space } from '@/constants/theme';
+import { FLOWERS } from '@/domain/flowers';
 import type { Sfx } from '@/domain/farmSound';
 import { priceOf, type ShopItem } from '@/domain/shop';
 import { useStyles } from '@/hooks/useStyles';
 import type { Rewards } from '@/hooks/useRewards';
+import { useLogs } from '@/providers/LogsProvider';
+import { useTheme } from '@/providers/ThemeProvider';
 
 import { itemName, ShopArt } from './ShopArt';
 
@@ -32,6 +35,7 @@ export function ShopCard({ item, rewards, sfx }: Props) {
 function ItemAction({ item, name, rewards, sfx }: Props & { name: string }) {
   const styles = useStyles(makeStyles);
   const price = priceOf(item);
+  if (item.kind === 'flower') return <FlowerAction item={item} name={name} rewards={rewards} sfx={sfx} />;
   if (rewards.inUse(item))
     return (
       <Txt variant="caption" style={styles.state}>
@@ -69,6 +73,118 @@ function ItemAction({ item, name, rewards, sfx }: Props & { name: string }) {
       <ClayButton label={short > 0 ? `Kurang ${short} poin` : 'Beli'} onPress={confirm} disabled={short > 0} />
     </>
   );
+}
+
+/**
+ * Bunga bisa beda per hari: "Pakai" menanyakan cakupannya supaya satu hari
+ * tidak harus ikut berubah semua. Hari tanpa pilihan sendiri ikut default.
+ */
+function FlowerAction({ item, name, rewards, sfx }: Props & { name: string }) {
+  const styles = useStyles(makeStyles);
+  const { today } = useLogs();
+  const { flower: defaultFlower, flowerFor, dayFlowers, setFlower, setFlowerFor, clearFlowerFor } = useTheme();
+  if (item.kind !== 'flower') return null;
+  const id = item.id;
+  const price = priceOf(item);
+  const todayFlower = flowerFor(today);
+  const isDefault = defaultFlower === id;
+  const isToday = todayFlower === id;
+  const hasTodayOverride = today in dayFlowers;
+
+  if (!rewards.owns(item)) {
+    const short = price - rewards.balance;
+    const confirm = () =>
+      Alert.alert(`Beli ${name}?`, `${price} poin`, [
+        { text: 'Batal', style: 'cancel' },
+        {
+          text: 'Beli',
+          onPress: () => {
+            rewards.buy(item);
+            sfx?.('buy');
+          },
+        },
+      ]);
+    return (
+      <>
+        <View style={styles.price}>
+          <Txt variant="bold">{price} poin</Txt>
+        </View>
+        <ClayButton label={short > 0 ? `Kurang ${short} poin` : 'Beli'} onPress={confirm} disabled={short > 0} />
+      </>
+    );
+  }
+
+  if (isDefault && isToday)
+    return (
+      <Txt variant="caption" style={styles.state}>
+        Dipakai (hari ini & default)
+      </Txt>
+    );
+  if (isToday)
+    return (
+      <>
+        <Txt variant="caption" style={styles.state}>
+          Dipakai hari ini
+        </Txt>
+        <ClayButton
+          label="Jadikan default"
+          tone="soft"
+          onPress={() => {
+            setFlower(id);
+            sfx?.('equip');
+          }}
+        />
+        {hasTodayOverride && (
+          <ClayButton label="Ikuti default" tone="soft" onPress={() => clearFlowerFor(today)} />
+        )}
+      </>
+    );
+  if (isDefault)
+    return (
+      <>
+        <Txt variant="caption" style={styles.state}>
+          Default
+        </Txt>
+        <ClayButton
+          label="Pakai hari ini"
+          tone="soft"
+          onPress={() => {
+            setFlowerFor(today, id);
+            sfx?.('equip');
+          }}
+        />
+      </>
+    );
+
+  const todayName = FLOWERS.find((f) => f.id === todayFlower)?.name ?? todayFlower;
+  const defaultName = FLOWERS.find((f) => f.id === defaultFlower)?.name ?? defaultFlower;
+  const choose = () =>
+    Alert.alert(`Pakai ${name} untuk?`, `Hari ini: ${todayName} · Default: ${defaultName}`, [
+      { text: 'Batal', style: 'cancel' },
+      {
+        text: 'Hari ini saja',
+        onPress: () => {
+          setFlowerFor(today, id);
+          sfx?.('equip');
+        },
+      },
+      {
+        text: 'Jadi default',
+        onPress: () => {
+          setFlower(id);
+          sfx?.('equip');
+        },
+      },
+      {
+        text: 'Keduanya',
+        onPress: () => {
+          setFlower(id);
+          setFlowerFor(today, id);
+          sfx?.('equip');
+        },
+      },
+    ]);
+  return <ClayButton label="Pakai" tone="soft" onPress={choose} />;
 }
 
 const makeStyles = (c: Palette) =>

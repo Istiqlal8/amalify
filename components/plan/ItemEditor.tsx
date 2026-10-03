@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ReminderField } from '@/components/ReminderField';
+import { WeekdayPicker } from '@/components/WeekdayPicker';
 import { ClayButton } from '@/components/ui/ClayButton';
 import { TextField } from '@/components/ui/TextField';
 import { Txt } from '@/components/ui/Txt';
@@ -9,6 +10,7 @@ import { clayOf, type Palette, radius, space } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
 import { useTheme } from '@/providers/ThemeProvider';
 import { SECTIONS } from '@/domain/amalan';
+import { CADENCES, cadenceOf, isDaily } from '@/domain/cadence';
 import type { ItemDraft } from '@/domain/plan';
 import { useReminders } from '@/providers/ReminderProvider';
 
@@ -18,6 +20,9 @@ const KINDS: { id: ItemDraft['kind']; title: string }[] = [
   { id: 'check', title: 'Ceklis' },
   { id: 'count', title: 'Hitungan' },
 ];
+
+// Five cadences never fit one row, and a scroller would hide the last of them off the edge.
+const CADENCE_CHOICES = CADENCES.map((c) => ({ id: c.id, title: c.label }));
 
 export function ItemEditor({ initial, onSave, onCancel }: Props) {
   const styles = useStyles(makeStyles);
@@ -44,6 +49,7 @@ export function ItemEditor({ initial, onSave, onCancel }: Props) {
       <TextField label="Nama amalan" value={draft.label} onChangeText={(label) => patch({ label })} maxLength={40} autoFocus />
       <Choice label="Bagian" options={SECTIONS} value={draft.section} onChange={(section) => patch({ section })} />
       <Choice label="Jenis" options={KINDS} value={draft.kind} onChange={(kind) => patch({ kind })} />
+      <Choice label="Jangka" options={CADENCE_CHOICES} value={cadenceOf(draft)} onChange={(cadence) => patch({ cadence })} />
       {counted && (
         <View style={styles.pair}>
           <View style={styles.flex}>
@@ -56,6 +62,9 @@ export function ItemEditor({ initial, onSave, onCancel }: Props) {
       )}
       {!targetValid && <Txt style={{ color: colors.destructive }}>Target harus angka bulat, minimal 1.</Txt>}
       <ReminderField label="Pengingat" value={draft.reminder ?? null} defaultTime="05:00" onChange={setReminder} />
+      {draft.reminder && isDaily(draft) && (
+        <WeekdayPicker value={draft.reminderDays} onChange={(reminderDays) => patch({ reminderDays })} />
+      )}
       {denied && <Txt style={{ color: colors.destructive }}>Izin notifikasi ditolak. Aktifkan di Pengaturan HP untuk Amalify.</Txt>}
       <View style={styles.pair}>
         <View style={styles.flex}>

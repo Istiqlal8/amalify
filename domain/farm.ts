@@ -57,7 +57,8 @@ export const PLOT_ROWS = 4;
 /** Full-tilt speed, in cell widths per second (vertical speed matches on screen). */
 export const WALK_CELLS_PER_SEC = 3;
 
-export type FarmDay = { key: string; percent: number; onHaid: boolean };
+/** `recorded` is false for a day with no log entry at all, which is not the same as 0%. */
+export type FarmDay = { key: string; percent: number; onHaid: boolean; recorded: boolean };
 export type Point = { x: number; y: number };
 export type Facing = 'down' | 'left' | 'up' | 'right';
 

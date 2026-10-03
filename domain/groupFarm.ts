@@ -32,7 +32,9 @@ export function buildGroupWorld(today: string, members: MemberMonth[], me: strin
     .slice(0, MAX_FIELDS)
     .map((m, index) => {
       const info = { index, year, month: month - 1, label: m.name, short: firstName(m.name, 7) };
-      const field = buildField(info, today, (key) => ({ key, percent: m.days[key] ?? 0, onHaid: false }), ring);
+      // Haid is private: a member's shared summary never says which days were special.
+      const dayOf = (key: string) => ({ key, percent: m.days[key] ?? 0, onHaid: false, recorded: m.days[key] !== undefined });
+      const field = buildField(info, today, dayOf, ring);
       return { ...field, userId: m.userId };
     });
 }

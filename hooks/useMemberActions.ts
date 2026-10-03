@@ -2,18 +2,25 @@ import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert } from 'react-native';
 
+import type { GroupRole } from '@/domain/groupRole';
 import { leaveGroup, type MemberToday, removeMember, setMemberRole } from '@/services/groupService';
 import { supabase } from '@/services/supabase';
 
 type MemberActions = {
   error: string | null;
-  /** Opens the admin menu for another member: promote or demote, or remove. */
+  /** The member whose role dialog is open, or null. */
+  managed: MemberToday | null;
+  /** Opens the admin dialog for another member. */
   manage: (member: MemberToday) => void;
+  closeManage: () => void;
+  setRole: (role: GroupRole) => void;
+  remove: () => void;
   leave: () => void;
 };
 
 export function useMemberActions(groupId: string, groupName: string, me: string | null): MemberActions {
   const [error, setError] = useState<string | null>(null);
+  const [managed, setManaged] = useState<MemberToday | null>(null);
 
   async function run(task: () => Promise<void>) {
     setError(null);
@@ -25,23 +32,25 @@ export function useMemberActions(groupId: string, groupName: string, me: string 
   }
 
   function manage(m: MemberToday) {
+    if (supabase && m.userId !== me) setManaged(m);
+  }
+
+  function setRole(role: GroupRole) {
     const db = supabase;
-    if (!db || m.userId === me) return;
-    const promote = m.role === 'member';
-    Alert.alert(m.name, undefined, [
-      {
-        text: promote ? 'Jadikan admin' : 'Jadikan anggota',
-        onPress: () => run(() => setMemberRole(db, groupId, m.userId, promote ? 'admin' : 'member')),
-      },
-      {
-        text: 'Keluarkan',
-        style: 'destructive',
-        onPress: () => Alert.alert(`Keluarkan ${m.name}?`, undefined, [
-          { text: 'Batal', style: 'cancel' },
-          { text: 'Keluarkan', style: 'destructive', onPress: () => run(() => removeMember(db, groupId, m.userId)) },
-        ]),
-      },
+    const m = managed;
+    setManaged(null);
+    if (!db || !m || m.role === role) return;
+    run(() => setMemberRole(db, groupId, m.userId, role));
+  }
+
+  function remove() {
+    const db = supabase;
+    const m = managed;
+    setManaged(null);
+    if (!db || !m) return;
+    Alert.alert(`Keluarkan ${m.name}?`, undefined, [
       { text: 'Batal', style: 'cancel' },
+      { text: 'Keluarkan', style: 'destructive', onPress: () => run(() => removeMember(db, groupId, m.userId)) },
     ]);
   }
 
@@ -61,5 +70,5 @@ export function useMemberActions(groupId: string, groupName: string, me: string 
     ]);
   }
 
-  return { error, manage, leave };
+  return { error, managed, manage, closeManage: () => setManaged(null), setRole, remove, leave };
 }

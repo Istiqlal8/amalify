@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { StyleSheet, Text } from 'react-native';
 import Animated, {
   cancelAnimation,
@@ -22,7 +22,10 @@ import { PetFollower } from './PetFollower';
 import { Rider } from './Rider';
 import { CHARACTERS } from './farmSprites';
 
-const GLIDE_MS = 150; // a little longer than the ~125ms between updates, so motion stays smooth
+// Senders slow down on a crowded farm, so the glide follows the gap between their updates instead
+// of a fixed rate: long enough to stay smooth, capped so a lost update does not leave a long crawl.
+const MIN_GLIDE_MS = 140;
+const MAX_GLIDE_MS = 1100;
 const HOP_MS = 160;
 
 /** Another group member's animal, gliding to each position they broadcast, with their name above. */
@@ -31,8 +34,12 @@ export function RemotePlayer({ player, cell }: { player: Player; cell: number })
   const y = useSharedValue(player.y);
   const face = useSharedValue<Facing>(player.facing);
   const hop = useSharedValue(0);
+  const seen = useRef(0);
   useEffect(() => {
-    const glide = { duration: GLIDE_MS, easing: Easing.linear };
+    const now = Date.now();
+    const gap = seen.current === 0 ? MIN_GLIDE_MS : Math.min(Math.max(now - seen.current, MIN_GLIDE_MS), MAX_GLIDE_MS);
+    seen.current = now;
+    const glide = { duration: gap, easing: Easing.linear };
     x.value = withTiming(player.x, glide);
     y.value = withTiming(player.y, glide);
     face.value = player.facing;

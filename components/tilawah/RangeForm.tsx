@@ -18,7 +18,7 @@ const toRef = (d: Draft): AyahRef => ({ surah: d.surah, ayah: Number(d.ayah) });
 
 type Props = { session?: TilawahSession; onDone?: () => void };
 
-/** From–to ayah range; pages are counted from the mushaf and added to today, or to the edited sitting's day. */
+/** From–to ayah range; pages are counted from the mushaf. The amalan checklist is not touched. */
 export function RangeForm({ session, onDone }: Props) {
   const styles = useStyles(makeStyles);
   const { colors } = useTheme();

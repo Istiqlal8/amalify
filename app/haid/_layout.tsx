@@ -1,11 +1,15 @@
-import { Stack } from 'expo-router';
+import { Redirect, Stack } from 'expo-router';
 
 import { useTheme } from '@/providers/ThemeProvider';
+import { useProfile } from '@/providers/ProfileProvider';
 import { HaidLockGate } from '@/components/haid/HaidLockGate';
 import { stackHeader } from '@/components/ui/stackHeader';
 
 export default function HaidLayout() {
   const { colors } = useTheme();
+  const { loaded, isMale } = useProfile();
+  // Laki-laki tidak punya modul Haid; deep-link pun dikembalikan ke beranda.
+  if (loaded && isMale) return <Redirect href="/(tabs)" />;
   return (
     <HaidLockGate>
       <Stack

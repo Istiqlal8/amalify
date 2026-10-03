@@ -4,7 +4,7 @@ import { InstrumentSerif_400Regular } from '@expo-google-fonts/instrument-serif'
 import { Nunito_400Regular, Nunito_700Bold } from '@expo-google-fonts/nunito';
 import { PlusJakartaSans_400Regular, PlusJakartaSans_500Medium, PlusJakartaSans_700Bold } from '@expo-google-fonts/plus-jakarta-sans';
 import { useFonts } from 'expo-font';
-import { DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { DefaultTheme, Stack, ThemeProvider, useSegments, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, type ReactNode } from 'react';
@@ -12,6 +12,7 @@ import 'react-native-reanimated';
 
 import { AuthProvider } from '@/providers/AuthProvider';
 import { LogsProvider } from '@/providers/LogsProvider';
+import { ProfileProvider, useProfile } from '@/providers/ProfileProvider';
 import { AmbiencePlayer } from '@/components/murottal/AmbiencePlayer';
 import { MurottalProvider } from '@/providers/MurottalProvider';
 import { PrayerProvider } from '@/providers/PrayerProvider';
@@ -42,6 +43,24 @@ function NavigationTheme({ children }: { children: ReactNode }) {
   return <ThemeProvider value={theme}>{children}</ThemeProvider>;
 }
 
+/** Mengarahkan ke onboarding sampai gender dipilih; tetap di dalam Stack agar hook aman. */
+function GenderGate() {
+  const { gender, loaded, isMale } = useProfile();
+  const { name, setTheme } = useTheme();
+  const segments = useSegments();
+  useEffect(() => {
+    if (!loaded) return;
+    const onOnboarding = segments[0] === 'onboarding';
+    if (gender === null && !onOnboarding) router.replace('/onboarding');
+    if (gender !== null && onOnboarding) router.replace('/(tabs)');
+  }, [gender, loaded, segments]);
+  // Laki-laki tidak pakai pink: pindahkan sekali ke biru (pilihan user selain pink dihormati).
+  useEffect(() => {
+    if (loaded && isMale && name === 'pink') setTheme('biru');
+  }, [loaded, isMale, name, setTheme]);
+  return null;
+}
+
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     Amiri_400Regular,
@@ -68,6 +87,7 @@ export default function RootLayout() {
 
   return (
     <AppThemeProvider>
+      <ProfileProvider>
       <NavigationTheme>
       <AuthProvider>
         <LogsProvider>
@@ -75,8 +95,10 @@ export default function RootLayout() {
             <ReminderProvider>
               <MurottalProvider>
                 <StatusBar style="dark" />
+                <GenderGate />
                 <Stack>
                   <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                  <Stack.Screen name="onboarding" options={{ headerShown: false }} />
                   <Stack.Screen name="haid" options={{ headerShown: false }} />
                   <Stack.Screen name="doa" options={{ headerShown: false }} />
                   <Stack.Screen name="murottal" options={{ headerShown: false }} />
@@ -88,6 +110,7 @@ export default function RootLayout() {
         </LogsProvider>
       </AuthProvider>
       </NavigationTheme>
+      </ProfileProvider>
     </AppThemeProvider>
   );
 }

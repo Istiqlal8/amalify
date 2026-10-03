@@ -6,7 +6,7 @@ import { Txt } from '@/components/ui/Txt';
 import { clayOf, type Palette, radius, space } from '@/constants/theme';
 import { formatDay } from '@/domain/cycle';
 import { dateKey } from '@/domain/dayLog';
-import { eventRatio, eventStatus, STATUS_LABELS, type GroupEvent } from '@/domain/groupEvent';
+import { clampProgress, eventRatio, eventStatus, STATUS_LABELS, type GroupEvent } from '@/domain/groupEvent';
 import { formatClock } from '@/domain/reminders';
 import { useStyles } from '@/hooks/useStyles';
 import { useTheme } from '@/providers/ThemeProvider';
@@ -57,7 +57,7 @@ export function EventCard({ event, picName, canManage, onProgress, onEdit, onRem
           </View>
           <View style={styles.row}>
             <ClayButton label={`-${step}`} tone="soft" disabled={event.progress === 0} onPress={() => onProgress(Math.max(0, event.progress - step))} />
-            <ClayButton label={`+${step}`} onPress={() => onProgress(event.progress + step)} />
+            <ClayButton label={`+${step}`} onPress={() => onProgress(clampProgress(event.progress + step, event.target))} />
           </View>
         </>
       ) : (

@@ -1,8 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { DuesPeriod } from '@/domain/cash';
+import type { GroupRole } from '@/domain/groupRole';
 import type { ReportField } from '@/domain/groupReport';
-import { isProgressHidden } from '@/storage/privacyPrefs';
 
 /** `dues_amount` is the monthly dues in rupiah; null when the group has none. */
 export type Group = {
@@ -18,7 +18,7 @@ export type Group = {
   /** What the weekly report asks; set by the creator. */
   report_fields: ReportField[];
 };
-export type GroupRole = 'admin' | 'member';
+export type { GroupRole };
 /** `hidden` members keep their percentage off the server; `percent` is then 0. */
 export type MemberToday = {
   userId: string;
@@ -64,9 +64,12 @@ export async function joinGroup(db: SupabaseClient, code: string): Promise<Group
   return data as Group;
 }
 
-export async function pushToday(db: SupabaseClient, day: string, percent: number, tilawah: number): Promise<void> {
-  const shared = isProgressHidden() ? null : percent;
-  const { error } = await db.from('daily_summaries').upsert({ day, percent: shared, tilawah });
+/**
+ * Shares today's tilawah pages for the leaderboard. The personal percentage is no longer shared:
+ * group screens read progress on the group's own list from `group_day_summaries`.
+ */
+export async function pushToday(db: SupabaseClient, day: string, tilawah: number): Promise<void> {
+  const { error } = await db.from('daily_summaries').upsert({ day, percent: null, tilawah });
   if (error) throw error;
 }
 
@@ -77,8 +80,8 @@ export async function membersToday(db: SupabaseClient, groupId: string, day: str
     .eq('group_id', groupId)
     .returns<MemberRow[]>();
   if (members.error) throw members.error;
-  const ids = members.data.map((m) => m.user_id);
-  const summaries = await db.from('daily_summaries').select('user_id, percent').eq('day', day).in('user_id', ids);
+  // Progress on the group's own list for that day, never the member's personal plan.
+  const summaries = await db.from('group_day_summaries').select('user_id, percent').eq('group_id', groupId).eq('day', day);
   if (summaries.error) throw summaries.error;
   const rows = summaries.data as SummaryRow[];
   const byUser = new Map(rows.map((s) => [s.user_id, s.percent]));

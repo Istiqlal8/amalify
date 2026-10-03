@@ -7,10 +7,10 @@ import { formatDay } from '@/domain/cycle';
 import { useStyles } from '@/hooks/useStyles';
 import { useTheme } from '@/providers/ThemeProvider';
 
-/** Admins manage every entry; others only their own. */
-type Props = { entries: CashEntry[]; me: string | null; isAdmin: boolean; onEdit: (entry: CashEntry) => void; onRemove: (id: string) => void };
+/** `canManage` covers every entry; everyone else manages only their own. */
+type Props = { entries: CashEntry[]; me: string | null; canManage: boolean; onEdit: (entry: CashEntry) => void; onRemove: (id: string) => void };
 
-export function CashList({ entries, me, isAdmin, onEdit, onRemove }: Props) {
+export function CashList({ entries, me, canManage, onEdit, onRemove }: Props) {
   const styles = useStyles(makeStyles);
   const { colors } = useTheme();
   if (entries.length === 0) return <Txt variant="caption">Belum ada catatan kas.</Txt>;
@@ -35,9 +35,9 @@ export function CashList({ entries, me, isAdmin, onEdit, onRemove }: Props) {
       {entries.map((e) => (
         <Pressable
           key={e.id}
-          disabled={!isAdmin && e.createdBy !== me}
+          disabled={!canManage && e.createdBy !== me}
           onPress={() => actions(e)}
-          accessibilityRole={isAdmin || e.createdBy === me ? 'button' : undefined}
+          accessibilityRole={canManage || e.createdBy === me ? 'button' : undefined}
           style={styles.row}>
           <View style={styles.flex}>
             <Txt variant="bold" numberOfLines={1}>

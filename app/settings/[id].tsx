@@ -5,6 +5,8 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { PrayerSettings } from '@/components/prayer/PrayerSettings';
 import { AccountCard } from '@/components/settings/AccountCard';
 import { EveningReminderCard } from '@/components/settings/EveningReminderCard';
+import { GenderCard } from '@/components/settings/GenderCard';
+import { ReminderSoundCard } from '@/components/settings/ReminderSoundCard';
 import { ProfileCard } from '@/components/settings/ProfileCard';
 import { Txt } from '@/components/ui/Txt';
 import { type Palette, space } from '@/constants/theme';
@@ -19,12 +21,21 @@ const PAGES: Record<string, { title: string; render: () => ReactElement }> = {
     render: () => (
       <>
         <ProfileCard />
+        <GenderCard />
         <AccountCard />
       </>
     ),
   },
   sholat: { title: 'Sholat & adzan', render: () => <PrayerSettings /> },
-  pengingat: { title: 'Pengingat', render: () => <EveningReminderCard /> },
+  pengingat: {
+    title: 'Pengingat',
+    render: () => (
+      <>
+        <EveningReminderCard />
+        <ReminderSoundCard />
+      </>
+    ),
+  },
 };
 
 export default function SettingsPage() {

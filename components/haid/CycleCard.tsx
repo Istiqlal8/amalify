@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, View } from 'react-native';
 
+import { FormDialog } from '@/components/ui/FormDialog';
 import { Txt } from '@/components/ui/Txt';
 import { clayOf, type Palette, radius, space } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
 import { useTheme } from '@/providers/ThemeProvider';
 import { cycleStats, daysBetween, formatDay, sortedPeriods } from '@/domain/cycle';
+import { dayOfPeriod } from '@/domain/haid';
 import { useLogs } from '@/providers/LogsProvider';
 
 import { PeriodForm } from './PeriodForm';
-
-const HISTORY = 4;
 
 function when(today: string, day: string): string {
   const n = daysBetween(today, day);
@@ -30,6 +30,7 @@ export function CycleCard() {
   if (periods.length === 0) return null;
   const stats = cycleStats(haid);
   const open = periods.some((p) => p.end === undefined);
+  const edited = periods.find((p) => p.start === editing);
 
   function confirmRemove(start: string) {
     Alert.alert(`Hapus catatan ${formatDay(start)}?`, undefined, [
@@ -57,32 +58,35 @@ export function CycleCard() {
         <Txt variant="caption">Perkiraan muncul setelah 2 kali haid tercatat.</Txt>
       )}
       <View style={styles.history}>
-        {periods.slice(-HISTORY).reverse().map((p) =>
-          editing === p.start ? (
-            <PeriodForm key={p.start} period={p} onDone={() => setEditing(null)} />
-          ) : (
-            <View key={p.start} style={styles.row}>
-              <View style={styles.dot} />
-              <Txt style={styles.flex}>
-                {formatDay(p.start)} – {p.end ? formatDay(p.end) : 'sekarang'}
-              </Txt>
-              {p.end && <Txt variant="caption">{daysBetween(p.start, p.end) + 1} hari</Txt>}
-              {p.end && (
-                <Pressable accessibilityRole="button" accessibilityLabel={`Ubah catatan ${formatDay(p.start)}`} onPress={() => setEditing(p.start)} style={styles.remove}>
-                  <Txt variant="bold">Ubah</Txt>
-                </Pressable>
-              )}
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Hapus catatan ${formatDay(p.start)}`}
-                onPress={() => confirmRemove(p.start)}
-                style={styles.remove}>
-                <Txt variant="bold" style={{ color: colors.destructive }}>Hapus</Txt>
-              </Pressable>
-            </View>
-          ),
-        )}
+        {periods.slice().reverse().map((p) => (
+          <View key={p.start} style={styles.row}>
+            <View style={styles.dot} />
+            <Txt style={styles.flex}>
+              {formatDay(p.start)} – {p.end ? formatDay(p.end) : 'sekarang'}
+            </Txt>
+            {p.end ? (
+              <Txt variant="caption">{daysBetween(p.start, p.end) + 1} hari</Txt>
+            ) : (
+              <Txt variant="caption">hari ke-{dayOfPeriod(p, today)}</Txt>
+            )}
+            <Pressable accessibilityRole="button" accessibilityLabel={`Ubah catatan ${formatDay(p.start)}`} onPress={() => setEditing(p.start)} style={styles.remove}>
+              <Txt variant="bold">Ubah</Txt>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={`Hapus catatan ${formatDay(p.start)}`}
+              onPress={() => confirmRemove(p.start)}
+              style={styles.remove}>
+              <Txt variant="bold" style={{ color: colors.destructive }}>Hapus</Txt>
+            </Pressable>
+          </View>
+        ))}
       </View>
+      {edited && (
+        <FormDialog onClose={() => setEditing(null)}>
+          <PeriodForm key={edited.start} period={edited} onDone={() => setEditing(null)} />
+        </FormDialog>
+      )}
     </View>
   );
 }

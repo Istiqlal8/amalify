@@ -3,6 +3,7 @@ import { StyleSheet, View, type LayoutChangeEvent } from 'react-native';
 
 import { clayOf, type Palette, radius, space } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
+import { useLogs } from '@/providers/LogsProvider';
 import { useTheme } from '@/providers/ThemeProvider';
 import { isTree } from '@/domain/flowers';
 import { stageFromPercent, stageName } from '@/domain/plantStage';
@@ -16,7 +17,9 @@ type Props = { percent: number; streakDays: number; loaded: boolean };
 
 export function TodayPlantCard({ percent, streakDays, loaded }: Props) {
   const styles = useStyles(makeStyles);
-  const { flower } = useTheme();
+  const { flowerFor } = useTheme();
+  const { today } = useLogs();
+  const flower = flowerFor(today);
   const stage = stageFromPercent(percent);
   const bursting = useBloomCelebration(percent, loaded, BURST_MS);
   const [size, setSize] = useState({ width: 0, height: 0 });
@@ -24,7 +27,7 @@ export function TodayPlantCard({ percent, streakDays, loaded }: Props) {
 
   return (
     <View style={styles.card} onLayout={measure}>
-      <Plant stage={stage} size={150} label={`Tanaman hari ini: ${stageName(stage, isTree(flower))}, ${percent}%`} />
+      <Plant stage={stage} size={150} flower={flower} label={`Tanaman hari ini: ${stageName(stage, isTree(flower))}, ${percent}%`} />
       <View style={styles.info}>
         <Txt variant="caption">Hari ini</Txt>
         <Txt variant="heading">{stageName(stage, isTree(flower))}</Txt>

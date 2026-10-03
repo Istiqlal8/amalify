@@ -41,6 +41,20 @@ export async function addCash(db: SupabaseClient, groupId: string, draft: CashDr
   if (error) throw error;
 }
 
+/** One row per period so `paidFor` and the reports keep working unchanged. */
+export async function addManyCash(db: SupabaseClient, groupId: string, drafts: CashDraft[]): Promise<void> {
+  const rows = drafts.map((d) => ({
+    group_id: groupId,
+    amount: d.amount,
+    note: d.note,
+    day: d.day,
+    dues_for: d.duesFor,
+    dues_month: d.duesMonth,
+  }));
+  const { error } = await db.from('cash_entries').insert(rows);
+  if (error) throw error;
+}
+
 /** Dues entries keep the member and month they pay for. */
 export async function updateCash(db: SupabaseClient, id: string, draft: CashDraft): Promise<void> {
   const { amount, note, day } = draft;

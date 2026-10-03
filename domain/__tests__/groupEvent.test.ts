@@ -1,6 +1,6 @@
 import { expect, test } from '@jest/globals';
 
-import { eventRatio, eventStatus, sortEvents, type GroupEvent } from '../groupEvent';
+import { clampProgress, eventRatio, eventStatus, sortEvents, type GroupEvent } from '../groupEvent';
 
 const at = (y: number, mo: number, d: number, h = 9) => new Date(y, mo - 1, d, h).toISOString();
 const ev = (over: Partial<GroupEvent> = {}): GroupEvent => ({
@@ -29,4 +29,16 @@ test('test_sortEvents_upcomingSoonestThenPastLatest', () => {
   const list = [ev({ id: 'past1', startsAt: at(2026, 9, 1) }), ev({ id: 'soon2', startsAt: at(2026, 9, 30) }),
     ev({ id: 'soon1', startsAt: at(2026, 9, 24) }), ev({ id: 'past2', startsAt: at(2026, 9, 20) })];
   expect(sortEvents(list, now).map((e) => e.id)).toEqual(['soon1', 'soon2', 'past2', 'past1']);
+});
+
+test('test_clampProgress_aboveTarget_dropsToTarget', () => {
+  expect(clampProgress(40, 30)).toBe(30);
+});
+
+test('test_clampProgress_negativeOrBlank_isZero', () => {
+  expect([clampProgress(-5, 30), clampProgress(Number(''), 30), clampProgress(Number('x'), 30)]).toEqual([0, 0, 0]);
+});
+
+test('test_clampProgress_insideTarget_keepsTypedValue', () => {
+  expect(clampProgress(25, 30)).toBe(25);
 });

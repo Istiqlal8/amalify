@@ -1,5 +1,44 @@
 {
-  "enabledPlugins": {
-    "expo@claude-plugins-official": true
-  }
+  "effortLevel": "xhigh",
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://openagentic.id/api/v1"
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/istiqlalbi/.claude/hooks/graphify-session.sh",
+            "timeout": 15,
+            "statusMessage": "Menyegarkan graf graphify"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"/Users/istiqlalbi/.nvm/versions/node/v26.4.0/bin/node\" \"/Users/istiqlalbi/.nvm/versions/node/v26.4.0/lib/node_modules/@tts-open-toolkit/cli/dist/otk-history-hook.mjs\" \"--host\" \"cc\"",
+            "statusMessage": "Tracking TTS bundled skill usage"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Read|Skill",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"/Users/istiqlalbi/.nvm/versions/node/v26.4.0/bin/node\" \"/Users/istiqlalbi/.nvm/versions/node/v26.4.0/lib/node_modules/@tts-open-toolkit/cli/dist/otk-history-hook.mjs\" \"--host\" \"cc\"",
+            "statusMessage": "Tracking TTS bundled skill usage"
+          }
+        ]
+      }
+    ]
+  },
+  "model": "claude-opus-5.5"
 }

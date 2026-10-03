@@ -1,5 +1,6 @@
 import { dateKey } from './dayLog';
 import type { FarmDay, Point } from './farm';
+import { monthSummary } from './farmDay';
 import { type PlantStage, stageFromPercent } from './plantStage';
 
 /**
@@ -157,17 +158,16 @@ export function buildField(info: FieldInfo, today: string, dayOf: (key: string) 
   const left = bx * BLOCK_COLS;
   const top = by * BLOCK_ROWS;
   const plots = calendarSlots(info.year, info.month).map(({ key, week, weekday }) => {
-    const day = key > today ? { key, percent: 0, onHaid: false } : dayOf(key);
+    const day = key > today ? { key, percent: 0, onHaid: false, recorded: false } : dayOf(key);
     const at = { x: left + FIRST_BED_COL + weekday, y: top + FIRST_BED_ROW + week * BED_ROW_STEP };
     return { ...day, ...at, stage: stageFromPercent(day.percent) };
   });
   return { ...info, left, top, plots };
 }
 
-/** Average percentage of a field's days up to today (0 when none). */
+/** Average percentage of a field's recorded days up to today (0 when none were recorded). */
 export function monthAverage(field: WorldField, today: string): number {
-  const past = field.plots.filter((p) => p.key <= today);
-  return past.length ? Math.round(past.reduce((sum, p) => sum + p.percent, 0) / past.length) : 0;
+  return monthSummary(field.plots, today).average;
 }
 
 /** The spot on the path just outside a field's top gate: where the overview map drops the character. */

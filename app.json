@@ -21,7 +21,24 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.amalify.app",
       "permissions": [
-        "android.permission.SCHEDULE_EXACT_ALARM"
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.SCHEDULE_EXACT_ALARM",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
       ],
       "runtimeVersion": {
         "policy": "appVersion"
@@ -29,7 +46,7 @@
     },
     "web": {
       "bundler": "metro",
-      "output": "static",
+      "output": "single",
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
@@ -81,7 +98,8 @@
         "expo-notifications",
         {
           "icon": "./assets/images/android-icon-monochrome.png",
-          "color": "#EC4899"
+          "color": "#EC4899",
+          "sounds": ["./assets/sounds/notif/lembut.wav", "./assets/sounds/notif/ceria.wav"]
         }
       ],
       "./plugins/withEasDebugSigning",
@@ -119,7 +137,8 @@
         {
           "faceIDPermission": "Face ID dipakai untuk membuka menu Haid."
         }
-      ]
+      ],
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true
@@ -133,6 +152,9 @@
     "owner": "istiqlalbi",
     "updates": {
       "url": "https://u.expo.dev/395d4056-0120-4f0f-a3f4-4f1161ea41fe"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   }
 }

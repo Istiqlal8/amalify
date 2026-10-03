@@ -10,6 +10,10 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { FLOWERS } from '@/domain/flowers';
+import { useLogs } from '@/providers/LogsProvider';
+import { useTheme } from '@/providers/ThemeProvider';
+
 import type { Particles } from './farmSprites';
 
 const COUNT = 16;
@@ -19,6 +23,10 @@ type Props = { kind: Particles; width: number; height: number };
 /** Falling petals or snow, or twinkling fireflies, over the whole farm. Decorative; hidden under reduced motion. */
 export function ThemeParticles({ kind, width, height }: Props) {
   const reduced = useReducedMotion();
+  const { flowerFor, colors } = useTheme();
+  const { today } = useLogs();
+  // Petals take the colour of the flower being grown; those without one follow the app accent.
+  const petalColor = FLOWERS.find((f) => f.id === flowerFor(today))?.petal ?? colors.secondary;
   if (!kind || reduced || width === 0) return null;
   return (
     <View style={styles.layer}>
@@ -26,7 +34,7 @@ export function ThemeParticles({ kind, width, height }: Props) {
         kind === 'fireflies' ? (
           <Firefly key={i} index={i} width={width} height={height} />
         ) : (
-          <Flake key={i} index={i} width={width} height={height} petal={kind === 'petals'} />
+          <Flake key={i} index={i} width={width} height={height} color={kind === 'petals' ? petalColor : null} />
         ),
       )}
     </View>
@@ -36,7 +44,8 @@ export function ThemeParticles({ kind, width, height }: Props) {
 // Stable pseudo-random 0..1 per particle and salt, so particles don't jump between renders.
 const rand = (i: number, salt: number) => ((i * 7919 + salt * 104729) % 1000) / 1000;
 
-function Flake({ index, width, height, petal }: { index: number; width: number; height: number; petal: boolean }) {
+/** `color` paints a petal; null falls as snow. */
+function Flake({ index, width, height, color }: { index: number; width: number; height: number; color: string | null }) {
   const t = useSharedValue(0);
   const duration = 7000 + rand(index, 1) * 6000;
   useEffect(() => {
@@ -50,7 +59,7 @@ function Flake({ index, width, height, petal }: { index: number; width: number; 
       { rotate: `${t.value * 720 + index * 40}deg` },
     ],
   }));
-  return <Animated.View style={[petal ? styles.petal : styles.snow, style]} />;
+  return <Animated.View style={[color ? [styles.petal, { backgroundColor: color }] : styles.snow, style]} />;
 }
 
 function Firefly({ index, width, height }: { index: number; width: number; height: number }) {
@@ -72,7 +81,7 @@ function Firefly({ index, width, height }: { index: number; width: number; heigh
 
 const styles = StyleSheet.create({
   layer: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, pointerEvents: 'none' },
-  petal: { position: 'absolute', width: 9, height: 6, borderRadius: 4, backgroundColor: '#F9A8D4' },
+  petal: { position: 'absolute', width: 9, height: 6, borderRadius: 4 },
   snow: { position: 'absolute', width: 6, height: 6, borderRadius: 3, backgroundColor: '#FFFFFF', opacity: 0.9 },
   firefly: { position: 'absolute', width: 5, height: 5, borderRadius: 3, backgroundColor: '#FFF3A0', boxShadow: '0px 0px 6px #FDE68A' },
 });

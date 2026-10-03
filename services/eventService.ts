@@ -40,13 +40,14 @@ export async function addEvent(db: SupabaseClient, groupId: string, draft: Event
 }
 
 export async function updateEvent(db: SupabaseClient, id: string, draft: EventDraft): Promise<void> {
-  const { title, startsAt, pic, target, unit } = draft;
-  const { error } = await db.from('group_events').update({ title, starts_at: startsAt, pic, target, unit }).eq('id', id);
+  const { title, startsAt, pic, target, unit, progress } = draft;
+  const { error } = await db.from('group_events').update({ title, starts_at: startsAt, pic, target, unit, progress }).eq('id', id);
   if (error) throw error;
 }
 
+/** Through an RPC, so any member may tick progress while the row itself stays gated. */
 export async function setEventProgress(db: SupabaseClient, id: string, progress: number): Promise<void> {
-  const { error } = await db.from('group_events').update({ progress }).eq('id', id);
+  const { error } = await db.rpc('set_event_progress', { e: id, value: progress });
   if (error) throw error;
 }
 

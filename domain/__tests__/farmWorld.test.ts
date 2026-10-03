@@ -25,7 +25,7 @@ import {
   worldNear,
 } from '../farmWorld';
 
-const day = (key: string) => ({ key, percent: 50, onHaid: false });
+const day = (key: string) => ({ key, percent: 50, onHaid: false, recorded: true });
 const fields = buildWorld('2026-09-26', day);
 const grid = worldCollision();
 

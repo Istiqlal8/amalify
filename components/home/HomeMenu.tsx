@@ -6,29 +6,34 @@ import { Txt } from '@/components/ui/Txt';
 import { inkOf, mihrabFonts } from '@/constants/mihrab';
 import type { Palette } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
+import { useProfile } from '@/providers/ProfileProvider';
 import { useTheme } from '@/providers/ThemeProvider';
 
 type Entry = { href: Href; label: string; icon: SymbolViewProps['name'] };
 
 const ENTRIES: Entry[] = [
-  { href: '/amal-yaumi', label: 'Amal Yaumi', icon: { ios: 'checklist', android: 'checklist', web: 'checklist' } },
+  { href: '/amal-yaumi', label: 'Amalan', icon: { ios: 'checklist', android: 'checklist', web: 'checklist' } },
   { href: '/quran', label: 'Baca Quran', icon: { ios: 'book', android: 'menu_book', web: 'menu_book' } },
   { href: '/murottal', label: 'Murottal', icon: { ios: 'headphones', android: 'headphones', web: 'headphones' } },
   { href: '/tilawah', label: 'Tilawah', icon: { ios: 'bookmark', android: 'bookmark_added', web: 'bookmark_added' } },
   { href: '/doa', label: 'Doa', icon: { ios: 'hands.sparkles', android: 'front_hand', web: 'front_hand' } },
   { href: '/haid', label: 'Haid', icon: { ios: 'drop', android: 'water_drop', web: 'water_drop' } },
   { href: '/kiblat', label: 'Kiblat', icon: { ios: 'location.north.circle', android: 'explore', web: 'explore' } },
-  { href: '/garden', label: 'Kebun', icon: { ios: 'leaf', android: 'potted_plant', web: 'potted_plant' } },
   { href: '/leaderboard', label: 'Peringkat', icon: { ios: 'trophy', android: 'emoji_events', web: 'emoji_events' } },
+  // Prototype hub: three private-garden redesign concepts (herbarium / fokus / ledger).
+  { href: '/garden', label: 'Kebun', icon: { ios: 'leaf.fill', android: 'potted_plant', web: 'potted_plant' } },
+  { href: '/keuangan', label: 'Keuangan', icon: { ios: 'wallet.bifold.fill', android: 'wallet', web: 'wallet' } },
 ];
 
-/** Line icons over short labels, four across, no boxes. */
+/** Line icons over short labels, four across, no boxes. Haid disembunyikan untuk laki-laki. */
 export function HomeMenu() {
   const styles = useStyles(makeStyles);
   const { colors } = useTheme();
+  const { isMale } = useProfile();
+  const entries = isMale ? ENTRIES.filter((e) => e.href !== '/haid') : ENTRIES;
   return (
     <View style={styles.grid}>
-      {ENTRIES.map((e) => (
+      {entries.map((e) => (
         <Pressable
           key={e.label}
           onPress={() => router.push(e.href)}

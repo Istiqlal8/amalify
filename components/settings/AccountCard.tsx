@@ -16,11 +16,26 @@ export const SYNC_LABEL: Record<SyncStatus, string> = {
   error: 'Gagal sinkron, dicoba lagi saat ada perubahan',
 };
 
+/** "5 mnt lalu · 3 Okt 12.30": relative when recent, absolute otherwise. */
+function lastSyncedLabel(at: number): string {
+  const minutes = Math.floor((Date.now() - at) / 60000);
+  if (minutes < 1) return 'baru saja';
+  if (minutes < 60) return `${minutes} mnt lalu`;
+  const d = new Date(at);
+  const time = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(':', '.');
+  const today = new Date();
+  const sameDay = d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
+  if (sameDay) return `hari ini ${time}`;
+  return `${d.getDate()} ${['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'][d.getMonth()]} ${time}`;
+}
+
 export function AccountCard() {
   const styles = useStyles(makeStyles);
   const { user, signIn, signOut, deleteAccount } = useAuth();
-  const { sync } = useLogs();
+  const { sync, syncNow, lastSynced } = useLogs();
   const [error, setError] = useState<string | null>(null);
+  const [manualSyncing, setManualSyncing] = useState(false);
+  const busy = manualSyncing || sync === 'syncing';
 
   async function run(action: () => Promise<void>) {
     setError(null);
@@ -28,6 +43,16 @@ export function AccountCard() {
       await action();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
+    }
+  }
+
+  async function manualSync() {
+    setManualSyncing(true);
+    try {
+      const ok = await syncNow();
+      if (!ok) setError('Sinkron gagal. Periksa koneksi lalu coba lagi.');
+    } finally {
+      setManualSyncing(false);
     }
   }
 
@@ -53,8 +78,15 @@ export function AccountCard() {
         <Txt>Catatan amalan disimpan di Google Drive milikmu sendiri.</Txt>
       )}
       <Txt variant="bold">{SYNC_LABEL[sync]}</Txt>
+      {user && lastSynced !== null && <Txt variant="caption">Terakhir sinkron {lastSyncedLabel(lastSynced)}</Txt>}
       {user ? (
         <>
+          <ClayButton
+            label={busy ? 'Menyinkronkan…' : 'Sinkronkan sekarang'}
+            tone="soft"
+            onPress={manualSync}
+            disabled={busy}
+          />
           <ClayButton label="Kelola akun Google" tone="soft" onPress={() => Linking.openURL('https://myaccount.google.com/security')} />
           <ClayButton label="Keluar" tone="soft" onPress={() => run(signOut)} />
           <Txt style={styles.danger} onPress={confirmDelete} accessibilityRole="button">

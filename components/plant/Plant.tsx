@@ -10,14 +10,15 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import type { FlowerId } from '@/domain/flowers';
 import type { PlantStage } from '@/domain/plantStage';
 
 import { PlantArt } from './PlantArt';
 
-type Props = { stage: PlantStage; size: number; label: string };
+type Props = { stage: PlantStage; size: number; label: string; flower?: FlowerId };
 
 /** Sways gently and pops when it grows a stage. Both motions are skipped under reduced motion. */
-export function Plant({ stage, size, label }: Props) {
+export function Plant({ stage, size, label, flower }: Props) {
   const reduced = useReducedMotion();
   const sway = useSharedValue(0);
   const scale = useSharedValue(1);
@@ -47,7 +48,7 @@ export function Plant({ stage, size, label }: Props) {
       accessible
       accessibilityRole="image"
       accessibilityLabel={label}>
-      <PlantArt stage={stage} size={size} />
+      <PlantArt stage={stage} size={size} flower={flower} />
     </Animated.View>
   );
 }

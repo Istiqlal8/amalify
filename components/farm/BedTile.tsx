@@ -1,8 +1,8 @@
-import { memo, useEffect } from 'react';
+import { memo } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
-import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 
 import { PlantArt } from '@/components/plant/PlantArt';
+import { farm } from '@/constants/farm';
 import { fonts, type Palette } from '@/constants/theme';
 import { CELL_ASPECT } from '@/domain/farm';
 import { type FlowerId, isTree } from '@/domain/flowers';
@@ -39,7 +39,7 @@ export const BedTile = memo(function BedTile({ x, y, cell, flower, stage, drawBe
       {drawBed && <Image source={BED_BLANK} style={{ width: cell, height: cell }} />}
       {stage > 0 && <BedPlant flower={flower} stage={stage} cell={cell} />}
       {marker && <View style={[styles.marker, { top: box.top }]} />}
-      {highlight && <PulseFrame box={box} />}
+      {highlight && <View style={[styles.frame, styles.today, box]} />}
       {active && !highlight && <View style={[styles.frame, styles.active, box]} />}
       {name !== undefined && (
         <Text numberOfLines={1} style={[styles.name, { top: cell, width: cell + 16, fontSize: Math.max(9, cell * 0.22) }]}>
@@ -63,18 +63,6 @@ function BedPlant({ flower, stage, cell }: { flower: FlowerId; stage: PlantStage
   );
 }
 
-/** Soft pulsing frame; steady when reduced motion is on. */
-function PulseFrame({ box }: { box: { top: number; height: number } }) {
-  const styles = useStyles(makeStyles);
-  const reduced = useReducedMotion();
-  const opacity = useSharedValue(1);
-  useEffect(() => {
-    if (!reduced) opacity.value = withRepeat(withTiming(0.3, { duration: 700 }), -1, true);
-  }, [reduced, opacity]);
-  const style = useAnimatedStyle(() => ({ opacity: opacity.value }));
-  return <Animated.View style={[styles.frame, styles.today, box, style]} />;
-}
-
 const styles = StyleSheet.create({
   plant: { position: 'absolute', overflow: 'hidden', pointerEvents: 'none' },
 });
@@ -84,7 +72,8 @@ const makeStyles = (c: Palette) =>
     bed: { position: 'absolute' },
     frame: { position: 'absolute', left: 1, right: 1, borderWidth: 2, borderRadius: 8 },
     marker: { position: 'absolute', right: 2, width: 9, height: 9, borderRadius: 5, backgroundColor: c.primary, borderWidth: 1.5, borderColor: '#fff' },
-    today: { borderColor: '#FFF6A8' },
+    // Steady, not pulsing: the spec wants today readable without motion.
+    today: { borderColor: farm.sun, borderWidth: 3 },
     active: { borderColor: '#FFFFFF' },
     name: { position: 'absolute', left: -8, textAlign: 'center', color: '#FFFFFF', fontFamily: fonts.bodyBold, textShadowColor: 'rgba(0,0,0,0.45)', textShadowRadius: 3 },
   });

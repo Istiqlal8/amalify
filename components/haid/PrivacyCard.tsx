@@ -7,6 +7,7 @@ import { toggleHaidLock, useHaidLock } from '@/hooks/useHaidLock';
 import { useStyles } from '@/hooks/useStyles';
 import { useLogs } from '@/providers/LogsProvider';
 import { useTheme } from '@/providers/ThemeProvider';
+import { hideGroupDays } from '@/services/groupDaySummaryService';
 import { hideToday } from '@/services/groupService';
 import { supabase } from '@/services/supabase';
 import { isProgressHidden, setProgressHidden } from '@/storage/privacyPrefs';
@@ -28,7 +29,9 @@ export function PrivacyCard() {
   async function toggleHidden(value: boolean) {
     setHidden(value);
     await setProgressHidden(value);
-    if (value && supabase) await hideToday(supabase, today).catch(() => undefined);
+    if (value && supabase) {
+      await Promise.all([hideToday(supabase, today), hideGroupDays(supabase, today)]).catch(() => undefined);
+    }
   }
 
   const track = { false: colors.border, true: colors.primary };

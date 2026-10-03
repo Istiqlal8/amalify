@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { useLiveRefresh } from '@/hooks/useLiveRefresh';
+import { patchProgress } from '@/domain/memberProgress';
+import { type Change, useLiveRefresh } from '@/hooks/useLiveRefresh';
 import * as groups from '@/services/groupService';
 import { supabase } from '@/services/supabase';
 
@@ -50,13 +51,25 @@ export function useMembersToday(groupId: string | null, day: string): groups.Mem
   }, [groupId, day]);
 
   useEffect(() => reload(), [reload]);
+  // A group summary row carries the progress itself, so a mate ticking a group amalan redraws the
+  // board without a fetch. Rows for other days are ignored. Anything else — joining, leaving, a
+  // delete, coming back to the app — refetches, because names and avatars live on other tables.
+  const apply = useCallback(
+    (changes: Change[]) => {
+      const summaries = changes.filter((c) => c.table === 'group_day_summaries' && c.row);
+      if (summaries.length === 0 || summaries.length !== changes.length) return reload();
+      const rows = summaries.flatMap((c) => (c.row && c.row.day === day ? [c.row] : []));
+      if (rows.length > 0) setMembers((prev) => patchProgress(prev, rows));
+    },
+    [reload, day],
+  );
   useLiveRefresh(
     groupId !== null,
     [
-      { table: 'daily_summaries', filter: `day=eq.${day}` },
+      { table: 'group_day_summaries', filter: `group_id=eq.${groupId}` },
       { table: 'group_members', filter: `group_id=eq.${groupId}` },
     ],
-    reload,
+    apply,
   );
   return members;
 }

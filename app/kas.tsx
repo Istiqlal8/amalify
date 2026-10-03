@@ -6,17 +6,19 @@ import { CashForm } from '@/components/kas/CashForm';
 import { CashList } from '@/components/kas/CashList';
 import { DuesCard } from '@/components/kas/DuesCard';
 import { ClayButton } from '@/components/ui/ClayButton';
+import { FormDialog } from '@/components/ui/FormDialog';
 import { StackScreen } from '@/components/ui/StackScreen';
 import { Txt } from '@/components/ui/Txt';
 import { clayOf, type Palette, space } from '@/constants/theme';
-import { balance, duesPeriodStart, formatRupiah, paidFor } from '@/domain/cash';
+import { balance, duesPeriodStart, formatRupiah } from '@/domain/cash';
 import { useGroupData } from '@/hooks/useGroupData';
 import { useMembersToday } from '@/hooks/useGroups';
+import { useMyRole } from '@/hooks/useMyRole';
 import { useMyUserId } from '@/hooks/useMyUserId';
 import { useStyles } from '@/hooks/useStyles';
 import { useLogs } from '@/providers/LogsProvider';
 import { useTheme } from '@/providers/ThemeProvider';
-import { addCash, listCash, removeCash, setDues, updateCash, type CashDraft } from '@/services/cashService';
+import { addCash, addManyCash, listCash, removeCash, setDues, updateCash, type CashDraft } from '@/services/cashService';
 import type { Group, MemberToday } from '@/services/groupService';
 
 export default function KasScreen() {
@@ -37,7 +39,7 @@ function GroupCash({ group, refreshGroups }: { group: Group; refreshGroups: () =
   /** 'new' for the add form, an entry id while editing it, or null. */
   const [editing, setEditing] = useState<string | null>(null);
   const editedEntry = data.find((e) => e.id === editing);
-  const isAdmin = members.some((m) => m.userId === me && m.role === 'admin');
+  const { canManageCash } = useMyRole(members, me);
   const periodStart = duesPeriodStart(today, group.dues_period);
 
   function save(draft: CashDraft) {
@@ -46,9 +48,11 @@ function GroupCash({ group, refreshGroups }: { group: Group; refreshGroups: () =
     run((db) => (id === 'new' ? addCash(db, group.id, draft) : updateCash(db, id!, draft)));
   }
 
-  function pay(member: MemberToday) {
+  /** One entry per period, so a member can settle several periods at once. */
+  function pay(member: MemberToday, starts: string[]) {
     const amount = group.dues_amount ?? 0;
-    run((db) => addCash(db, group.id, { amount, note: `Iuran ${member.name}`, day: today, duesFor: member.userId, duesMonth: periodStart }));
+    const drafts = starts.map((start) => ({ amount, note: `Iuran ${member.name}`, day: today, duesFor: member.userId, duesMonth: start }));
+    run((db) => addManyCash(db, group.id, drafts));
   }
 
   return (
@@ -61,17 +65,20 @@ function GroupCash({ group, refreshGroups }: { group: Group; refreshGroups: () =
         amount={group.dues_amount}
         period={group.dues_period}
         members={members}
-        paid={paidFor(data, periodStart)}
+        entries={data}
+        periodStart={periodStart}
+        canManage={canManageCash}
         onSet={(amount, period) => run((db) => setDues(db, group.id, amount, period)).then(refreshGroups)}
         onPay={pay}
       />
-      {editing ? (
-        <CashForm key={editing} today={today} initial={editedEntry} onSave={save} onCancel={() => setEditing(null)} />
-      ) : (
-        <ClayButton label="Catat kas" onPress={() => setEditing('new')} />
-      )}
+      <ClayButton label="Catat kas" onPress={() => setEditing('new')} />
       {error && <Txt style={{ color: colors.destructive }}>{error}</Txt>}
-      <CashList entries={data} me={me} isAdmin={isAdmin} onEdit={(e) => setEditing(e.id)} onRemove={(id) => run((db) => removeCash(db, id))} />
+      <CashList entries={data} me={me} canManage={canManageCash} onEdit={(e) => setEditing(e.id)} onRemove={(id) => run((db) => removeCash(db, id))} />
+      {editing && (
+        <FormDialog onClose={() => setEditing(null)}>
+          <CashForm key={editing} today={today} initial={editedEntry} onSave={save} onCancel={() => setEditing(null)} />
+        </FormDialog>
+      )}
     </>
   );
 }

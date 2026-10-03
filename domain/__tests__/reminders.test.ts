@@ -1,5 +1,6 @@
 import { expect, test } from '@jest/globals';
 
+import type { CadenceLogs } from '../cadenceLog';
 import type { Logs } from '../dayLog';
 import { EMPTY_HAID } from '../haid';
 import type { PlanItem } from '../plan';
@@ -10,7 +11,7 @@ const now = new Date(2026, 8, 23, 12, 0);
 const off = { enabled: false, time: '20:30' };
 const on = { enabled: true, time: '20:30' };
 const run = (p: Partial<ScheduleInput>) =>
-  buildSchedule({ items: [], logs: {}, evening: off, prayers: [], city: 'KOTA BANDUNG', haid: EMPTY_HAID, now, ...p });
+  buildSchedule({ items: [], logs: {}, cadence: {}, evening: off, prayers: [], city: 'KOTA BANDUNG', haid: EMPTY_HAID, now, ...p });
 const item = (id: string, reminder?: string): PlanItem => ({
   id, label: id, section: 'sholat', kind: 'check', target: 1, unit: '', reminder,
 });
@@ -52,6 +53,27 @@ test('test_buildSchedule_manyReminders_capsPending', () => {
   expect(run({ items, evening: on })).toHaveLength(MAX_PENDING);
 });
 
+const weekly = (reminder: string): PlanItem => ({ ...item('wirid', reminder), section: 'quran', cadence: 'mingguan' });
+
+test('test_buildSchedule_weeklyItem_remindsOnlyOnTheLastDayOfItsWeek', () => {
+  expect(run({ items: [weekly('21:00')] }).map((r) => r.id)).toEqual(['2026-09-27:wirid']);
+});
+
+test('test_buildSchedule_weeklyBucketDone_skipsIt', () => {
+  const cadence: CadenceLogs = { 'mingguan:2026-W39': { counts: { wirid: 1 }, at: 1 } };
+  expect(run({ items: [weekly('21:00')], cadence })).toEqual([]);
+});
+
+test('test_buildSchedule_monthlyBucketEndingAfterTheWeek_remindsLater', () => {
+  const monthly = { ...weekly('21:00'), cadence: 'bulanan' as const };
+  expect(run({ items: [monthly] })).toEqual([]);
+});
+
+test('test_buildSchedule_weeklyItem_doesNotHoldBackTheEvening', () => {
+  const logs: Logs = { '2026-09-23': { counts: { a: 1 }, at: 1 } };
+  expect(run({ items: [item('a'), weekly('21:00')], logs, evening: on })[0].id).toBe('2026-09-24:evening');
+});
+
 const maghrib = (d: number): NextPrayer => ({ id: 'maghrib', name: 'Maghrib', at: new Date(2026, 8, d, 17, 56) });
 
 test('test_buildSchedule_adzan_titledWithPrayerAndCity', () => {
@@ -77,4 +99,15 @@ test('test_buildSchedule_haid_skipsAdzanFromStart', () => {
 test('test_buildSchedule_haid_keepsNonSholatReminders', () => {
   const tilawah = { ...item('tilawah', '21:00'), section: 'quran' as const };
   expect(run({ items: [item('isya', '19:30'), tilawah], haid: haidFrom24 }).filter((r) => r.id.startsWith('2026-09-24')).map((r) => r.id)).toEqual(['2026-09-24:tilawah']);
+});
+
+test('test_buildSchedule_chosenWeekdays_skipsOtherDays', () => {
+  // 2026-09-23 is a Wednesday, so a Friday-only reminder first rings on the 25th.
+  const friday: PlanItem = { ...item('dhuha', '08:00'), reminderDays: [5] };
+  const ids = run({ items: [friday] }).map((r) => r.id);
+  expect(ids).toEqual(['2026-09-25:dhuha']);
+});
+
+test('test_buildSchedule_noChosenWeekdays_ringsEveryDay', () => {
+  expect(run({ items: [item('dhuha', '08:00')] })).toHaveLength(6);
 });

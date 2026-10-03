@@ -11,15 +11,24 @@ import { dayOfPeriod, earliestStart, openPeriod } from '@/domain/haid';
 import { useHaidStart } from '@/hooks/useHaidStart';
 import { useSuciConfirm } from '@/hooks/useSuciConfirm';
 import { useLogs } from '@/providers/LogsProvider';
+import { useProfile } from '@/providers/ProfileProvider';
 
 import { IstihadahNotice, MandiNotice } from './FiqhNotices';
 
-/** Section header for Sholat, with the haid switch beside it. */
+/** Section header for Sholat, with the haid switch beside it. Laki-laki: judul polos. */
 export function SholatHeader({ title }: { title: string }) {
   const styles = useStyles(makeStyles);
   const { colors } = useTheme();
   const { haid, todayHaid } = useLogs();
+  const { isMale } = useProfile();
   const startHaid = useHaidStart();
+  if (isMale) {
+    return (
+      <Txt variant="heading" accessibilityRole="header">
+        {title}
+      </Txt>
+    );
+  }
   return (
     <>
       <View style={styles.header}>

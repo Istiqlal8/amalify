@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { configureGoogle, googleTokens, restoreGoogle, revokeGoogle, signInGoogle, signOutGoogle } from '@/services/googleAuth';
 import { signInSupabase } from '@/services/groupService';
 import { deleteAccount as deleteGroupAccount } from '@/services/profileService';
+import { forgetPushToken, registerPushToken } from '@/services/pushTokens';
 import { supabase } from '@/services/supabase';
 import { deleteFile } from '@/storage/driveStore';
 
@@ -21,6 +22,7 @@ async function connectGroups(user: User): Promise<boolean> {
   if (!supabase) return false;
   const { idToken } = await googleTokens();
   await signInSupabase(supabase, idToken, user.user.name ?? user.user.email, user.user.photo);
+  await registerPushToken(supabase).catch(() => {});
   return true;
 }
 
@@ -41,6 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = useCallback(async () => adopt(await signInGoogle()), [adopt]);
 
   const signOut = useCallback(async () => {
+    if (supabase) await forgetPushToken(supabase).catch(() => {});
     await signOutGoogle();
     await supabase?.auth.signOut();
     await adopt(null);

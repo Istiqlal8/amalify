@@ -3,17 +3,21 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Txt } from '@/components/ui/Txt';
 import { clayOf, type Palette, palettes, radius, space, THEME_NAMES } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
+import { useProfile } from '@/providers/ProfileProvider';
 import { useTheme } from '@/providers/ThemeProvider';
 
 export function ThemePicker() {
   const { name, setTheme } = useTheme();
+  const { isMale } = useProfile();
   const s = useStyles(makeStyles);
+  // Laki-laki tidak pakai pink: opsi pink disembunyikan.
+  const options = isMale ? THEME_NAMES.filter((t) => t.id !== 'pink') : THEME_NAMES;
 
   return (
     <View style={s.card}>
       <Txt variant="bold">Warna aplikasi</Txt>
       <View style={s.row} accessibilityRole="radiogroup" accessibilityLabel="Warna aplikasi">
-        {THEME_NAMES.map((t) => {
+        {options.map((t) => {
           const p = palettes[t.id];
           const active = t.id === name;
           return (

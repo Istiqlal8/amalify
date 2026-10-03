@@ -14,7 +14,14 @@ export type GroupEvent = {
   createdBy: string;
 };
 
-export type EventDraft = Pick<GroupEvent, 'title' | 'startsAt' | 'pic' | 'target' | 'unit'>;
+/** `progress` only reaches the server when an existing event is saved; new ones start at 0. */
+export type EventDraft = Pick<GroupEvent, 'title' | 'startsAt' | 'pic' | 'target' | 'unit' | 'progress'>;
+
+/** Keeps progress inside 0..target, so lowering the target lowers a progress above it. */
+export function clampProgress(progress: number, target: number): number {
+  if (!Number.isFinite(progress)) return 0;
+  return Math.min(Math.max(Math.round(progress), 0), target);
+}
 
 export type EventStatus = 'terlaksana' | 'belum' | 'tidak';
 

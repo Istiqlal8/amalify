@@ -6,6 +6,7 @@ import Svg, { Path } from 'react-native-svg';
 import { type Palette } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
 import { FLOWERS } from '@/domain/flowers';
+import { useLogs } from '@/providers/LogsProvider';
 import { useTheme } from '@/providers/ThemeProvider';
 
 const PETALS = 14;
@@ -27,7 +28,8 @@ export function PetalBurst({ width, height }: Props) {
 
 function Petal({ index, width, height }: { index: number; width: number; height: number }) {
   const styles = useStyles(makeStyles);
-  const { colors, flower } = useTheme();
+  const { colors, flowerFor } = useTheme();
+  const { today } = useLogs();
   const progress = useSharedValue(0);
   // Drawn once per petal so a re-render mid-fall does not make it jump.
   const [{ startX, drift, spin, size, delay }] = useState(() => ({
@@ -38,7 +40,7 @@ function Petal({ index, width, height }: { index: number; width: number; height:
     size: 12 + Math.random() * 8,
     delay: Math.random() * 500,
   }));
-  const own = FLOWERS.find((f) => f.id === flower)?.petal ?? null;
+  const own = FLOWERS.find((f) => f.id === flowerFor(today))?.petal ?? null;
   // Sakura follows the theme; other flowers fall in their own colour, every third one in the accent.
   const fill = index % 3 === 0 ? colors.primary : (own ?? colors.petal);
 

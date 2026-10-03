@@ -1,3 +1,5 @@
+import { cadenceKey, cadenceOf, cadenceRange, isDaily } from './cadence';
+import type { CadenceLogs } from './cadenceLog';
 import { countOf, dateKey, dayPercent, type Logs } from './dayLog';
 import { isHaidDay, isPausedSection, type HaidLog } from './haid';
 import { haidReminders } from './haidReminders';
@@ -37,11 +39,16 @@ function itemIsDone(logs: Logs, day: string, item: PlanItem): boolean {
   return countOf(logs[day], item.id) >= item.target;
 }
 
+/** An item with chosen weekdays stays quiet on the others; without them it rings every day. */
+function ringsOn(item: PlanItem, day: Date): boolean {
+  return !item.reminderDays || item.reminderDays.includes(day.getDay());
+}
+
 function remindersForDay(day: Date, items: PlanItem[], logs: Logs, evening: EveningReminder, haid: HaidLog): ScheduledReminder[] {
   const key = dateKey(day);
   const onHaid = isHaidDay(haid, key);
   const list: ScheduledReminder[] = items
-    .filter((it) => it.reminder && !itemIsDone(logs, key, it) && !(onHaid && isPausedSection(it.section)))
+    .filter((it) => it.reminder && ringsOn(it, day) && !itemIsDone(logs, key, it) && !(onHaid && isPausedSection(it.section)))
     .map((it) => ({
       id: `${key}:${it.id}`,
       date: at(day, it.reminder!),
@@ -57,6 +64,32 @@ function remindersForDay(day: Date, items: PlanItem[], logs: Logs, evening: Even
     });
   }
   return list;
+}
+
+function bucketOf(item: PlanItem, day: string): string {
+  return cadenceKey(cadenceOf(item), day);
+}
+
+function bucketDone(cadence: CadenceLogs, item: PlanItem, day: string): boolean {
+  return countOf(cadence[bucketOf(item, day)], item.id) >= item.target;
+}
+
+function isPaused(item: PlanItem, day: string, haid: HaidLog): boolean {
+  return isHaidDay(haid, day) && isPausedSection(item.section);
+}
+
+/** A longer cadence is nagged at most once a bucket: on its last day, and only if still unfinished. */
+function bucketReminders(day: Date, items: PlanItem[], cadence: CadenceLogs, haid: HaidLog): ScheduledReminder[] {
+  const key = dateKey(day);
+  return items
+    .filter((it) => it.reminder && cadenceRange(cadenceOf(it), bucketOf(it, key)).to === key)
+    .filter((it) => !bucketDone(cadence, it, key) && !isPaused(it, key, haid))
+    .map((it) => ({
+      id: `${key}:${it.id}`,
+      date: at(day, it.reminder!),
+      title: it.label,
+      body: 'Hari terakhir periode ini.',
+    }));
 }
 
 function adzan(prayers: NextPrayer[], items: PlanItem[], logs: Logs, city: string, haid: HaidLog): ScheduledReminder[] {
@@ -78,6 +111,8 @@ function adzan(prayers: NextPrayer[], items: PlanItem[], logs: Logs, city: strin
 export type ScheduleInput = {
   items: PlanItem[];
   logs: Logs;
+  /** Progress per cadence bucket, so a longer item is not nagged once its bucket is done. */
+  cadence: CadenceLogs;
   evening: EveningReminder;
   /** Upcoming prayer times when adzan reminders are on, otherwise empty. */
   prayers: NextPrayer[];
@@ -90,16 +125,18 @@ export type ScheduleInput = {
  * Reminders for the coming days, soonest first. Anything already done today is skipped, which is
  * why these are one-off dated notifications instead of daily repeats.
  */
-export function buildSchedule({ items, logs, evening, prayers, city, haid, now }: ScheduleInput): ScheduledReminder[] {
+export function buildSchedule({ items, logs, cadence, evening, prayers, city, haid, now }: ScheduleInput): ScheduledReminder[] {
+  const daily = items.filter(isDaily);
+  const longer = items.filter((it) => !isDaily(it));
   const all: ScheduledReminder[] = [];
   for (let i = 0; i < DAYS_AHEAD; i += 1) {
     const day = new Date(now);
     day.setDate(now.getDate() + i);
-    all.push(...remindersForDay(day, items, logs, evening, haid));
+    all.push(...remindersForDay(day, daily, logs, evening, haid), ...bucketReminders(day, longer, cadence, haid));
   }
   const horizon = new Date(now);
   horizon.setDate(now.getDate() + DAYS_AHEAD);
-  all.push(...adzan(prayers.filter((p) => p.at < horizon), items, logs, city, haid));
+  all.push(...adzan(prayers.filter((p) => p.at < horizon), daily, logs, city, haid));
   all.push(...haidReminders(haid, now));
   return all
     .filter((r) => r.date.getTime() > now.getTime())

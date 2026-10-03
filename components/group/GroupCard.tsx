@@ -8,6 +8,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Txt } from '@/components/ui/Txt';
 import { clayOf, type Palette, space } from '@/constants/theme';
 import { useMembersToday } from '@/hooks/useGroups';
+import { useMyRole } from '@/hooks/useMyRole';
 import { useMyUserId } from '@/hooks/useMyUserId';
 import { useStyles } from '@/hooks/useStyles';
 import { useTheme } from '@/providers/ThemeProvider';
@@ -29,7 +30,7 @@ export function GroupCard({ group, today, initiallyOpen, onChanged }: Props) {
   const [editOpen, setEditOpen] = useState(false);
   const members = useMembersToday(group.id, today);
   const me = useMyUserId();
-  const isAdmin = members.some((m) => m.userId === me && m.role === 'admin');
+  const { isAdmin } = useMyRole(members, me);
 
   /** Closes the editor, runs one admin change, then reloads the groups. */
   async function change(task: (db: NonNullable<typeof supabase>) => Promise<unknown>) {
@@ -82,6 +83,10 @@ export function GroupCard({ group, today, initiallyOpen, onChanged }: Props) {
           <MenuTile href={{ pathname: '/kas', params: { group: group.id } }} label="Kas grup" icon={{ ios: 'banknote.fill', android: 'payments', web: 'payments' }} />
           <MenuTile href={{ pathname: '/group-farm', params: { group: group.id } }} label="Kebun grup" icon={{ ios: 'leaf', android: 'yard', web: 'yard' }} />
           <MenuTile href={{ pathname: '/catatan', params: { group: group.id } }} label="Catatan" icon={{ ios: 'note.text', android: 'sticky_note_2', web: 'sticky_note_2' }} />
+          <MenuTile href={{ pathname: '/amalan-grup', params: { group: group.id } }} label="Amalan grup" icon={{ ios: 'checklist', android: 'checklist', web: 'checklist' }} />
+          {isAdmin && (
+            <MenuTile href={{ pathname: '/pantau', params: { group: group.id } }} label="Pantau" icon={{ ios: 'chart.bar.fill', android: 'monitoring', web: 'monitoring' }} />
+          )}
         </View>
       )}
       {error && <Txt style={{ color: colors.destructive }}>{error}</Txt>}

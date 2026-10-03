@@ -1,17 +1,19 @@
 import { useEffect, useId, useRef } from 'react';
 import { AppState } from 'react-native';
 
-import { supabase } from '@/services/supabase';
+import { type Change, watchTables, type Watch } from '@/hooks/liveBus';
 
-/** A table to watch, optionally narrowed with a Realtime filter such as `group_id=eq.<id>`. */
-export type Watch = { table: string; filter?: string };
+export type { Change, Watch };
 
 /**
- * Calls `reload` whenever a watched table changes on Supabase, and when the app comes back
+ * Calls `reload` with the changed rows whenever a watched table changes on Supabase, and with no
+ * rows when the app comes back
  * to the foreground (the socket is closed while it sleeps, so changes made then are missed).
- * `enabled` false skips both, e.g. before sign-in.
+ * A caller that ignores the rows simply refetches.
+ * `enabled` false skips both, e.g. before sign-in. Every caller shares one channel, so the
+ * same change is delivered — and billed — once however many screens are listening.
  */
-export function useLiveRefresh(enabled: boolean, watches: Watch[], reload: () => void): void {
+export function useLiveRefresh(enabled: boolean, watches: Watch[], reload: (changes: Change[]) => void): void {
   const id = useId();
   const reloadRef = useRef(reload);
   const key = JSON.stringify(watches);
@@ -22,24 +24,12 @@ export function useLiveRefresh(enabled: boolean, watches: Watch[], reload: () =>
 
   useEffect(() => {
     if (!enabled) return;
-    const sub = AppState.addEventListener('change', (state) => state === 'active' && reloadRef.current());
+    const sub = AppState.addEventListener('change', (state) => state === 'active' && reloadRef.current([]));
     return () => sub.remove();
   }, [enabled]);
 
   useEffect(() => {
-    if (!enabled || !supabase || key === '[]') return;
-    const db = supabase;
-    const channel = db.channel(`live${id}`);
-    for (const { table, filter } of JSON.parse(key) as Watch[]) {
-      const fire = () => reloadRef.current();
-      channel.on('postgres_changes', { event: 'INSERT', schema: 'public', table, filter }, fire);
-      channel.on('postgres_changes', { event: 'UPDATE', schema: 'public', table, filter }, fire);
-      // Delete events cannot be filtered, so any delete on the table triggers a reload.
-      channel.on('postgres_changes', { event: 'DELETE', schema: 'public', table }, fire);
-    }
-    channel.subscribe();
-    return () => {
-      db.removeChannel(channel);
-    };
+    if (!enabled || key === '[]') return;
+    return watchTables(id, JSON.parse(key) as Watch[], (changes) => reloadRef.current(changes));
   }, [enabled, key, id]);
 }
