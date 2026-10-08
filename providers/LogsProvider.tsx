@@ -9,6 +9,7 @@ import * as plans from '@/domain/plan';
 import { mergeRules, type RecurringRule } from '@/domain/recurringFinance';
 import { EMPTY_UNLOCKS, mergeUnlocks, type Unlocks } from '@/domain/shop';
 import { newerTilawah } from '@/domain/tilawah';
+import { alive, bury as buryIn, mergeTombstones, type TombKind, type Tombstones } from '@/domain/tombstones';
 import { useCadenceLog } from '@/hooks/useCadenceLog';
 import { useDriveSync, type SyncNow, type SyncStatus } from '@/hooks/useDriveSync';
 import { useGroupSummary } from '@/hooks/useGroupSummary';
@@ -72,6 +73,8 @@ type LogsState = Actions & Pick<TilawahState, 'tilawah' | 'addTilawah' | 'editTi
   /** Transaksi bulanan berulang; dibaca dan diubah lewat useRecurringFinance. */
   recurring: RecurringRule[];
   setRecurring: Dispatch<SetStateAction<RecurringRule[]>>;
+  /** Deletes a finance entry, category or recurring rule so that it stays deleted on every device. */
+  bury: (kind: TombKind, id: string) => void;
 };
 
 const LogsContext = createContext<LogsState | null>(null);
@@ -87,10 +90,11 @@ export function LogsProvider({ children }: { children: ReactNode }) {
   const [budgets, setBudgets, budgetsLoaded] = usePersisted<MonthlyBudget[]>([], store.loadBudgets, store.saveBudgets);
   const [financeCats, setFinanceCats, catsLoaded] = usePersisted<CustomCategory[]>([], store.loadFinanceCats, store.saveFinanceCats);
   const [recurring, setRecurring, recurringLoaded] = usePersisted<RecurringRule[]>([], store.loadRecurring, store.saveRecurring);
+  const [deleted, setDeleted, deletedLoaded] = usePersisted<Tombstones>({}, store.loadDeleted, store.saveDeleted);
   const today = dateKey(new Date());
   const { tilawah, tilawahLoaded, setTilawah, addTilawah, editTilawah, removeTilawah } = useTilawahLog(today);
   const { cadenceLogs, cadenceLoaded, setCadenceLogs, setCadence } = useCadenceLog(today, plan.items);
-  const loaded = logsLoaded && planLoaded && haidLoaded && tilawahLoaded && unlocksLoaded && cadenceLoaded && financeLoaded && budgetsLoaded && catsLoaded && recurringLoaded;
+  const loaded = logsLoaded && planLoaded && haidLoaded && tilawahLoaded && unlocksLoaded && cadenceLoaded && financeLoaded && budgetsLoaded && catsLoaded && recurringLoaded && deletedLoaded;
 
   const applyRemote = useCallback((remote: DriveFile) => {
     setLogs((l) => mergeLogs(l, remote.logs));
@@ -103,10 +107,19 @@ export function LogsProvider({ children }: { children: ReactNode }) {
     setBudgets((b) => mergeBudgets(b, remote.budgets));
     setFinanceCats((c) => mergeCats(c, remote.financeCats));
     setRecurring((r) => mergeRules(r, remote.recurring));
-  }, [setLogs, setPlan, setHaid, setTilawah, setUnlocks, setCadenceLogs, setFinance, setBudgets, setFinanceCats, setRecurring]);
+    setDeleted((d) => mergeTombstones(d, remote.deleted));
+  }, [setLogs, setPlan, setHaid, setTilawah, setUnlocks, setCadenceLogs, setFinance, setBudgets, setFinanceCats, setRecurring, setDeleted]);
+  // One place enforces deletions, whichever way a buried item arrives: a merge from Drive, a
+  // recurring rule posting again, or the delete itself.
+  useEffect(() => {
+    setFinance((f) => alive(f, deleted, 'finance'));
+    setFinanceCats((c) => alive(c, deleted, 'cat'));
+    setRecurring((r) => alive(r, deleted, 'rule'));
+  }, [deleted, finance, financeCats, recurring, setFinance, setFinanceCats, setRecurring]);
+  const bury = useCallback((kind: TombKind, id: string) => setDeleted((d) => buryIn(d, kind, id, Date.now())), [setDeleted]);
   const local = useMemo(
-    () => ({ logs, plan, haid, tilawah, unlocks, cadence: cadenceLogs, finance, budgets, financeCats, recurring }),
-    [logs, plan, haid, tilawah, unlocks, cadenceLogs, finance, budgets, financeCats, recurring],
+    () => ({ logs, plan, haid, tilawah, unlocks, cadence: cadenceLogs, finance, budgets, financeCats, recurring, deleted }),
+    [logs, plan, haid, tilawah, unlocks, cadenceLogs, finance, budgets, financeCats, recurring, deleted],
   );
   const { status: sync, syncNow, lastSynced } = useDriveSync(user !== null, loaded, local, applyRemote);
 
@@ -158,8 +171,8 @@ export function LogsProvider({ children }: { children: ReactNode }) {
     [setHaid],
   );
   const value = useMemo(
-    () => ({ logs, plan, haid, today, todayHaid, loaded, todayEntry, todayPercent, sync, syncNow, lastSynced, setHaidStart, removeHaid, addHaid, moveHaid, saveOpenPeriod, editHaid, tilawah, addTilawah, editTilawah, removeTilawah, unlocks, setUnlocks, cadenceLogs, setCadence, finance, setFinance, budgets, setBudgets, financeCats, setFinanceCats, recurring, setRecurring, ...actions }),
-    [logs, plan, haid, today, todayHaid, loaded, todayEntry, todayPercent, sync, syncNow, lastSynced, setHaidStart, removeHaid, addHaid, moveHaid, saveOpenPeriod, editHaid, tilawah, addTilawah, editTilawah, removeTilawah, unlocks, setUnlocks, cadenceLogs, setCadence, finance, setFinance, budgets, setBudgets, financeCats, setFinanceCats, recurring, setRecurring, actions],
+    () => ({ logs, plan, haid, today, todayHaid, loaded, todayEntry, todayPercent, sync, syncNow, lastSynced, setHaidStart, removeHaid, addHaid, moveHaid, saveOpenPeriod, editHaid, tilawah, addTilawah, editTilawah, removeTilawah, unlocks, setUnlocks, cadenceLogs, setCadence, finance, setFinance, budgets, setBudgets, financeCats, setFinanceCats, recurring, setRecurring, bury, ...actions }),
+    [logs, plan, haid, today, todayHaid, loaded, todayEntry, todayPercent, sync, syncNow, lastSynced, setHaidStart, removeHaid, addHaid, moveHaid, saveOpenPeriod, editHaid, tilawah, addTilawah, editTilawah, removeTilawah, unlocks, setUnlocks, cadenceLogs, setCadence, finance, setFinance, budgets, setBudgets, financeCats, setFinanceCats, recurring, setRecurring, bury, actions],
   );
   return <LogsContext.Provider value={value}>{children}</LogsContext.Provider>;
 }

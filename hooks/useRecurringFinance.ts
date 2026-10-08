@@ -8,7 +8,7 @@ type RecurringFinance = { rules: RecurringRule[]; addRule: (draft: FinanceDraft)
 
 /** Monthly repeating transactions; whatever has come due is written into the finance log on sight. */
 export function useRecurringFinance(): RecurringFinance {
-  const { recurring: rules, setRecurring, setFinance, today, loaded } = useLogs();
+  const { recurring: rules, setRecurring, setFinance, bury, today, loaded } = useLogs();
 
   useEffect(() => {
     if (!loaded) return;
@@ -23,7 +23,7 @@ export function useRecurringFinance(): RecurringFinance {
     (draft: FinanceDraft) => setRecurring((prev) => [...prev, ruleFromDraft(draft, newCategoryId(Date.now()))]),
     [setRecurring],
   );
-  const removeRule = useCallback((id: string) => setRecurring((prev) => prev.filter((r) => r.id !== id)), [setRecurring]);
+  const removeRule = useCallback((id: string) => bury('rule', id), [bury]);
 
   return { rules, addRule, removeRule };
 }

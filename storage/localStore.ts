@@ -7,6 +7,7 @@ import type { CustomCategory, MonthlyBudget, PersonalEntry } from '@/domain/pers
 import { DEFAULT_PLAN, type Plan } from '@/domain/plan';
 import type { RecurringRule } from '@/domain/recurringFinance';
 import { EMPTY_TILAWAH, type TilawahLog } from '@/domain/tilawah';
+import type { Tombstones } from '@/domain/tombstones';
 
 const LOGS_KEY = 'amalify.logs.v1';
 const PLAN_KEY = 'amalify.plan.v1';
@@ -17,6 +18,7 @@ const FINANCE_KEY = 'amalify.finance.v1';
 const BUDGET_KEY = 'amalify.budgets.v1';
 const FINANCE_CATS_KEY = 'amalify.financeCats.v1';
 const RECURRING_KEY = 'amalify.recurring.v1';
+const DELETED_KEY = 'amalify.deleted.v1';
 
 export async function loadLogs(): Promise<Logs> {
   const raw = await AsyncStorage.getItem(LOGS_KEY);
@@ -97,4 +99,13 @@ export async function loadRecurring(): Promise<RecurringRule[]> {
 
 export async function saveRecurring(rules: RecurringRule[]): Promise<void> {
   await AsyncStorage.setItem(RECURRING_KEY, JSON.stringify(rules));
+}
+
+export async function loadDeleted(): Promise<Tombstones> {
+  const raw = await AsyncStorage.getItem(DELETED_KEY);
+  return raw ? (JSON.parse(raw) as Tombstones) : {};
+}
+
+export async function saveDeleted(stones: Tombstones): Promise<void> {
+  await AsyncStorage.setItem(DELETED_KEY, JSON.stringify(stones));
 }
