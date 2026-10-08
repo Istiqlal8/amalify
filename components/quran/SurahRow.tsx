@@ -23,7 +23,8 @@ export function SurahRow({ surah }: { surah: Surah }) {
             {surah.arti} · {surah.jumlahAyat} ayat
           </Txt>
         </View>
-        <Txt style={styles.arab}>{surah.nama}</Txt>
+        {/* The trailing space is slack: Android can draw this box a pixel narrower than it measured, and a name with no room to spare loses its last letters to a clipped second line. */}
+        <Txt style={styles.arab}>{`${surah.nama} `}</Txt>
       </Pressable>
     </Link>
   );

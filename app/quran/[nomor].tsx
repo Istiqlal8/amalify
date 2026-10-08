@@ -38,7 +38,8 @@ function Header({ surah }: { surah: SurahDetail }) {
             {surah.arti} · {surah.tempatTurun} · {surah.jumlahAyat} ayat
           </Txt>
         </View>
-        <Txt style={styles.heroArab}>{surah.nama}</Txt>
+        {/* Trailing space as slack against Android clipping the name; see components/quran/SurahRow.tsx. */}
+        <Txt style={styles.heroArab}>{`${surah.nama} `}</Txt>
       </View>
       {!NO_BASMALAH.has(surah.nomor) && <Txt style={styles.basmalah}>بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ</Txt>}
     </View>
