@@ -6,25 +6,35 @@ import { monthSchedule } from '@/services/prayerApi';
 
 const KEY = 'amalify.prayer.v1';
 
-type Settings = { city: City | null; adzan: boolean };
+/** `lead` is minutes of warning before each prayer (0 = none); `ignoredCity` is a detected city the user declined. */
+type Settings = { city: City | null; adzan: boolean; lead: number; ignoredCity?: string };
+
+const DEFAULTS: Settings = { city: null, adzan: false, lead: 0 };
 
 type PrayerState = Settings & {
+  /** False until the saved city has been read, so nothing mistakes "not read yet" for "none chosen". */
+  loaded: boolean;
   days: PrayerDay[];
   error: string | null;
   setCity: (city: City) => void;
   setAdzan: (on: boolean) => void;
+  setLead: (minutes: number) => void;
+  ignoreCity: (id: string) => void;
 };
 
 const PrayerContext = createContext<PrayerState | null>(null);
 
 /** City choice and adzan toggle stay on this device; the schedule comes from Kemenag via myQuran. */
 export function PrayerProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettings] = useState<Settings>({ city: null, adzan: false });
+  const [settings, setSettings] = useState<Settings>(DEFAULTS);
   const [days, setDays] = useState<PrayerDay[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    AsyncStorage.getItem(KEY).then((raw) => raw && setSettings(JSON.parse(raw) as Settings));
+    AsyncStorage.getItem(KEY)
+      .then((raw) => raw && setSettings({ ...DEFAULTS, ...(JSON.parse(raw) as Partial<Settings>) }))
+      .finally(() => setLoaded(true));
   }, []);
 
   useEffect(() => {
@@ -46,10 +56,12 @@ export function PrayerProvider({ children }: { children: ReactNode }) {
 
   const setCity = useCallback((city: City) => save({ city }), [save]);
   const setAdzan = useCallback((adzan: boolean) => save({ adzan }), [save]);
+  const setLead = useCallback((lead: number) => save({ lead }), [save]);
+  const ignoreCity = useCallback((ignoredCity: string) => save({ ignoredCity }), [save]);
 
   const value = useMemo(
-    () => ({ ...settings, days, error, setCity, setAdzan }),
-    [settings, days, error, setCity, setAdzan],
+    () => ({ ...settings, loaded, days, error, setCity, setAdzan, setLead, ignoreCity }),
+    [settings, loaded, days, error, setCity, setAdzan, setLead, ignoreCity],
   );
   return <PrayerContext.Provider value={value}>{children}</PrayerContext.Provider>;
 }

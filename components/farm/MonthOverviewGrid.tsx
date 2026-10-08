@@ -1,9 +1,10 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { BAND_FILL, BAND_INK, bandOf, farm, farmRadius } from '@/constants/farm';
-import { fonts, space } from '@/constants/theme';
+import { bandFillOf, bandInkOf, bandOf, farmRadius } from '@/constants/farm';
+import { type Palette, fonts, space } from '@/constants/theme';
 import { monthSummary } from '@/domain/farmDay';
 import type { WorldField } from '@/domain/farmWorld';
+import { useStyles } from '@/hooks/useStyles';
 import { useTheme } from '@/providers/ThemeProvider';
 
 import { PaperButton, PaperLabel, PaperTitle } from './ui/Paper';
@@ -34,27 +35,29 @@ export function MonthOverviewGrid({ fields, today, onPick, onClose }: Props) {
 type TileProps = { field: WorldField; today: string; current: boolean; accent: string; onPress: () => void };
 
 function MonthTile({ field, today, current, accent, onPress }: TileProps) {
+  const { colors } = useTheme();
+  const s = useStyles(makeStyles);
   const { average, counted } = monthSummary(field.plots, today);
   const band = counted > 0 ? bandOf(average) : 'kosong';
-  const ink = BAND_INK[band];
+  const ink = bandInkOf(colors)[band];
   const state = counted > 0 ? `${average}%` : 'Belum ada data';
   return (
     <PaperButton
       label=""
       onPress={onPress}
       accessibilityLabel={`${field.label}, ${state}, ${counted} hari tercatat${current ? ', bulan ini' : ''}`}
-      style={[styles.tile, current && { borderColor: accent, borderWidth: 2.5 }]}>
-      <View style={styles.tileBody}>
-        <View style={[styles.swatch, { backgroundColor: BAND_FILL[band] }]}>
-          <Text style={[styles.swatchText, { color: ink }]}>{counted > 0 ? `${average}%` : '–'}</Text>
+      style={[s.tile, current && { borderColor: accent, borderWidth: 2.5 }]}>
+      <View style={s.tileBody}>
+        <View style={[s.swatch, { backgroundColor: bandFillOf(colors)[band] }]}>
+          <Text style={[s.swatchText, { color: ink }]}>{counted > 0 ? `${average}%` : '–'}</Text>
         </View>
-        <View style={styles.tileText}>
-          <Text style={styles.month} numberOfLines={1}>
+        <View style={s.tileText}>
+          <Text style={s.month} numberOfLines={1}>
             {field.label}
           </Text>
-          <Text style={styles.meta}>{counted} hari tercatat</Text>
+          <Text style={s.meta}>{counted} hari tercatat</Text>
         </View>
-        {current && <Text style={[styles.now, { color: accent }]}>Bulan ini</Text>}
+        {current && <Text style={[s.now, { color: accent }]}>Bulan ini</Text>}
       </View>
     </PaperButton>
   );
@@ -62,20 +65,24 @@ function MonthTile({ field, today, current, accent, onPress }: TileProps) {
 
 const styles = StyleSheet.create({
   grid: { gap: space.sm, paddingBottom: space.md },
-  tile: { justifyContent: 'flex-start', paddingHorizontal: space.sm, paddingVertical: space.sm },
-  tileBody: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  swatch: {
-    width: 46,
-    height: 46,
-    borderRadius: farmRadius.chip,
-    borderWidth: 1,
-    borderColor: farm.paperEdge,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  swatchText: { fontFamily: fonts.bodyBold, fontSize: 13 },
-  tileText: { flex: 1, gap: 1 },
-  month: { fontFamily: fonts.bodyBold, fontSize: 15, color: farm.ink },
-  meta: { fontFamily: fonts.body, fontSize: 12, color: farm.muted },
-  now: { fontFamily: fonts.bodyBold, fontSize: 11 },
 });
+
+const makeStyles = (c: Palette) =>
+  StyleSheet.create({
+    tile: { justifyContent: 'flex-start', paddingHorizontal: space.sm, paddingVertical: space.sm },
+    tileBody: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: space.sm },
+    swatch: {
+      width: 46,
+      height: 46,
+      borderRadius: farmRadius.chip,
+      borderWidth: 1,
+      borderColor: c.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    swatchText: { fontFamily: fonts.bodyBold, fontSize: 13 },
+    tileText: { flex: 1, gap: 1 },
+    month: { fontFamily: fonts.bodyBold, fontSize: 15, color: c.foreground },
+    meta: { fontFamily: fonts.body, fontSize: 12, color: c.mutedForeground },
+    now: { fontFamily: fonts.bodyBold, fontSize: 11 },
+  });

@@ -4,7 +4,7 @@ import { InstrumentSerif_400Regular } from '@expo-google-fonts/instrument-serif'
 import { Nunito_400Regular, Nunito_700Bold } from '@expo-google-fonts/nunito';
 import { PlusJakartaSans_400Regular, PlusJakartaSans_500Medium, PlusJakartaSans_700Bold } from '@expo-google-fonts/plus-jakarta-sans';
 import { useFonts } from 'expo-font';
-import { DefaultTheme, Stack, ThemeProvider, useSegments, router } from 'expo-router';
+import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useSegments, router } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, type ReactNode } from 'react';
@@ -14,10 +14,12 @@ import { AuthProvider } from '@/providers/AuthProvider';
 import { LogsProvider } from '@/providers/LogsProvider';
 import { ProfileProvider, useProfile } from '@/providers/ProfileProvider';
 import { AmbiencePlayer } from '@/components/murottal/AmbiencePlayer';
+import { GestureRoot } from '@/components/farm/gesture';
 import { MurottalProvider } from '@/providers/MurottalProvider';
 import { PrayerProvider } from '@/providers/PrayerProvider';
 import { ReminderProvider } from '@/providers/ReminderProvider';
 import { AppThemeProvider, useTheme } from '@/providers/ThemeProvider';
+import { lockPortrait } from '@/hooks/orientation';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -33,20 +35,25 @@ SplashScreen.preventAutoHideAsync();
 /** Hands the active palette to React Navigation, so screen backgrounds follow the theme. */
 function NavigationTheme({ children }: { children: ReactNode }) {
   const { colors } = useTheme();
-  const theme = useMemo(
-    () => ({
-      ...DefaultTheme,
-      colors: { ...DefaultTheme.colors, background: colors.wash, primary: colors.primary, text: colors.foreground },
-    }),
-    [colors],
+  const theme = useMemo(() => {
+    const base = colors.dark ? DarkTheme : DefaultTheme;
+    return {
+      ...base,
+      colors: { ...base.colors, background: colors.wash, card: colors.card, border: colors.border, primary: colors.primary, text: colors.foreground },
+    };
+  }, [colors]);
+  return (
+    <ThemeProvider value={theme}>
+      {/* Dark "Malam" palette needs light status bar text on every screen. */}
+      <StatusBar style={colors.dark ? 'light' : 'dark'} />
+      {children}
+    </ThemeProvider>
   );
-  return <ThemeProvider value={theme}>{children}</ThemeProvider>;
 }
 
 /** Mengarahkan ke onboarding sampai gender dipilih; tetap di dalam Stack agar hook aman. */
 function GenderGate() {
-  const { gender, loaded, isMale } = useProfile();
-  const { name, setTheme } = useTheme();
+  const { gender, loaded } = useProfile();
   const segments = useSegments();
   useEffect(() => {
     if (!loaded) return;
@@ -54,10 +61,6 @@ function GenderGate() {
     if (gender === null && !onOnboarding) router.replace('/onboarding');
     if (gender !== null && onOnboarding) router.replace('/(tabs)');
   }, [gender, loaded, segments]);
-  // Laki-laki tidak pakai pink: pindahkan sekali ke biru (pilihan user selain pink dihormati).
-  useEffect(() => {
-    if (loaded && isMale && name === 'pink') setTheme('biru');
-  }, [loaded, isMale, name, setTheme]);
   return null;
 }
 
@@ -83,34 +86,40 @@ export default function RootLayout() {
     if (loaded) SplashScreen.hideAsync();
   }, [loaded]);
 
+  // The garden unlocks rotation for itself; every other screen stays portrait.
+  useEffect(() => {
+    lockPortrait();
+  }, []);
+
   if (!loaded) return null;
 
   return (
-    <AppThemeProvider>
+    <GestureRoot>
       <ProfileProvider>
-      <NavigationTheme>
-      <AuthProvider>
-        <LogsProvider>
-          <PrayerProvider>
-            <ReminderProvider>
-              <MurottalProvider>
-                <StatusBar style="dark" />
-                <GenderGate />
-                <Stack>
-                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                  <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-                  <Stack.Screen name="haid" options={{ headerShown: false }} />
-                  <Stack.Screen name="doa" options={{ headerShown: false }} />
-                  <Stack.Screen name="murottal" options={{ headerShown: false }} />
-                </Stack>
-                <AmbiencePlayer />
-              </MurottalProvider>
-            </ReminderProvider>
-          </PrayerProvider>
-        </LogsProvider>
-      </AuthProvider>
-      </NavigationTheme>
+        <AppThemeProvider>
+        <NavigationTheme>
+        <AuthProvider>
+          <LogsProvider>
+            <PrayerProvider>
+              <ReminderProvider>
+                <MurottalProvider>
+                  <GenderGate />
+                  <Stack>
+                    <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                    <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+                    <Stack.Screen name="haid" options={{ headerShown: false }} />
+                    <Stack.Screen name="doa" options={{ headerShown: false }} />
+                    <Stack.Screen name="murottal" options={{ headerShown: false }} />
+                  </Stack>
+                  <AmbiencePlayer />
+                </MurottalProvider>
+              </ReminderProvider>
+            </PrayerProvider>
+          </LogsProvider>
+        </AuthProvider>
+        </NavigationTheme>
+        </AppThemeProvider>
       </ProfileProvider>
-    </AppThemeProvider>
+    </GestureRoot>
   );
 }

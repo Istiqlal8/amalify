@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Svg, { Defs, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { pastels } from '@/constants/pastel';
@@ -13,6 +13,10 @@ type Blob = { id: string; cx: string; cy: string; r: string; color: string; stre
  */
 export function SoftBackdrop() {
   const { colors } = useTheme();
+  // Dark "Malam" palette: flat solid background, no pastel wash or blobs.
+  if (colors.dark) {
+    return <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background }]} pointerEvents="none" />;
+  }
   const blobs: Blob[] = [
     { id: 'b1', cx: '95%', cy: '18%', r: '45%', color: colors.primary, strength: 0.35 },
     { id: 'b2', cx: '5%', cy: '42%', r: '50%', color: '#8B5CF6', strength: 0.25 },

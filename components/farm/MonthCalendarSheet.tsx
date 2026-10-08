@@ -2,10 +2,11 @@ import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { farm, farmRadius, touch } from '@/constants/farm';
-import { fonts, space } from '@/constants/theme';
+import { farmRadius, touch } from '@/constants/farm';
+import { type Palette, fonts, space } from '@/constants/theme';
 import { type DayView, dayView, monthSummary } from '@/domain/farmDay';
 import type { WorldField } from '@/domain/farmWorld';
+import { useStyles } from '@/hooks/useStyles';
 import { useTheme } from '@/providers/ThemeProvider';
 
 import { DayCell } from './DayCell';
@@ -33,34 +34,35 @@ type Props = {
 /** A month at full size: one tappable cell per day, today marked by border, label and icon. */
 export function MonthCalendarSheet({ field, today, onClose, onPickDay, onPrev, onNext, onWalk }: Props) {
   const { colors } = useTheme();
+  const s = useStyles(makeStyles);
   const accent = colors.primary;
   const { rows, summary } = useMonth(field, today);
 
   return (
     <PaperSheet onClose={onClose} label={`Kalender ${field.label}`}>
-      <View style={styles.header}>
+      <View style={s.header}>
         <Arrow dir="left" onPress={onPrev} />
-        <View style={styles.headerMiddle}>
+        <View style={s.headerMiddle}>
           <PaperTitle>{field.label}</PaperTitle>
         </View>
         <Arrow dir="right" onPress={onNext} />
       </View>
-      <View style={styles.summary}>
+      <View style={s.summary}>
         <PaperChip>
-          <Text style={styles.badge}>{summary.counted > 0 ? `${summary.average}%` : 'Belum ada data'}</Text>
+          <Text style={s.badge}>{summary.counted > 0 ? `${summary.average}%` : 'Belum ada data'}</Text>
         </PaperChip>
         <PaperLabel>{summary.counted} hari tercatat</PaperLabel>
       </View>
-      <View style={styles.weekdays}>
+      <View style={s.weekdays}>
         {WEEKDAYS.map((d) => (
-          <Text key={d} style={styles.weekday}>
+          <Text key={d} style={s.weekday}>
             {d}
           </Text>
         ))}
       </View>
-      <ScrollView contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={s.grid} showsVerticalScrollIndicator={false}>
         {rows.map((row, week) => (
-          <View key={week} style={styles.row}>
+          <View key={week} style={s.row}>
             {row.map((cell, i) =>
               cell ? (
                 <DayCell
@@ -72,7 +74,7 @@ export function MonthCalendarSheet({ field, today, onClose, onPickDay, onPrev, o
                   onPress={() => onPickDay(cell.view)}
                 />
               ) : (
-                <View key={`pad-${week}-${i}`} style={styles.pad} />
+                <View key={`pad-${week}-${i}`} style={s.pad} />
               ),
             )}
           </View>
@@ -84,6 +86,8 @@ export function MonthCalendarSheet({ field, today, onClose, onPickDay, onPrev, o
 }
 
 function Arrow({ dir, onPress }: { dir: 'left' | 'right'; onPress: (() => void) | null }) {
+  const { colors } = useTheme();
+  const s = useStyles(makeStyles);
   return (
     <Pressable
       onPress={onPress ?? undefined}
@@ -91,8 +95,8 @@ function Arrow({ dir, onPress }: { dir: 'left' | 'right'; onPress: (() => void) 
       accessibilityRole="button"
       accessibilityLabel={dir === 'left' ? 'Bulan sebelumnya' : 'Bulan berikutnya'}
       accessibilityState={{ disabled: onPress === null }}
-      style={[styles.arrow, onPress === null && styles.arrowOff]}>
-      <SymbolView name={CHEVRON(dir)} tintColor={farm.ink} size={22} />
+      style={[s.arrow, onPress === null && s.arrowOff]}>
+      <SymbolView name={CHEVRON(dir)} tintColor={colors.foreground} size={22} />
     </Pressable>
   );
 }
@@ -113,22 +117,23 @@ function useMonth(field: WorldField, today: string) {
   }, [field, today]);
 }
 
-const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  headerMiddle: { flex: 1, alignItems: 'center' },
-  summary: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  badge: { fontFamily: fonts.bodyBold, fontSize: 13, color: farm.ink },
-  arrow: {
-    width: touch.min,
-    height: touch.min,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: farmRadius.control,
-  },
-  arrowOff: { opacity: 0.3 },
-  weekdays: { flexDirection: 'row', gap: space.xs },
-  weekday: { flex: 1, textAlign: 'center', fontFamily: fonts.bodyBold, fontSize: 11, color: farm.muted },
-  grid: { gap: space.xs, paddingBottom: space.md },
-  row: { flexDirection: 'row', gap: space.xs },
-  pad: { flex: 1, minWidth: touch.cell.width },
-});
+const makeStyles = (c: Palette) =>
+  StyleSheet.create({
+    header: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+    headerMiddle: { flex: 1, alignItems: 'center' },
+    summary: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+    badge: { fontFamily: fonts.bodyBold, fontSize: 13, color: c.foreground },
+    arrow: {
+      width: touch.min,
+      height: touch.min,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderRadius: farmRadius.control,
+    },
+    arrowOff: { opacity: 0.3 },
+    weekdays: { flexDirection: 'row', gap: space.xs },
+    weekday: { flex: 1, textAlign: 'center', fontFamily: fonts.bodyBold, fontSize: 11, color: c.mutedForeground },
+    grid: { gap: space.xs, paddingBottom: space.md },
+    row: { flexDirection: 'row', gap: space.xs },
+    pad: { flex: 1, minWidth: touch.cell.width },
+  });

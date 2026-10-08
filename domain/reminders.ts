@@ -92,7 +92,18 @@ function bucketReminders(day: Date, items: PlanItem[], cadence: CadenceLogs, hai
     }));
 }
 
-function adzan(prayers: NextPrayer[], items: PlanItem[], logs: Logs, city: string, haid: HaidLog): ScheduledReminder[] {
+/** The heads-up `lead` minutes before a prayer; none when `lead` is 0. */
+function headsUp(p: NextPrayer, lead: number, body: string): ScheduledReminder[] {
+  if (lead <= 0) return [];
+  return [{
+    id: `${dateKey(p.at)}:menjelang-${p.id}`,
+    date: new Date(p.at.getTime() - lead * 60000),
+    title: `${lead} menit lagi ${p.name}`,
+    body,
+  }];
+}
+
+function adzan(prayers: NextPrayer[], items: PlanItem[], logs: Logs, city: string, haid: HaidLog, lead: number): ScheduledReminder[] {
   return prayers
     .filter((p) => !isHaidDay(haid, dateKey(p.at)))
     .filter((p) => {
@@ -100,12 +111,10 @@ function adzan(prayers: NextPrayer[], items: PlanItem[], logs: Logs, city: strin
       const item = items.find((it) => it.id === p.id);
       return !item || !itemIsDone(logs, dateKey(p.at), item);
     })
-    .map((p) => ({
-      id: `${dateKey(p.at)}:adzan-${p.id}`,
-      date: p.at,
-      title: `Waktunya sholat ${p.name}`,
-      body: `${formatClock(p.at.getHours(), p.at.getMinutes())} · ${city}`,
-    }));
+    .flatMap((p) => {
+      const body = `${formatClock(p.at.getHours(), p.at.getMinutes())} · ${city}`;
+      return [...headsUp(p, lead, body), { id: `${dateKey(p.at)}:adzan-${p.id}`, date: p.at, title: `Waktunya sholat ${p.name}`, body }];
+    });
 }
 
 export type ScheduleInput = {
@@ -116,6 +125,8 @@ export type ScheduleInput = {
   evening: EveningReminder;
   /** Upcoming prayer times when adzan reminders are on, otherwise empty. */
   prayers: NextPrayer[];
+  /** Minutes of warning before each prayer; 0 or absent for none. */
+  prayerLead?: number;
   city: string;
   haid: HaidLog;
   now: Date;
@@ -125,7 +136,7 @@ export type ScheduleInput = {
  * Reminders for the coming days, soonest first. Anything already done today is skipped, which is
  * why these are one-off dated notifications instead of daily repeats.
  */
-export function buildSchedule({ items, logs, cadence, evening, prayers, city, haid, now }: ScheduleInput): ScheduledReminder[] {
+export function buildSchedule({ items, logs, cadence, evening, prayers, prayerLead = 0, city, haid, now }: ScheduleInput): ScheduledReminder[] {
   const daily = items.filter(isDaily);
   const longer = items.filter((it) => !isDaily(it));
   const all: ScheduledReminder[] = [];
@@ -136,7 +147,7 @@ export function buildSchedule({ items, logs, cadence, evening, prayers, city, ha
   }
   const horizon = new Date(now);
   horizon.setDate(now.getDate() + DAYS_AHEAD);
-  all.push(...adzan(prayers.filter((p) => p.at < horizon), daily, logs, city, haid));
+  all.push(...adzan(prayers.filter((p) => p.at < horizon), daily, logs, city, haid, prayerLead));
   all.push(...haidReminders(haid, now));
   return all
     .filter((r) => r.date.getTime() > now.getTime())

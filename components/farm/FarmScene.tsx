@@ -2,29 +2,28 @@ import { useCallback, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { dayView } from '@/domain/farmDay';
 import * as world from '@/domain/farmWorld';
 import { useFarmAudio } from '@/hooks/useFarmAudio';
 import { useFarmSfx } from '@/hooks/useFarmSfx';
+import { useLandscape } from '@/hooks/useLandscape';
 import { useTabBarSpace } from '@/hooks/useTabBarSpace';
 import { space } from '@/constants/theme';
 import { useLogs } from '@/providers/LogsProvider';
 import { useTheme } from '@/providers/ThemeProvider';
 
 import { HouseGlow, WorldBackground } from './Backgrounds';
-import { BedContextCard } from './BedContextCard';
 import { DayDetailSheet } from './DayDetailSheet';
 import { THEME_ART } from './farmSprites';
-import { CONTROL_SPACE, GardenControls } from './GardenControls';
+import { GardenControls } from './GardenControls';
 import { FarmStage, type StageMode } from './FarmStage';
 import { GardenHeader, HEADER_SPACE } from './GardenHeader';
 import { MonthCalendarSheet } from './MonthCalendarSheet';
 import { MonthField } from './MonthField';
 import { MonthOverviewGrid } from './MonthOverviewGrid';
+import { MiniMap } from './MiniMap';
 import { PlotTapLayer } from './PlotTapLayer';
 import { PondLife } from './PondLife';
 import { RideButton } from './RideButton';
-import { SUMMARY_SPACE, TodayProgressCard } from './TodayProgressCard';
 import { useCurrentBlock } from './useCurrentBlock';
 import { useGardenPanels } from './useGardenPanels';
 import { useGardenWorld } from './useGardenWorld';
@@ -39,9 +38,11 @@ const isNear = (p: { x: number; y: number }, block: { bx: number; by: number }) 
   Math.abs(Math.floor(p.x / world.BLOCK_COLS) - block.bx) <= 1 && Math.abs(Math.floor(p.y / world.BLOCK_ROWS) - block.by) <= 1;
 
 /**
- * Direct play: begin beside today's plot, roam the village with the joystick, and inspect any bed.
+ * Direct play: begin beside today's plot, roam the village with the joystick. The beds stay silent
+ * to look at — no card or panel interrupts the walk; day detail lives behind the calendar.
  */
 export function FarmScene() {
+  useLandscape();
   const [mode, setMode] = useState<StageMode>('jelajah');
   const [near, setNear] = useState(-1);
   const { today, fields, plots, nearFn } = useGardenWorld();
@@ -53,8 +54,7 @@ export function FarmScene() {
   const insets = useSafeAreaInsets();
   const tabBarSpace = useTabBarSpace();
   const top = insets.top + HEADER_SPACE;
-  const bottom = tabBarSpace + SUMMARY_SPACE;
-  const { todayPercent, todayHaid, todayEntry } = useLogs();
+  const bottom = tabBarSpace;
   const panels = useGardenPanels();
   const block = useCurrentBlock(motion.pos);
   const current = plots[near];
@@ -98,13 +98,6 @@ export function FarmScene() {
         lanterns={world.WORLD_LANTERNS}
         top={top}
         bottom={bottom}
-        caption={
-          <BedContextCard
-            view={current ? dayView(current, today) : null}
-            bottom={bottom + CONTROL_SPACE}
-            onOpen={panels.openDay}
-          />
-        }
         motion={motion}
         animal={animal}
         pet={pet}
@@ -156,14 +149,7 @@ export function FarmScene() {
           </>
         )}
       </FarmStage>
-      <View pointerEvents="box-none" style={[styles.summary, { bottom: tabBarSpace + space.xs }]}>
-        <TodayProgressCard
-          today={today}
-          percent={todayPercent}
-          onHaid={todayHaid}
-          recorded={todayEntry !== undefined}
-        />
-      </View>
+      {mode === 'jelajah' && <MiniMap fields={fields} today={today} block={block} top={top + space.xs} right={insets.right + space.md} />}
       {panels.months && <MonthOverviewGrid fields={fields} today={today} onPick={openMonth} onClose={panels.closeMonths} />}
       {month && (
         <MonthCalendarSheet
@@ -182,7 +168,6 @@ export function FarmScene() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, width: '100%', maxWidth: 520, alignSelf: 'center', overflow: 'hidden' },
+  root: { flex: 1, width: '100%', overflow: 'hidden' },
   hud: { position: 'absolute', zIndex: 2, top: 0, left: 0, right: 0 },
-  summary: { position: 'absolute', zIndex: 2, left: space.md, right: space.md },
 });

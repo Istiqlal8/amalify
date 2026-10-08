@@ -5,12 +5,14 @@ import { Txt } from '@/components/ui/Txt';
 import { formatRupiah } from '@/domain/cash';
 import { entriesInMonth, monthlySummary } from '@/domain/personalFinance';
 import { usePersonalFinance } from '@/hooks/usePersonalFinance';
+import { useRecurringFinance } from '@/hooks/useRecurringFinance';
 import { useLogs } from '@/providers/LogsProvider';
 
 /** Hub keuangan pribadi: saldo + pintu ke tiap menu. */
 export default function KeuanganHub() {
   const { today } = useLogs();
   const { entries, budgets, loaded } = usePersonalFinance();
+  const { rules } = useRecurringFinance();
   const { month, nav } = useMonth(today.slice(0, 7));
   const summary = monthlySummary(entries, budgets, month);
   const count = entriesInMonth(entries, month).length;
@@ -28,7 +30,8 @@ export default function KeuanganHub() {
       <SettingsRow number={2} title="Transaksi" summary={loaded ? `${count} transaksi bulan ini` : 'Memuat…'} href="/keuangan/transaksi" />
       <SettingsRow number={3} title="Grafik" summary="Per kategori dan harian" href="/keuangan/grafik" />
       <SettingsRow number={4} title="Budget" summary={loaded && summary.overBudget.length > 0 ? `${summary.overBudget.length} kategori over` : 'Batas bulanan per kategori'} href="/keuangan/budget" />
-      <SettingsRow number={5} title="Ekspor" summary="Bagikan laporan CSV" href="/keuangan/ekspor" />
+      <SettingsRow number={5} title="Berulang" summary={rules.length > 0 ? `${rules.length} transaksi tiap bulan` : 'Kos, listrik, cicilan'} href="/keuangan/berulang" />
+      <SettingsRow number={6} title="Ekspor" summary="Bagikan laporan CSV" href="/keuangan/ekspor" />
     </StackScreen>
   );
 }

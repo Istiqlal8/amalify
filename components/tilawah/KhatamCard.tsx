@@ -9,10 +9,12 @@ import { type Palette, radius, space } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
 import { formatRef, khatamCount, lastRead, nextStart, pageOf, TOTAL_PAGES } from '@/domain/tilawah';
 import { useLogs } from '@/providers/LogsProvider';
+import { useTheme } from '@/providers/ThemeProvider';
 
 /** Last position in the mushaf, progress toward khatam, and a jump back into reading. */
 export function KhatamCard() {
   const styles = useStyles(makeStyles);
+  const { colors } = useTheme();
   const { tilawah } = useLogs();
   const last = lastRead(tilawah);
   const page = last ? pageOf(last) : 0;
@@ -21,7 +23,11 @@ export function KhatamCard() {
 
   return (
     <View style={styles.card}>
-      <GradientFill from={pastels.sky.tint} to={pastels.lavender.tint} />
+      {colors.dark ? (
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.card }]} />
+      ) : (
+        <GradientFill from={pastels.sky.tint} to={pastels.lavender.tint} />
+      )}
       <Txt variant="caption" style={styles.soft}>Terakhir dibaca</Txt>
       <Txt variant="heading" style={styles.onPink}>{last ? formatRef(last) : 'Belum ada'}</Txt>
       <View style={styles.bar}>
@@ -43,13 +49,13 @@ export function KhatamCard() {
 
 const makeStyles = (c: Palette) =>
   StyleSheet.create({
-    card: { gap: space.sm, padding: space.lg, borderRadius: radius.lg, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.95)' },
+    card: { gap: space.sm, padding: space.lg, borderRadius: c.dark ? 10 : radius.lg, overflow: 'hidden', borderWidth: 1, borderColor: c.dark ? c.border : 'rgba(255,255,255,0.95)' },
     onPink: { color: c.foreground },
     soft: { color: c.foreground },
     bar: { height: 10, borderRadius: radius.pill, overflow: 'hidden' },
     // Faded on its own layer so the fill above keeps full strength.
     track: { ...StyleSheet.absoluteFill, backgroundColor: c.card, opacity: 0.7 },
-    fill: { height: '100%', borderRadius: radius.pill, backgroundColor: pastels.sky.ink },
+    fill: { height: '100%', borderRadius: radius.pill, backgroundColor: c.dark ? c.primary : pastels.sky.ink },
     row: { flexDirection: 'row', alignItems: 'center' },
     flex: { flex: 1 },
   });

@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
+import Svg, { Circle, Ellipse, Path } from 'react-native-svg';
 import Animated, {
   Easing,
   type SharedValue,
@@ -53,7 +54,7 @@ function useLoop(ms: number, delay = 0): SharedValue<number> {
 
 function Koi({ index, cell, width, height }: { index: number; cell: number; width: number; height: number }) {
   const phase = useLoop(LAP_MS + index * 3500);
-  const len = cell * 0.5;
+  const len = cell * 0.62;
   const style = useAnimatedStyle(() => {
     const p = koiAt(phase.value, index);
     return { transform: [{ translateX: p.x * width - len / 2 }, { translateY: p.y * height - len / 4 }, { rotate: `${p.angle}deg` }] };
@@ -61,11 +62,31 @@ function Koi({ index, cell, width, height }: { index: number; cell: number; widt
   const spotted = index % 2 === 0;
   return (
     <Animated.View style={[styles.koi, { width: len, height: len / 2 }, style]}>
-      <View style={[styles.tail, { borderTopWidth: len / 6, borderBottomWidth: len / 6, borderLeftWidth: len / 4, top: len / 12 }]} />
-      <View style={[styles.body, { left: len / 5, width: len * 0.8, height: len / 2, borderRadius: len / 4 }]}>
-        <View style={[styles.patch, spotted ? styles.patchWhite : styles.patchRed, { width: len * 0.3, height: len / 4, borderRadius: len / 8 }]} />
-      </View>
+      <Animated.View style={[styles.wake, { width: len * 1.1, height: len * 0.5, borderRadius: len / 2 }]} />
+      <SvgKoi len={len} spotted={spotted} />
     </Animated.View>
+  );
+}
+
+/** A koi seen from above: teardrop body, flowing tail, side fins and a soft colour patch. */
+function SvgKoi({ len, spotted }: { len: number; spotted: boolean }) {
+  const h = len / 2;
+  const patch = spotted ? '#FFF7EE' : '#D9481F';
+  return (
+    <Svg width={len} height={h} viewBox="0 0 100 50">
+      {/* tail fin */}
+      <Path d="M14 25 Q2 10 6 25 Q2 40 14 25 Z" fill="#F08A2E" opacity={0.95} />
+      {/* side fins */}
+      <Path d="M40 25 Q34 6 52 20 Z" fill="#F6A44E" />
+      <Path d="M40 25 Q34 44 52 30 Z" fill="#F6A44E" />
+      {/* body */}
+      <Path d="M18 25 Q34 4 62 12 Q86 18 90 25 Q86 32 62 38 Q34 46 18 25 Z" fill="#F28C38" />
+      {/* colour patch */}
+      <Ellipse cx={spotted ? 52 : 60} cy={25} rx={11} ry={8} fill={patch} />
+      {/* dorsal shading + eye */}
+      <Path d="M24 22 Q50 12 84 23" stroke="#D9701F" strokeWidth={2} fill="none" strokeLinecap="round" opacity={0.6} />
+      <Circle cx={80} cy={22} r={2.4} fill="#3B2412" />
+    </Svg>
   );
 }
 
@@ -79,19 +100,7 @@ const styles = StyleSheet.create({
   pond: { position: 'absolute', overflow: 'hidden', pointerEvents: 'none' },
   ice: { backgroundColor: 'rgba(255,255,255,0.35)' },
   glint: { position: 'absolute', left: -20, height: 6, backgroundColor: 'rgba(255,255,255,0.7)', transform: [{ rotate: '-18deg' }] },
-  koi: { position: 'absolute', left: 0, top: 0 },
-  tail: {
-    position: 'absolute',
-    left: 0,
-    width: 0,
-    height: 0,
-    borderTopColor: 'transparent',
-    borderBottomColor: 'transparent',
-    borderLeftColor: '#F28C38',
-  },
-  body: { position: 'absolute', top: 0, backgroundColor: '#F28C38', alignItems: 'center', justifyContent: 'center' },
-  patch: { marginLeft: 4 },
-  patchWhite: { backgroundColor: '#FFF7EE' },
-  patchRed: { backgroundColor: '#D9481F' },
+  koi: { position: 'absolute', left: 0, top: 0, alignItems: 'center', justifyContent: 'center' },
+  wake: { position: 'absolute', backgroundColor: 'rgba(255,255,255,0.12)' },
   ripple: { position: 'absolute', borderWidth: 2, borderColor: 'rgba(255,255,255,0.8)' },
 });

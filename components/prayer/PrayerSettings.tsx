@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, Switch, View } from 'react-native';
 
 import { ClayButton } from '@/components/ui/ClayButton';
+import { PillTabs } from '@/components/ui/PillTabs';
 import { Txt } from '@/components/ui/Txt';
 import { clayOf, type Palette, space } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
@@ -11,10 +12,12 @@ import { usePrayer } from '@/providers/PrayerProvider';
 import { useReminders } from '@/providers/ReminderProvider';
 import { openExactAlarmSettings } from '@/services/exactAlarm';
 
+const LEADS = [0, 5, 10, 15, 30].map((m) => ({ id: String(m), label: m === 0 ? 'Mati' : `${m} menit` }));
+
 export function PrayerSettings() {
   const styles = useStyles(makeStyles);
   const { colors } = useTheme();
-  const { city, adzan, setAdzan } = usePrayer();
+  const { city, adzan, lead, setAdzan, setLead } = usePrayer();
   const { requestPermission } = useReminders();
   const [denied, setDenied] = useState(false);
 
@@ -43,6 +46,12 @@ export function PrayerSettings() {
           thumbColor={colors.card}
         />
       </View>
+      {adzan && (
+        <View style={styles.lead}>
+          <Txt variant="bold">Ingatkan sebelumnya</Txt>
+          <PillTabs options={LEADS} value={String(lead)} onChange={(id) => setLead(Number(id))} />
+        </View>
+      )}
       {denied && <Txt style={{ color: colors.destructive }}>Izin notifikasi ditolak. Aktifkan di Pengaturan HP untuk Amalify.</Txt>}
       {adzan && Platform.OS === 'android' && (
         <>
@@ -59,4 +68,5 @@ const makeStyles = (c: Palette) =>
     card: { padding: space.md, gap: space.md },
     row: { flexDirection: 'row', alignItems: 'center', gap: space.sm, minHeight: 48 },
     flex: { flex: 1 },
+    lead: { gap: space.sm },
   });

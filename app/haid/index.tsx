@@ -2,6 +2,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { SubScreen } from '@/components/ui/SubScreen';
 import { IstihadahNotice, MandiNotice } from '@/components/haid/FiqhNotices';
+import { CoupleCard } from '@/components/couple/CoupleCard';
 import { PregnancyCard } from '@/components/haid/PregnancyCard';
 import { PrivacyCard } from '@/components/haid/PrivacyCard';
 import { QadhaCard } from '@/components/haid/QadhaCard';
@@ -28,9 +29,11 @@ export default function HaidHome() {
         <MenuTile href="/haid/pad" label="Pembalut" icon={{ ios: 'drop.fill', android: 'water_drop', web: 'water_drop' }} />
         <MenuTile href="/haid/pill" label="Pil KB" icon={{ ios: 'pills.fill', android: 'medication', web: 'medication' }} />
         <MenuTile href="/haid/kb" label="KB" icon={{ ios: 'checkmark.shield.fill', android: 'verified_user', web: 'verified_user' }} />
+        <MenuTile href="/pasangan" label="Pasangan" icon={{ ios: 'heart.fill', android: 'favorite', web: 'favorite' }} />
         <MenuTile href="/doa" label="Doa & Dzikir" icon={{ ios: 'hands.sparkles.fill', android: 'front_hand', web: 'front_hand' }} />
       </View>
       <QadhaCard />
+      <CoupleCard />
       <PrivacyCard />
     </SubScreen>
   );

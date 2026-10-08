@@ -2,13 +2,14 @@ import { memo } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 
 import { PlantArt } from '@/components/plant/PlantArt';
-import { farm } from '@/constants/farm';
 import { fonts, type Palette } from '@/constants/theme';
 import { CELL_ASPECT } from '@/domain/farm';
 import { type FlowerId, isTree } from '@/domain/flowers';
 import type { PlantStage } from '@/domain/plantStage';
 import { useStyles } from '@/hooks/useStyles';
+import { useTheme } from '@/providers/ThemeProvider';
 
+import { BedActiveGlow } from './BedActiveGlow';
 import { BED_BLANK, BED_BOX, PLANT_WIDTH } from './farmSprites';
 
 // PlantArt's canvas is 160 wide with the plant rooted at y≈116 and a pot below; we show only the plant.
@@ -31,6 +32,7 @@ type Props = {
 
 /** One garden bed with the chosen flower growing in it; memoised so moving characters don't redraw it. */
 export const BedTile = memo(function BedTile({ x, y, cell, flower, stage, drawBed, label, highlight, active, marker, name }: Props) {
+  const { colors } = useTheme();
   const styles = useStyles(makeStyles);
   const top = (y + 1) * cell * CELL_ASPECT - cell;
   const box = { top: BED_BOX.top * cell, height: (BED_BOX.bottom - BED_BOX.top) * cell };
@@ -39,6 +41,7 @@ export const BedTile = memo(function BedTile({ x, y, cell, flower, stage, drawBe
       {drawBed && <Image source={BED_BLANK} style={{ width: cell, height: cell }} />}
       {stage > 0 && <BedPlant flower={flower} stage={stage} cell={cell} />}
       {marker && <View style={[styles.marker, { top: box.top }]} />}
+      {active && <BedActiveGlow left={1} top={box.top} width={cell - 2} height={box.height} color={colors.primary} />}
       {highlight && <View style={[styles.frame, styles.today, box]} />}
       {active && !highlight && <View style={[styles.frame, styles.active, box]} />}
       {name !== undefined && (
@@ -73,7 +76,7 @@ const makeStyles = (c: Palette) =>
     frame: { position: 'absolute', left: 1, right: 1, borderWidth: 2, borderRadius: 8 },
     marker: { position: 'absolute', right: 2, width: 9, height: 9, borderRadius: 5, backgroundColor: c.primary, borderWidth: 1.5, borderColor: '#fff' },
     // Steady, not pulsing: the spec wants today readable without motion.
-    today: { borderColor: farm.sun, borderWidth: 3 },
+    today: { borderColor: c.primary, borderWidth: 3 },
     active: { borderColor: '#FFFFFF' },
     name: { position: 'absolute', left: -8, textAlign: 'center', color: '#FFFFFF', fontFamily: fonts.bodyBold, textShadowColor: 'rgba(0,0,0,0.45)', textShadowRadius: 3 },
   });

@@ -5,6 +5,7 @@ import { Txt } from '@/components/ui/Txt';
 import { clayOf, type Palette, radius, space } from '@/constants/theme';
 import { FLOWERS } from '@/domain/flowers';
 import type { Sfx } from '@/domain/farmSound';
+import type { MilestoneProgress } from '@/domain/milestones';
 import { priceOf, type ShopItem } from '@/domain/shop';
 import { useStyles } from '@/hooks/useStyles';
 import type { Rewards } from '@/hooks/useRewards';
@@ -28,6 +29,25 @@ export function ShopCard({ item, rewards, sfx }: Props) {
         {name}
       </Txt>
       <ItemAction item={item} name={name} rewards={rewards} sfx={sfx} />
+    </View>
+  );
+}
+
+/** A rare flower that is not yet earned: its requirement and a progress bar instead of a price. */
+function MilestoneLock({ milestone }: { milestone: MilestoneProgress }) {
+  const styles = useStyles(makeStyles);
+  const { colors } = useTheme();
+  return (
+    <View style={styles.lock}>
+      <Txt variant="caption" style={styles.lockText}>
+        {milestone.requirement}
+      </Txt>
+      <View style={styles.track}>
+        <View style={[styles.fill, { width: `${Math.round(milestone.ratio * 100)}%`, backgroundColor: colors.primary }]} />
+      </View>
+      <Txt variant="caption" style={styles.lockText}>
+        {milestone.current} / {milestone.target}
+      </Txt>
     </View>
   );
 }
@@ -90,6 +110,10 @@ function FlowerAction({ item, name, rewards, sfx }: Props & { name: string }) {
   const isDefault = defaultFlower === id;
   const isToday = todayFlower === id;
   const hasTodayOverride = today in dayFlowers;
+
+  // Rare flowers are earned, never bought: show the milestone progress while locked.
+  const rare = rewards.milestones.find((m) => m.id === id);
+  if (rare && !rare.earned) return <MilestoneLock milestone={rare} />;
 
   if (!rewards.owns(item)) {
     const short = price - rewards.balance;
@@ -210,4 +234,8 @@ const makeStyles = (c: Palette) =>
       borderRadius: radius.pill,
       paddingHorizontal: space.sm,
     },
+    lock: { gap: space.xs },
+    lockText: { textAlign: 'center' },
+    track: { height: 8, borderRadius: 4, backgroundColor: c.muted, overflow: 'hidden' },
+    fill: { height: '100%', borderRadius: 4 },
   });

@@ -3,6 +3,7 @@ import { migrateLogs, type Logs } from '@/domain/dayLog';
 import type { HaidLog } from '@/domain/haid';
 import type { CustomCategory, MonthlyBudget, PersonalEntry } from '@/domain/personalFinance';
 import type { Plan } from '@/domain/plan';
+import type { RecurringRule } from '@/domain/recurringFinance';
 import type { Unlocks } from '@/domain/shop';
 import type { TilawahLog } from '@/domain/tilawah';
 
@@ -12,7 +13,7 @@ const API = 'https://www.googleapis.com/drive/v3/files';
 const UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
 
 /** `plan`, `haid`, `tilawah`, `cadence`, `finance` and `budgets` are absent in files written before those existed. */
-export type DriveFile = { logs: Logs; plan?: Plan; haid?: HaidLog; tilawah?: TilawahLog; unlocks?: Unlocks; cadence?: CadenceLogs; finance?: PersonalEntry[]; budgets?: MonthlyBudget[]; financeCats?: CustomCategory[] };
+export type DriveFile = { logs: Logs; plan?: Plan; haid?: HaidLog; tilawah?: TilawahLog; unlocks?: Unlocks; cadence?: CadenceLogs; finance?: PersonalEntry[]; budgets?: MonthlyBudget[]; financeCats?: CustomCategory[]; recurring?: RecurringRule[] };
 
 async function driveFetch(token: string, url: string, init: RequestInit = {}): Promise<Response> {
   const res = await fetch(url, {
@@ -35,7 +36,7 @@ export async function downloadFile(token: string): Promise<{ fileId: string | nu
   if (!fileId) return { fileId: null, file: { logs: {} } };
   const res = await driveFetch(token, `${API}/${fileId}?alt=media`);
   const body = (await res.json()) as DriveFile;
-  return { fileId, file: { logs: migrateLogs(body.logs ?? {}), plan: body.plan, haid: body.haid, tilawah: body.tilawah, unlocks: body.unlocks, cadence: body.cadence, finance: body.finance, budgets: body.budgets, financeCats: body.financeCats } };
+  return { fileId, file: { logs: migrateLogs(body.logs ?? {}), plan: body.plan, haid: body.haid, tilawah: body.tilawah, unlocks: body.unlocks, cadence: body.cadence, finance: body.finance, budgets: body.budgets, financeCats: body.financeCats, recurring: body.recurring } };
 }
 
 export async function uploadFile(token: string, fileId: string | null, file: DriveFile): Promise<string> {

@@ -4,22 +4,21 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { space } from '@/constants/theme';
 import type { Point } from '@/domain/farm';
-import { dayView } from '@/domain/farmDay';
 import * as world from '@/domain/farmWorld';
 import { buildGroupWorld, flowerFor, MAX_FIELDS, type MemberField } from '@/domain/groupFarm';
 import { useFarmAudio } from '@/hooks/useFarmAudio';
 import { useFarmPresence } from '@/hooks/useFarmPresence';
 import { useFarmSfx } from '@/hooks/useFarmSfx';
 import { useGroupMonth } from '@/hooks/useGroupMonth';
+import { useLandscape } from '@/hooks/useLandscape';
 import { useLogs } from '@/providers/LogsProvider';
 import { useTheme } from '@/providers/ThemeProvider';
 import type { MemberToday } from '@/services/groupService';
 
 import { WorldBackground } from './Backgrounds';
-import { BedContextCard } from './BedContextCard';
 import { DayDetailSheet } from './DayDetailSheet';
 import { FarmStage, type StageMode } from './FarmStage';
-import { CONTROL_SPACE, GardenControls } from './GardenControls';
+import { GardenControls } from './GardenControls';
 import { GroupPresenceBar } from './GroupPresenceBar';
 import { MonthCalendarSheet } from './MonthCalendarSheet';
 import { MonthField } from './MonthField';
@@ -37,6 +36,7 @@ type Bed = world.WorldPlot & { owner: string; ownerId: string };
 
 /** Kebun grup: every member's field for this month, read as a map first and walked second. */
 export function GroupFarmScene({ groupId, members, userId, name }: Props) {
+  useLandscape();
   const [mode, setMode] = useState<StageMode>('overview');
   const [near, setNear] = useState(-1);
   const motion = useMotion(world.WORLD_START);
@@ -86,14 +86,6 @@ export function GroupFarmScene({ groupId, members, userId, name }: Props) {
         lanterns={world.WORLD_LANTERNS}
         top={insets.top}
         bottom={bottom}
-        caption={
-          <BedContextCard
-            view={current ? dayView(current, today) : null}
-            owner={current?.owner}
-            bottom={bottom + CONTROL_SPACE}
-            onOpen={panels.openDay}
-          />
-        }
         motion={motion}
         animal={animal}
         pet={pet}
@@ -152,7 +144,7 @@ export function GroupFarmScene({ groupId, members, userId, name }: Props) {
           </>
         )}
       </FarmStage>
-      <View style={[styles.presence, { top: insets.top + space.sm }]} pointerEvents="none">
+      <View style={[styles.presence, { top: insets.top + space.sm, right: insets.right + space.md }]} pointerEvents="none">
         <GroupPresenceBar players={players} connected />
       </View>
       {month && (
@@ -172,7 +164,7 @@ export function GroupFarmScene({ groupId, members, userId, name }: Props) {
 }
 
 const styles = StyleSheet.create({
-  presence: { position: 'absolute', right: space.md, maxWidth: '62%' },
+  presence: { position: 'absolute', maxWidth: '62%' },
 });
 
 type GroupWorld = {

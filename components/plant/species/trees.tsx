@@ -1,4 +1,4 @@
-import { Circle, G, Path } from 'react-native-svg';
+import { Circle, Ellipse, G, Path } from 'react-native-svg';
 
 import { FLOWER_ART } from '../flowers';
 
@@ -11,17 +11,25 @@ const BLOSSOMS: [number, number, number][] = [
   [84, 70, 5],
   [46, 74, 4],
   [116, 76, 4],
+  [68, 26, 4],
+  [96, 40, 4],
 ];
 
-/** Sakura: the round-crowned tree the app started with. */
+/** Sakura: a broad, layered crown with a lit top, a shaded underside and a soft ground shadow. */
 export const sakura: SpeciesArt = ({ bloom, c }) => (
   <G>
-    <Path d="M80 116 L80 70" stroke={c.trunk} strokeWidth={9} strokeLinecap="round" />
-    <Path d="M80 86 L64 72 M80 80 L98 68" stroke={c.trunk} strokeWidth={4} strokeLinecap="round" />
-    <Circle cx={80} cy={52} r={30} fill={c.leaf} />
-    <Circle cx={56} cy={66} r={20} fill={c.leaf} />
-    <Circle cx={104} cy={66} r={20} fill={c.leaf} />
-    <Circle cx={70} cy={42} r={8} fill="#86EFAC" />
+    <Ellipse cx={80} cy={118} rx={30} ry={7} fill="rgba(20,40,20,0.18)" />
+    <Path d="M80 118 L80 68" stroke={c.trunk} strokeWidth={9} strokeLinecap="round" />
+    <Path d="M80 88 L62 72" stroke={c.trunk} strokeWidth={5} strokeLinecap="round" />
+    <Path d="M80 82 L100 68" stroke={c.trunk} strokeWidth={5} strokeLinecap="round" />
+    {/* Shaded lower canopy, then the main crown, then a lit top cap: three tones give it depth. */}
+    <Circle cx={52} cy={68} r={21} fill={c.leafDeep} />
+    <Circle cx={108} cy={68} r={21} fill={c.leafDeep} />
+    <Circle cx={80} cy={58} r={32} fill={c.leaf} />
+    <Circle cx={56} cy={62} r={19} fill={c.leaf} />
+    <Circle cx={104} cy={62} r={19} fill={c.leaf} />
+    <Circle cx={70} cy={40} r={15} fill="#A7F3B0" opacity={0.75} />
+    <Circle cx={92} cy={44} r={11} fill="#A7F3B0" opacity={0.6} />
     {BLOSSOMS.map(([x, y, r]) =>
       bloom ? (
         <G key={`${x}-${y}`}>{FLOWER_ART.sakura(x, y, r, c.petal)}</G>

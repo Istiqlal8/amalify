@@ -17,13 +17,13 @@ import {
   type CustomCategory,
   type FinanceDraft,
   type FinanceKind,
-  type PersonalEntry,
 } from '@/domain/personalFinance';
 import { useStyles } from '@/hooks/useStyles';
 
 type Props = {
   today: string;
-  initial?: PersonalEntry;
+  /** A saved entry being edited, or a draft read off a receipt. */
+  initial?: FinanceDraft;
   cats: CustomCategory[];
   onAddCategory: (kind: FinanceKind, label: string) => string | null;
   onSave: (draft: FinanceDraft) => void;
@@ -40,7 +40,7 @@ const NEW_ID = '__new__';
 export function FinanceForm({ today, initial, cats, onAddCategory, onSave, onCancel }: Props) {
   const styles = useStyles(makeStyles);
   const [kind, setKind] = useState<FinanceKind>(initial?.kind ?? 'keluar');
-  const [amount, setAmount] = useState(initial ? String(initial.amount) : '');
+  const [amount, setAmount] = useState(initial?.amount ? String(initial.amount) : '');
   const [category, setCategory] = useState<string>(initial?.category ?? 'makan');
   const [note, setNote] = useState(initial?.note ?? '');
   const [day, setDay] = useState(initial?.day ?? today);

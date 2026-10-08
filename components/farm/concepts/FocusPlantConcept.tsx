@@ -115,7 +115,7 @@ export function FocusPlantConcept({ fields, today }: Props) {
               const s = monthSummary(f.plots, today);
               const band = s.counted > 0 ? bandOf(s.average) : 'kosong';
               return (
-                <View key={f.label} style={[styles.stripItem, paperOf('sunk'), { backgroundColor: BAND_FILL[band] }]}>
+                <View key={f.label} style={[styles.stripItem, paperOf(colors, 'sunk'), { backgroundColor: BAND_FILL[band] }]}>
                   <Text style={styles.stripShort}>{f.short}</Text>
                   <Text style={[styles.stripAvg, { color: BAND_INK[band] }]}>{s.counted > 0 ? `${s.average}%` : '–'}</Text>
                 </View>

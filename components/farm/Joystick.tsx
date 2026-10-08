@@ -1,10 +1,11 @@
-import { useMemo } from 'react';
-import { type GestureResponderEvent, PanResponder, type PanResponderGestureState, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Animated, { type SharedValue, useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 
 import { type Palette } from '@/constants/theme';
 import type { Point } from '@/domain/farm';
 import { useStyles } from '@/hooks/useStyles';
+
+import { PanPad } from './gesture';
 
 const BASE = 120;
 export const JOYSTICK_SIZE = BASE;
@@ -17,19 +18,34 @@ type Props = { vec: SharedValue<Point>; onGrab?: () => void };
 export function Joystick({ vec, onGrab }: Props) {
   const styles = useStyles(makeStyles);
   const thumb = useSharedValue<Point>({ x: 0, y: 0 });
-  const responder = useMemo(() => makeResponder(vec, thumb, onGrab), [vec, thumb, onGrab]);
   const thumbStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: thumb.value.x }, { translateY: thumb.value.y }],
   }));
   return (
-    <View
-      {...responder.panHandlers}
+    <PanPad
       style={styles.base}
-      accessibilityRole="adjustable"
-      accessibilityLabel="Joystick petani">
-      <Animated.View style={[styles.thumb, thumbStyle]} />
-    </View>
+      accessibilityLabel="Joystick petani"
+      onGrab={onGrab}
+      onPoint={(x, y) => moveStick(x, y, vec, thumb)}
+      onRelease={() => releaseStick(vec, thumb)}>
+      <View style={styles.inner}>
+        <Animated.View style={[styles.thumb, thumbStyle]} />
+      </View>
+    </PanPad>
   );
+}
+
+/** Turn a touch inside the pad into a clamped stick vector. */
+function moveStick(x: number, y: number, vec: SharedValue<Point>, thumb: SharedValue<Point>): void {
+  const p = clampToReach(x - BASE / 2, y - BASE / 2);
+  thumb.value = p;
+  vec.value = { x: p.x / REACH, y: p.y / REACH };
+}
+
+/** Let the stick spring back and stop the walk. */
+function releaseStick(vec: SharedValue<Point>, thumb: SharedValue<Point>): void {
+  vec.value = { x: 0, y: 0 };
+  thumb.value = withSpring({ x: 0, y: 0 });
 }
 
 /** Clamp a finger offset from the centre to the stick's reach. */
@@ -37,33 +53,6 @@ function clampToReach(dx: number, dy: number): Point {
   const dist = Math.hypot(dx, dy);
   const k = dist > REACH ? REACH / dist : 1;
   return { x: dx * k, y: dy * k };
-}
-
-function makeResponder(vec: SharedValue<Point>, thumb: SharedValue<Point>, onGrab?: () => void) {
-  let start: Point = { x: 0, y: 0 };
-  const move = (g: PanResponderGestureState) => {
-    const p = clampToReach(start.x + g.dx, start.y + g.dy);
-    thumb.value = p;
-    vec.value = { x: p.x / REACH, y: p.y / REACH };
-  };
-  const release = () => {
-    vec.value = { x: 0, y: 0 };
-    thumb.value = withSpring({ x: 0, y: 0 });
-  };
-  return PanResponder.create({
-    // Capture so the screen's ScrollView never steals the drag.
-    onStartShouldSetPanResponderCapture: () => true,
-    onMoveShouldSetPanResponderCapture: () => true,
-    onPanResponderTerminationRequest: () => false,
-    onPanResponderGrant: (e: GestureResponderEvent, g) => {
-      start = { x: e.nativeEvent.locationX - BASE / 2, y: e.nativeEvent.locationY - BASE / 2 };
-      onGrab?.();
-      move(g);
-    },
-    onPanResponderMove: (_e, g) => move(g),
-    onPanResponderRelease: release,
-    onPanResponderTerminate: release,
-  });
 }
 
 const makeStyles = (c: Palette) =>
@@ -78,5 +67,6 @@ const makeStyles = (c: Palette) =>
       alignItems: 'center',
       justifyContent: 'center',
     },
+    inner: { alignItems: 'center', justifyContent: 'center' },
     thumb: { width: THUMB, height: THUMB, borderRadius: THUMB / 2, backgroundColor: c.primary, borderWidth: 3, borderColor: '#FFFFFF', pointerEvents: 'none' },
   });

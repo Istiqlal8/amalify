@@ -1,12 +1,13 @@
 import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { BAND_FILL, farm, farmRadius } from '@/constants/farm';
-import { fonts, space } from '@/constants/theme';
+import { bandFillOf, farmRadius } from '@/constants/farm';
+import { type Palette, fonts, space } from '@/constants/theme';
 import { plotCaption } from '@/domain/farm';
 import { type DayView, dayHeadline } from '@/domain/farmDay';
 import { isTree } from '@/domain/flowers';
 import { stageFromPercent, stageName } from '@/domain/plantStage';
+import { useStyles } from '@/hooks/useStyles';
 import { useTheme } from '@/providers/ThemeProvider';
 
 import { PaperBody, PaperButton, PaperTitle } from './ui/Paper';
@@ -19,7 +20,8 @@ type Props = { view: DayView; today: string; onClose: () => void };
  * rules; a day with no entry says so plainly. Neither is ever shown as a 0% score.
  */
 export function DayDetailSheet({ view, today, onClose }: Props) {
-  const { flowerFor } = useTheme();
+  const { colors, flowerFor } = useTheme();
+  const s = useStyles(makeStyles);
   const flower = flowerFor(view.key);
   const editable = view.key === today;
   const stage = stageFromPercent(view.percent);
@@ -28,9 +30,9 @@ export function DayDetailSheet({ view, today, onClose }: Props) {
   return (
     <PaperSheet onClose={onClose} height="70%" label={`Detail ${title}`}>
       <PaperTitle>{title}</PaperTitle>
-      <View style={styles.head}>
-        <View style={[styles.swatch, { backgroundColor: BAND_FILL[view.band] }]} />
-        <Text style={styles.headline}>{dayHeadline(view)}</Text>
+      <View style={s.head}>
+        <View style={[s.swatch, { backgroundColor: bandFillOf(colors)[view.band] }]} />
+        <Text style={s.headline}>{dayHeadline(view)}</Text>
       </View>
       <PaperBody>{body(view, stageName(stage, isTree(flower)), editable)}</PaperBody>
       {editable && <PaperButton label="Isi amal hari ini" tone="accent" onPress={() => router.push('/amal-yaumi')} />}
@@ -47,8 +49,9 @@ function body(view: DayView, stage: string, isToday: boolean): string {
   return `Tanaman ${when}: ${stage}.`;
 }
 
-const styles = StyleSheet.create({
-  head: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
-  swatch: { width: 34, height: 34, borderRadius: farmRadius.chip, borderWidth: 1, borderColor: farm.paperEdge },
-  headline: { fontFamily: fonts.bodyBold, fontSize: 22, color: farm.ink },
-});
+const makeStyles = (c: Palette) =>
+  StyleSheet.create({
+    head: { flexDirection: 'row', alignItems: 'center', gap: space.sm },
+    swatch: { width: 34, height: 34, borderRadius: farmRadius.chip, borderWidth: 1, borderColor: c.border },
+    headline: { fontFamily: fonts.bodyBold, fontSize: 22, color: c.foreground },
+  });

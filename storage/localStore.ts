@@ -5,6 +5,7 @@ import { migrateLogs, type Logs } from '@/domain/dayLog';
 import { EMPTY_HAID, type HaidLog } from '@/domain/haid';
 import type { CustomCategory, MonthlyBudget, PersonalEntry } from '@/domain/personalFinance';
 import { DEFAULT_PLAN, type Plan } from '@/domain/plan';
+import type { RecurringRule } from '@/domain/recurringFinance';
 import { EMPTY_TILAWAH, type TilawahLog } from '@/domain/tilawah';
 
 const LOGS_KEY = 'amalify.logs.v1';
@@ -15,6 +16,7 @@ const CADENCE_KEY = 'amalify.cadence.v1';
 const FINANCE_KEY = 'amalify.finance.v1';
 const BUDGET_KEY = 'amalify.budgets.v1';
 const FINANCE_CATS_KEY = 'amalify.financeCats.v1';
+const RECURRING_KEY = 'amalify.recurring.v1';
 
 export async function loadLogs(): Promise<Logs> {
   const raw = await AsyncStorage.getItem(LOGS_KEY);
@@ -86,4 +88,13 @@ export async function loadFinanceCats(): Promise<CustomCategory[]> {
 
 export async function saveFinanceCats(cats: CustomCategory[]): Promise<void> {
   await AsyncStorage.setItem(FINANCE_CATS_KEY, JSON.stringify(cats));
+}
+
+export async function loadRecurring(): Promise<RecurringRule[]> {
+  const raw = await AsyncStorage.getItem(RECURRING_KEY);
+  return raw ? (JSON.parse(raw) as RecurringRule[]) : [];
+}
+
+export async function saveRecurring(rules: RecurringRule[]): Promise<void> {
+  await AsyncStorage.setItem(RECURRING_KEY, JSON.stringify(rules));
 }

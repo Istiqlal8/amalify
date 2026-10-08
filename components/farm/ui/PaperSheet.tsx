@@ -2,8 +2,10 @@ import type { ReactNode } from 'react';
 import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { farm, farmBorder, farmRadius } from '@/constants/farm';
-import { space } from '@/constants/theme';
+import { farmBorder, farmRadius } from '@/constants/farm';
+import { type Palette, space } from '@/constants/theme';
+import { useFarmChrome } from '@/hooks/useFarmChrome';
+import { useStyles } from '@/hooks/useStyles';
 
 type Props = {
   onClose: () => void;
@@ -13,30 +15,34 @@ type Props = {
   label?: string;
 };
 
-/** Bottom sheet on warm paper: the garden's panel surface, not the app's white card. */
+/** Bottom sheet on the garden panel surface, tinted from the active palette. */
 export function PaperSheet({ onClose, children, height = '85%', label }: Props) {
+  const chrome = useFarmChrome();
+  const s = useStyles(makeStyles);
   return (
     <Modal transparent animationType="slide" onRequestClose={onClose} accessibilityViewIsModal>
-      <Pressable style={styles.scrim} onPress={onClose} accessibilityRole="button" accessibilityLabel="Tutup" />
-      <SafeAreaView edges={['bottom']} style={[styles.sheet, { maxHeight: height }]} accessibilityLabel={label}>
-        <View style={styles.grip} />
+      <Pressable style={s.scrim} onPress={onClose} accessibilityRole="button" accessibilityLabel="Tutup" />
+      <SafeAreaView
+        edges={['bottom']}
+        style={[s.sheet, { backgroundColor: chrome.paper, borderTopColor: chrome.edge, maxHeight: height }]}
+        accessibilityLabel={label}>
+        <View style={s.grip} />
         {children}
       </SafeAreaView>
     </Modal>
   );
 }
 
-const styles = StyleSheet.create({
-  scrim: { flex: 1, backgroundColor: 'rgba(48,44,40,0.38)' },
-  sheet: {
-    paddingHorizontal: space.md,
-    paddingBottom: space.sm,
-    gap: space.sm,
-    backgroundColor: farm.paper,
-    borderTopWidth: farmBorder,
-    borderColor: farm.paperEdge,
-    borderTopLeftRadius: farmRadius.panel,
-    borderTopRightRadius: farmRadius.panel,
-  },
-  grip: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: farm.paperEdge, marginTop: space.sm },
-});
+const makeStyles = (c: Palette) =>
+  StyleSheet.create({
+    scrim: { flex: 1, backgroundColor: c.dark ? 'rgba(0,0,0,0.55)' : 'rgba(48,44,40,0.38)' },
+    sheet: {
+      paddingHorizontal: space.md,
+      paddingBottom: space.sm,
+      gap: space.sm,
+      borderTopWidth: farmBorder,
+      borderTopLeftRadius: farmRadius.panel,
+      borderTopRightRadius: farmRadius.panel,
+    },
+    grip: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: c.border, marginTop: space.sm },
+  });

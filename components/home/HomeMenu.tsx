@@ -23,6 +23,7 @@ const ENTRIES: Entry[] = [
   // Prototype hub: three private-garden redesign concepts (herbarium / fokus / ledger).
   { href: '/garden', label: 'Kebun', icon: { ios: 'leaf.fill', android: 'potted_plant', web: 'potted_plant' } },
   { href: '/keuangan', label: 'Keuangan', icon: { ios: 'wallet.bifold.fill', android: 'wallet', web: 'wallet' } },
+  { href: '/pasangan', label: 'Pasangan', icon: { ios: 'heart', android: 'favorite', web: 'favorite' } },
 ];
 
 /** Line icons over short labels, four across, no boxes. Haid disembunyikan untuk laki-laki. */
@@ -30,6 +31,7 @@ export function HomeMenu() {
   const styles = useStyles(makeStyles);
   const { colors } = useTheme();
   const { isMale } = useProfile();
+  // Laki-laki: Haid diganti Pasangan (baca status istri). Perempuan: keduanya ada.
   const entries = isMale ? ENTRIES.filter((e) => e.href !== '/haid') : ENTRIES;
   return (
     <View style={styles.grid}>

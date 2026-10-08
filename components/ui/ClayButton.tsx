@@ -2,6 +2,7 @@ import { Pressable, StyleSheet } from 'react-native';
 
 import { type Palette, radius, space } from '@/constants/theme';
 import { useStyles } from '@/hooks/useStyles';
+import { useProfile } from '@/providers/ProfileProvider';
 import { useTheme } from '@/providers/ThemeProvider';
 
 import { Txt } from './Txt';
@@ -11,6 +12,8 @@ type Props = { label: string; onPress: () => void; tone?: 'primary' | 'soft'; di
 export function ClayButton({ label, onPress, tone = 'primary', disabled = false }: Props) {
   const styles = useStyles(makeStyles);
   const { colors } = useTheme();
+  // Cowok: tombol tegas bersudut, bukan pil.
+  const { isMale } = useProfile();
   const primary = tone === 'primary';
   return (
     <Pressable
@@ -20,6 +23,7 @@ export function ClayButton({ label, onPress, tone = 'primary', disabled = false 
       onPress={onPress}
       style={({ pressed }) => [
         styles.base,
+        { borderRadius: isMale ? radius.md : radius.pill },
         primary ? styles.primary : styles.soft,
         disabled && styles.disabled,
         { transform: [{ scale: pressed ? 0.97 : 1 }] },

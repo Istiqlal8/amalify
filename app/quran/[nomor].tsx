@@ -135,7 +135,7 @@ const makeStyles = (c: Palette) =>
       borderRadius: radius.lg,
       overflow: 'hidden',
       borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.95)',
+      borderColor: c.dark ? c.border : 'rgba(255,255,255,0.95)',
     },
     heroRow: { flexDirection: 'row', alignItems: 'center', alignSelf: 'stretch', gap: space.sm },
     heroInfo: { flex: 1, gap: 2 },

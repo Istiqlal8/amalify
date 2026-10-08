@@ -6,6 +6,7 @@ import { countOf, dateKey, dayPercent, mergeLogs, resnapshot, setCount, type Day
 import * as haids from '@/domain/haid';
 import { mergeBudgets, mergeCats, mergeFinance, type CustomCategory, type MonthlyBudget, type PersonalEntry } from '@/domain/personalFinance';
 import * as plans from '@/domain/plan';
+import { mergeRules, type RecurringRule } from '@/domain/recurringFinance';
 import { EMPTY_UNLOCKS, mergeUnlocks, type Unlocks } from '@/domain/shop';
 import { newerTilawah } from '@/domain/tilawah';
 import { useCadenceLog } from '@/hooks/useCadenceLog';
@@ -68,6 +69,9 @@ type LogsState = Actions & Pick<TilawahState, 'tilawah' | 'addTilawah' | 'editTi
   /** Kategori bebas buatan user. */
   financeCats: CustomCategory[];
   setFinanceCats: Dispatch<SetStateAction<CustomCategory[]>>;
+  /** Transaksi bulanan berulang; dibaca dan diubah lewat useRecurringFinance. */
+  recurring: RecurringRule[];
+  setRecurring: Dispatch<SetStateAction<RecurringRule[]>>;
 };
 
 const LogsContext = createContext<LogsState | null>(null);
@@ -82,10 +86,11 @@ export function LogsProvider({ children }: { children: ReactNode }) {
   const [finance, setFinance, financeLoaded] = usePersisted<PersonalEntry[]>([], store.loadFinance, store.saveFinance);
   const [budgets, setBudgets, budgetsLoaded] = usePersisted<MonthlyBudget[]>([], store.loadBudgets, store.saveBudgets);
   const [financeCats, setFinanceCats, catsLoaded] = usePersisted<CustomCategory[]>([], store.loadFinanceCats, store.saveFinanceCats);
+  const [recurring, setRecurring, recurringLoaded] = usePersisted<RecurringRule[]>([], store.loadRecurring, store.saveRecurring);
   const today = dateKey(new Date());
   const { tilawah, tilawahLoaded, setTilawah, addTilawah, editTilawah, removeTilawah } = useTilawahLog(today);
   const { cadenceLogs, cadenceLoaded, setCadenceLogs, setCadence } = useCadenceLog(today, plan.items);
-  const loaded = logsLoaded && planLoaded && haidLoaded && tilawahLoaded && unlocksLoaded && cadenceLoaded && financeLoaded && budgetsLoaded && catsLoaded;
+  const loaded = logsLoaded && planLoaded && haidLoaded && tilawahLoaded && unlocksLoaded && cadenceLoaded && financeLoaded && budgetsLoaded && catsLoaded && recurringLoaded;
 
   const applyRemote = useCallback((remote: DriveFile) => {
     setLogs((l) => mergeLogs(l, remote.logs));
@@ -97,10 +102,11 @@ export function LogsProvider({ children }: { children: ReactNode }) {
     setFinance((f) => mergeFinance(f, remote.finance));
     setBudgets((b) => mergeBudgets(b, remote.budgets));
     setFinanceCats((c) => mergeCats(c, remote.financeCats));
-  }, [setLogs, setPlan, setHaid, setTilawah, setUnlocks, setCadenceLogs, setFinance, setBudgets, setFinanceCats]);
+    setRecurring((r) => mergeRules(r, remote.recurring));
+  }, [setLogs, setPlan, setHaid, setTilawah, setUnlocks, setCadenceLogs, setFinance, setBudgets, setFinanceCats, setRecurring]);
   const local = useMemo(
-    () => ({ logs, plan, haid, tilawah, unlocks, cadence: cadenceLogs, finance, budgets, financeCats }),
-    [logs, plan, haid, tilawah, unlocks, cadenceLogs, finance, budgets, financeCats],
+    () => ({ logs, plan, haid, tilawah, unlocks, cadence: cadenceLogs, finance, budgets, financeCats, recurring }),
+    [logs, plan, haid, tilawah, unlocks, cadenceLogs, finance, budgets, financeCats, recurring],
   );
   const { status: sync, syncNow, lastSynced } = useDriveSync(user !== null, loaded, local, applyRemote);
 
@@ -152,8 +158,8 @@ export function LogsProvider({ children }: { children: ReactNode }) {
     [setHaid],
   );
   const value = useMemo(
-    () => ({ logs, plan, haid, today, todayHaid, loaded, todayEntry, todayPercent, sync, syncNow, lastSynced, setHaidStart, removeHaid, addHaid, moveHaid, saveOpenPeriod, editHaid, tilawah, addTilawah, editTilawah, removeTilawah, unlocks, setUnlocks, cadenceLogs, setCadence, finance, setFinance, budgets, setBudgets, financeCats, setFinanceCats, ...actions }),
-    [logs, plan, haid, today, todayHaid, loaded, todayEntry, todayPercent, sync, syncNow, lastSynced, setHaidStart, removeHaid, addHaid, moveHaid, saveOpenPeriod, editHaid, tilawah, addTilawah, editTilawah, removeTilawah, unlocks, setUnlocks, cadenceLogs, setCadence, finance, setFinance, budgets, setBudgets, financeCats, setFinanceCats, actions],
+    () => ({ logs, plan, haid, today, todayHaid, loaded, todayEntry, todayPercent, sync, syncNow, lastSynced, setHaidStart, removeHaid, addHaid, moveHaid, saveOpenPeriod, editHaid, tilawah, addTilawah, editTilawah, removeTilawah, unlocks, setUnlocks, cadenceLogs, setCadence, finance, setFinance, budgets, setBudgets, financeCats, setFinanceCats, recurring, setRecurring, ...actions }),
+    [logs, plan, haid, today, todayHaid, loaded, todayEntry, todayPercent, sync, syncNow, lastSynced, setHaidStart, removeHaid, addHaid, moveHaid, saveOpenPeriod, editHaid, tilawah, addTilawah, editTilawah, removeTilawah, unlocks, setUnlocks, cadenceLogs, setCadence, finance, setFinance, budgets, setBudgets, financeCats, setFinanceCats, recurring, setRecurring, actions],
   );
   return <LogsContext.Provider value={value}>{children}</LogsContext.Provider>;
 }

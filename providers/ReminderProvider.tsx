@@ -33,7 +33,7 @@ const ReminderContext = createContext<ReminderState | null>(null);
 export function ReminderProvider({ children }: { children: ReactNode }) {
   const { plan, logs, cadenceLogs, loaded, haid } = useLogs();
   const { isMale } = useProfile();
-  const { days, adzan, city } = usePrayer();
+  const { days, adzan, lead, city } = usePrayer();
   const [evening, setEveningState] = useState<EveningReminder>(DEFAULT_EVENING);
   const [sound, setSoundState] = useState<ReminderSoundId>(DEFAULT_REMINDER_SOUND);
   const [foregrounds, setForegrounds] = useState(0);
@@ -59,12 +59,12 @@ export function ReminderProvider({ children }: { children: ReactNode }) {
       const now = new Date();
       const prayers = adzan ? upcomingPrayers(days, now) : [];
       await replaceScheduled(
-        buildSchedule({ items: plan.items, logs, cadence: cadenceLogs, evening, prayers, city: city?.name ?? '', haid: isMale ? EMPTY_HAID : haid, now }),
+        buildSchedule({ items: plan.items, logs, cadence: cadenceLogs, evening, prayers, prayerLead: lead, city: city?.name ?? '', haid: isMale ? EMPTY_HAID : haid, now }),
         sound,
       );
     }, RESCHEDULE_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [plan, logs, cadenceLogs, evening, sound, loaded, foregrounds, days, adzan, city, haid, isMale]);
+  }, [plan, logs, cadenceLogs, evening, sound, loaded, foregrounds, days, adzan, lead, city, haid, isMale]);
 
   const setEvening = useCallback(async (next: EveningReminder) => {
     if (next.enabled && !(await ensurePermission())) return false;

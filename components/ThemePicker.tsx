@@ -10,8 +10,9 @@ export function ThemePicker() {
   const { name, setTheme } = useTheme();
   const { isMale } = useProfile();
   const s = useStyles(makeStyles);
-  // Laki-laki tidak pakai pink: opsi pink disembunyikan.
-  const options = isMale ? THEME_NAMES.filter((t) => t.id !== 'pink') : THEME_NAMES;
+  // Laki-laki selalu pakai palet Malam; pemilih warna hanya untuk perempuan.
+  if (isMale) return null;
+  const options = THEME_NAMES;
 
   return (
     <View style={s.card}>

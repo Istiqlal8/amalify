@@ -1,10 +1,12 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { BAND_FILL, bandOf, farm, farmRadius } from '@/constants/farm';
-import { fonts } from '@/constants/theme';
+import { bandFillOf, bandOf, farmRadius } from '@/constants/farm';
+import { type Palette, fonts } from '@/constants/theme';
 import { CELL_ASPECT } from '@/domain/farm';
 import { monthSummary } from '@/domain/farmDay';
 import { BLOCK_COLS, BLOCK_ROWS, type WorldField } from '@/domain/farmWorld';
+import { useStyles } from '@/hooks/useStyles';
+import { useTheme } from '@/providers/ThemeProvider';
 
 type Props = {
   fields: WorldField[];
@@ -23,6 +25,8 @@ type Props = {
  * the map is for navigating and reading, not for walking.
  */
 export function PlotTapLayer({ fields, ring, cell, today, accent, mine = -1, onPick }: Props) {
+  const { colors } = useTheme();
+  const s = useStyles(makeStyles);
   const row = cell * CELL_ASPECT;
   return (
     <>
@@ -39,7 +43,7 @@ export function PlotTapLayer({ fields, ring, cell, today, accent, mine = -1, onP
             accessibilityRole="button"
             accessibilityLabel={`${field.label}, ${counted > 0 ? `${average}%` : 'belum ada data'}, ${counted} hari tercatat`}
             style={({ pressed }) => [
-              styles.block,
+              s.block,
               {
                 left: bx * BLOCK_COLS * cell,
                 top: by * BLOCK_ROWS * row,
@@ -47,11 +51,11 @@ export function PlotTapLayer({ fields, ring, cell, today, accent, mine = -1, onP
                 height: BLOCK_ROWS * row,
               },
               field.index === mine && { borderColor: accent, borderWidth: 2 },
-              pressed && styles.pressed,
+              pressed && s.pressed,
             ]}>
-            <View style={styles.marker}>
-              <View style={[styles.dot, { backgroundColor: BAND_FILL[band] }]} />
-              <Text style={styles.short} numberOfLines={1}>
+            <View style={s.marker}>
+              <View style={[s.dot, { backgroundColor: bandFillOf(colors)[band] }]} />
+              <Text style={s.short} numberOfLines={1}>
                 {field.short}
               </Text>
             </View>
@@ -62,20 +66,21 @@ export function PlotTapLayer({ fields, ring, cell, today, accent, mine = -1, onP
   );
 }
 
-const styles = StyleSheet.create({
-  block: { position: 'absolute', alignItems: 'center', justifyContent: 'flex-end', borderRadius: farmRadius.control, paddingBottom: 4 },
-  pressed: { backgroundColor: 'rgba(255,255,255,0.22)' },
-  marker: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    paddingHorizontal: 4,
-    paddingVertical: 1,
-    borderRadius: farmRadius.chip,
-    backgroundColor: farm.paper,
-    borderWidth: 1,
-    borderColor: farm.paperEdge,
-  },
-  dot: { width: 7, height: 7, borderRadius: 4, borderWidth: 0.5, borderColor: farm.paperEdge },
-  short: { fontFamily: fonts.bodyBold, fontSize: 9, color: farm.ink },
-});
+const makeStyles = (c: Palette) =>
+  StyleSheet.create({
+    block: { position: 'absolute', alignItems: 'center', justifyContent: 'flex-end', borderRadius: farmRadius.control, paddingBottom: 4 },
+    pressed: { backgroundColor: c.dark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.22)' },
+    marker: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 3,
+      paddingHorizontal: 4,
+      paddingVertical: 1,
+      borderRadius: farmRadius.chip,
+      backgroundColor: c.card,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    dot: { width: 7, height: 7, borderRadius: 4, borderWidth: 0.5, borderColor: c.border },
+    short: { fontFamily: fonts.bodyBold, fontSize: 9, color: c.foreground },
+  });

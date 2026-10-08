@@ -48,7 +48,7 @@ export function HerbariumConcept({ fields, today }: Props) {
               {todayView.onHaid ? 'Mengikuti aturan hari khusus' : stageName(stageFromPercent(todayView.percent), tree)}
             </Text>
           </View>
-          <View style={[styles.heroPlate, paperOf('sunk')]}>
+          <View style={[styles.heroPlate, paperOf(colors, 'sunk')]}>
             <PlantGlyph
               stage={stageFromPercent(todayView.recorded && !todayView.onHaid ? todayView.percent : 0)}
               size={88}
@@ -75,7 +75,7 @@ export function HerbariumConcept({ fields, today }: Props) {
               accessibilityLabel={`${field.label}, ${counted > 0 ? `${average} persen` : 'belum ada data'}, ${counted} hari tercatat`}
               style={({ pressed }) => [
                 styles.plate,
-                paperOf(),
+                paperOf(colors),
                 isNow && { borderColor: colors.primary, borderWidth: 2 },
                 pressed && styles.pressed,
               ]}>
@@ -138,6 +138,7 @@ function MonthOverlay({
 }
 
 function Specimen({ plot, today, accent, petal }: { plot: WorldPlot; today: string; accent: string; petal: string }) {
+  const { colors } = useTheme();
   const [detail, setDetail] = useState<DayView | null>(null);
   const view = dayView(plot, today);
   return (
@@ -148,7 +149,7 @@ function Specimen({ plot, today, accent, petal }: { plot: WorldPlot; today: stri
         accessibilityLabel={dayLabel(view)}
         style={({ pressed }) => [
           styles.specimen,
-          paperOf('sunk'),
+          paperOf(colors, 'sunk'),
           view.status === 'tercatat' && { backgroundColor: BAND_FILL[view.band] },
           plot.key === today && { borderColor: accent, borderWidth: 2 },
           pressed && styles.pressed,

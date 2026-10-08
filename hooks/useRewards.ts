@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 
 import { earnedPoints } from '@/domain/points';
 import * as shop from '@/domain/shop';
+import { earnedRare, milestoneContext, milestoneProgress, type MilestoneProgress } from '@/domain/milestones';
 import { useLogs } from '@/providers/LogsProvider';
 import { useTheme } from '@/providers/ThemeProvider';
 
@@ -18,6 +19,8 @@ export type Rewards = {
   /** Adds bonus points; used by the development-only grant in the shop. */
   grant: (amount: number) => void;
   inUse: (item: shop.ShopItem) => boolean;
+  /** Rare flowers earned from milestones, with live progress. */
+  milestones: MilestoneProgress[];
 };
 
 /** Points earned from amal yaumi, what they bought, and the current picks. */
@@ -26,10 +29,12 @@ export function useRewards(): Rewards {
   const { flower, setFlower } = useTheme();
   const fromAmal = useMemo(() => earnedPoints(logs, plan.items, haid, today, todayPercent), [logs, plan.items, haid, today, todayPercent]);
   const earned = fromAmal + unlocks.bonus;
+  const milestones = useMemo(() => milestoneProgress(milestoneContext(logs, plan.items, today, earned)), [logs, plan.items, today, earned]);
+  const rare = useMemo(() => new Set(earnedRare(milestoneContext(logs, plan.items, today, earned))), [logs, plan.items, today, earned]);
   // The flower in use is always owned, so users who picked one before the shop existed keep it.
   const owns = useCallback(
-    (item: shop.ShopItem) => shop.owns(unlocks, item) || (item.kind === 'flower' && item.id === flower),
-    [unlocks, flower],
+    (item: shop.ShopItem) => shop.owns(unlocks, item) || (item.kind === 'flower' && (item.id === flower || rare.has(item.id))),
+    [unlocks, flower, rare],
   );
   const buy = useCallback((item: shop.ShopItem) => setUnlocks((u) => shop.buy(earned, u, item, Date.now())), [earned, setUnlocks]);
   const use = useCallback(
@@ -59,5 +64,6 @@ export function useRewards(): Rewards {
     dropPet: () => setUnlocks((u) => shop.choosePet(u, null, Date.now())),
     grant: (amount) => setUnlocks((u) => shop.grantBonus(u, amount)),
     inUse,
+    milestones,
   };
 }

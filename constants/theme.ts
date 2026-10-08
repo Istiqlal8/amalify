@@ -1,6 +1,8 @@
-export type ThemeName = 'pink' | 'hijau' | 'biru' | 'putih';
+export type ThemeName = 'pink' | 'hijau' | 'biru' | 'putih' | 'malam';
 
 export type Palette = {
+  /** True for the dark "Malam" palette used by laki-laki; shared primitives switch surface and type on it. */
+  dark: boolean;
   primary: string;
   primaryDeep: string;
   onPrimary: string;
@@ -33,6 +35,7 @@ const plant = { leaf: '#4ADE80', leafDeep: '#16A34A', trunk: '#B45309', soil: '#
 export const palettes: Record<ThemeName, Palette> = {
   pink: {
     ...plant,
+    dark: false,
     primary: '#EC4899',
     primaryDeep: '#BE185D',
     onPrimary: '#FFFFFF',
@@ -53,6 +56,7 @@ export const palettes: Record<ThemeName, Palette> = {
   },
   hijau: {
     ...plant,
+    dark: false,
     primary: '#10B981',
     primaryDeep: '#047857',
     onPrimary: '#FFFFFF',
@@ -74,6 +78,7 @@ export const palettes: Record<ThemeName, Palette> = {
   },
   biru: {
     ...plant,
+    dark: false,
     primary: '#3B82F6',
     primaryDeep: '#1D4ED8',
     onPrimary: '#FFFFFF',
@@ -95,6 +100,7 @@ export const palettes: Record<ThemeName, Palette> = {
   // Clean white with slate accents; buttons stay dark enough for white text.
   putih: {
     ...plant,
+    dark: false,
     primary: '#475569',
     primaryDeep: '#1E293B',
     onPrimary: '#FFFFFF',
@@ -113,8 +119,31 @@ export const palettes: Record<ThemeName, Palette> = {
     potRim: '#94A3B8',
     petal: '#F1F5F9',
   },
+  // "Malam": always used for laki-laki, never offered in the picker. Matches constants/male.ts.
+  malam: {
+    ...plant,
+    dark: true,
+    primary: '#F5B23D',
+    primaryDeep: '#F5B23D',
+    onPrimary: '#1A1204',
+    onPrimarySoft: '#3D2A08',
+    secondary: '#3A4A6B',
+    wash: '#0B1220',
+    background: '#0B1220',
+    foreground: '#E8EEF8',
+    card: '#121B2E',
+    muted: '#18233A',
+    mutedForeground: '#8A9BB8',
+    border: '#24314D',
+    destructive: '#F87171',
+    shadow: 'rgba(0, 0, 0, 0.4)',
+    pot: '#24314D',
+    potRim: '#F5B23D',
+    petal: '#3A4A6B',
+  },
 };
 
+/** Themes offered in the colour picker (perempuan only). */
 export const THEME_NAMES: { id: ThemeName; label: string }[] = [
   { id: 'pink', label: 'Pink' },
   { id: 'hijau', label: 'Hijau' },
@@ -141,6 +170,10 @@ export const fonts = {
  * backdrop's colour blobs show through it, so it reads as glass.
  */
 export function frostOf(c: Palette) {
+  // Dark palette: flat solid panel with a hairline, no glass.
+  if (c.dark) {
+    return { backgroundColor: c.card, borderWidth: 1, borderColor: c.border, boxShadow: 'none' } as const;
+  }
   return {
     backgroundColor: 'rgba(255,255,255,0.55)',
     borderWidth: 1.5,
@@ -149,9 +182,9 @@ export function frostOf(c: Palette) {
   } as const;
 }
 
-// Frosted card: the frost surface with the large card radius.
+// Frosted card: the frost surface with the large card radius (tight corners on the dark palette).
 export function clayOf(c: Palette) {
-  return { ...frostOf(c), borderRadius: radius.lg } as const;
+  return { ...frostOf(c), borderRadius: c.dark ? 10 : radius.lg } as const;
 }
 
 export const clay = clayOf(colors);

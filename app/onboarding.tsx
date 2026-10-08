@@ -22,15 +22,14 @@ const OPTIONS: { id: Gender; desc: string }[] = [
 /** Pilihan pertama saat buka app; menentukan apakah modul Haid tampil. */
 export default function OnboardingScreen() {
   const styles = useStyles(makeStyles);
-  const { colors, name, setTheme } = useTheme();
+  const { colors } = useTheme();
   const { gender, setGender } = useProfile();
   const [picked, setPicked] = useState<Gender | null>(gender);
 
+  // Palet Malam ikut otomatis lewat ThemeProvider begitu gender laki-laki tersimpan.
   function lanjut() {
     if (!picked) return;
     setGender(picked);
-    // Laki-laki langsung dapat tema biru agar tidak ada pink sejak layar pertama.
-    if (picked === 'laki-laki' && name === 'pink') setTheme('biru');
     router.replace('/(tabs)');
   }
 

@@ -81,6 +81,11 @@ test('test_buildSchedule_adzan_titledWithPrayerAndCity', () => {
   expect([r.title, r.body]).toEqual(['Waktunya sholat Maghrib', '17:56 · KOTA BANDUNG']);
 });
 
+test('test_buildSchedule_prayerLead_addsHeadsUpBeforeAdzan', () => {
+  const [early, adzan] = run({ prayers: [maghrib(23)], prayerLead: 10 });
+  expect([early.title, early.date.getMinutes(), adzan.id]).toEqual(['10 menit lagi Maghrib', 46, '2026-09-23:adzan-maghrib']);
+});
+
 test('test_buildSchedule_prayerAlreadyTicked_skipsAdzan', () => {
   const logs: Logs = { '2026-09-23': { counts: { maghrib: 1 }, at: 1 } };
   expect(run({ items: [item('maghrib')], logs, prayers: [maghrib(23), maghrib(24)] })[0].id).toBe('2026-09-24:adzan-maghrib');

@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { palettes, type Palette, type ThemeName } from '@/constants/theme';
 import { DEFAULT_FLOWER, isFlowerId, type FlowerId } from '@/domain/flowers';
 import { clearDayFlower, flowerForDate, sanitizeDayFlowers, setDayFlower, type DayFlowers } from '@/domain/dayFlowers';
+import { useProfile } from '@/providers/ProfileProvider';
 
 const THEME_KEY = 'amalify.theme.v1';
 const FLOWER_KEY = 'amalify.flower.v1';
@@ -76,9 +77,11 @@ export function AppThemeProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  // Laki-laki always get the dark "Malam" palette; their saved colour choice is ignored, not overwritten.
+  const { isMale } = useProfile();
   const value = useMemo(
-    () => ({ name, colors: palettes[name], flower, dayFlowers, flowerFor, setTheme, setFlower, setFlowerFor, clearFlowerFor }),
-    [name, flower, dayFlowers, flowerFor, setTheme, setFlower, setFlowerFor, clearFlowerFor],
+    () => ({ name, colors: isMale ? palettes.malam : palettes[name], flower, dayFlowers, flowerFor, setTheme, setFlower, setFlowerFor, clearFlowerFor }),
+    [name, isMale, flower, dayFlowers, flowerFor, setTheme, setFlower, setFlowerFor, clearFlowerFor],
   );
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
