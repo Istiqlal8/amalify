@@ -1,8 +1,5 @@
 {
   "effortLevel": "xhigh",
-  "env": {
-    "ANTHROPIC_BASE_URL": "https://openagentic.id/api/v1"
-  },
   "hooks": {
     "SessionStart": [
       {
