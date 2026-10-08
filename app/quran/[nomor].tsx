@@ -140,7 +140,8 @@ const makeStyles = (c: Palette) =>
     heroRow: { flexDirection: 'row', alignItems: 'center', alignSelf: 'stretch', gap: space.sm },
     heroInfo: { flex: 1, gap: 2 },
     heroArab: { fontFamily: fonts.arabic, fontSize: 24, lineHeight: 46, color: c.primaryDeep },
-    basmalah: { fontFamily: fonts.arabic, fontSize: 19, lineHeight: 40, color: c.foreground },
+    // Full width so Android cannot wrap the last word out of sight; see the note in app/doa/tasbih.tsx.
+    basmalah: { alignSelf: 'stretch', textAlign: 'center', fontFamily: fonts.arabic, fontSize: 19, lineHeight: 40, color: c.foreground },
     onPink: { color: c.foreground },
     onPinkSoft: { color: c.mutedForeground },
   });

@@ -100,6 +100,7 @@ const makeStyles = (c: Palette) =>
     word: { color: c.foreground },
     banner: { alignItems: 'center', paddingVertical: space.sm, marginVertical: space.xs, borderRadius: 12, backgroundColor: c.muted },
     bannerText: { color: c.primaryDeep },
-    basmalah: { fontFamily: fonts.arabic, fontSize: 24, lineHeight: 52, color: c.foreground },
+    // Full width so Android cannot wrap the last word out of sight; see the note in app/doa/tasbih.tsx.
+    basmalah: { alignSelf: 'stretch', textAlign: 'center', fontFamily: fonts.arabic, fontSize: 24, lineHeight: 52, color: c.foreground },
     number: { textAlign: 'center', marginTop: space.md },
   });

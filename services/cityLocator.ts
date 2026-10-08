@@ -17,14 +17,16 @@ async function findByName(place: string): Promise<City | null> {
 
 /**
  * The schedule city the user is standing in, or null when location is refused or the place is
- * unknown. With `ask` false the permission dialog never opens: only an earlier grant is used.
+ * unknown. With `ask` false no dialog ever opens: only an earlier grant and the last known fix are used.
  */
 export async function locateCity(ask: boolean): Promise<City | null> {
   const perm = ask ? await Location.requestForegroundPermissionsAsync() : await Location.getForegroundPermissionsAsync();
   if (!perm.granted) return null;
+  // A fresh fix can raise Google's "turn on Location Accuracy" dialog, so only the asking path may want one.
   const pos =
     (await Location.getLastKnownPositionAsync()) ??
-    (await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }));
+    (ask ? await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }) : null);
+  if (!pos) return null;
   const [place] = await Location.reverseGeocodeAsync(pos.coords);
   for (const name of [place?.subregion, place?.city]) {
     const hit = name ? await findByName(name) : null;

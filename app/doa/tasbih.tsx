@@ -70,7 +70,10 @@ const makeStyles = (c: Palette) =>
     root: { flex: 1, backgroundColor: c.card },
     safe: { flex: 1, padding: space.md, gap: space.lg, justifyContent: 'space-between' },
     phrase: { alignItems: 'center', gap: space.xs, padding: space.lg },
-    arab: { fontFamily: fonts.arabic, fontSize: 32, lineHeight: 64, color: c.foreground, textAlign: 'center' },
+    // Full width, not shrunk to the phrase: Android measures text once and draws it again at a
+    // pixel-rounded width, and a box exactly as wide as the words can come out a pixel short. The
+    // last word then wraps onto a second line outside the box, and in Arabic that word is the leftmost.
+    arab: { alignSelf: 'stretch', fontFamily: fonts.arabic, fontSize: 32, lineHeight: 64, color: c.foreground, textAlign: 'center' },
     steps: { flexDirection: 'row', justifyContent: 'center', gap: space.sm },
     step: { width: 28, height: 8, borderRadius: radius.pill, backgroundColor: c.muted },
     stepNow: { backgroundColor: c.secondary },
